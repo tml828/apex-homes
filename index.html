@@ -727,173 +727,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
 
   
 </div>
-<!-- PROPERTY PAGES -->
-<div class="page" id="page-bradford">
-  <button class="btn btn-ghost btn-sm" style="margin-bottom:1rem" onclick="goBack()"><svg class="ico"><use href="#ico-arrow-left"/></svg> Dashboard</button>
-  <div class="pdg">
-    <div class="pd-left">
-      <div class="prop-hero-wrap" onclick="triggerPropImg('bradford')" id="hero-bradford">
-        <div class="prop-hero-empty"><svg class="ico"><use href="#ico-camera"/></svg><span>Upload Property Photo</span></div>
-      </div>
-      <div class="info-card">
-      <div style="border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:.6rem;margin-bottom:.6rem"><div style="font-size:14px;font-weight:700;color:var(--text)">19311 Bradford Court</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Strongsville, Ohio 44149</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:.5rem"><span class="badge b-reno" id="status-badge-bradford" style="font-size:12px;padding:5px 12px;cursor:pointer" onclick="openStatusDropdown('bradford',event)"><svg class="ico"><use href="#ico-circle-filled"/></svg><span id="status-badge-bradford-txt">Loading...</span></span><button class="btn btn-ghost btn-sm" onclick="openEditProp('bradford')"><svg class="ico"><use href="#ico-pencil"/></svg> Edit Property</button></div></div>
-      
-        <div class="ir"><span class="ir-lbl">Purchase Price</span><span class="ir-val" id="bradford-ir-purchase">—</span></div>
-        <div class="ir"><span class="ir-lbl">Offer Accepted</span><span class="ir-val" id="bradford-offer-date">—</span></div>
-        <div class="ir"><span class="ir-lbl">Purchase Date (Deed)</span><span class="ir-val" id="bradford-ir-pdate">—</span></div>
-        <div class="ir"><span class="ir-lbl">Total Expenses</span><span class="ir-val" style="color:var(--red)" id="bradford-meta-exp">—</span></div>
-        <div class="ir"><span class="ir-lbl">All-In Cost</span><span class="ir-val" id="bradford-meta-allin">—</span></div>
-      </div>
-    </div>
-    <div class="card" style="padding:1.25rem">
-      <div class="tab-bar">
-        <button class="tb active" onclick="stab(this,'tb-bex')">Expenses</button>
-        
-        
-        <button class="tb" onclick="stab(this,'tb-bdocs')">Docs</button>
-        <button class="tb" onclick="stab(this,'tb-broi')">ROI</button>
-        <button class="tb" onclick="stab(this,'tb-banalysis');renderAnalysis('bradford')">Analysis</button>
-      </div>
-      <div class="tab-pane active" id="tb-bex">
-        <div class="receipt-panel" style="margin-bottom:1rem">
-          <div class="receipt-panel-title"><svg class="ico" style="color:#c4b5fd;width:16px;height:16px"><use href="#ico-sparkles"/></svg> AI Receipt Scanner — take or upload multiple</div>
-          <div class="drop-zone" id="dz-bradford" onclick="document.getElementById('scan-inp-bradford').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event,'bradford')">
-            <svg class="ico dz-icon"><use href="#ico-photo-scan"/></svg><p>Tap to take/upload receipts</p><span>JPG, PNG, HEIC, PDF — select multiple</span>
-          </div>
-          <input type="file" id="scan-inp-bradford" accept="image/*,.pdf,application/pdf" multiple capture="environment" style="display:none" onchange="handleScanFiles(this.files,'bradford')">
-          <div class="scan-queue" id="sq-bradford"></div><div id="sr-bradford"></div>
-          <div style="display:flex;gap:8px;margin-top:.85rem"><button class="btn btn-ai" id="scan-btn-bradford" onclick="runScan('bradford')" style="display:none"><svg class="ico"><use href="#ico-sparkles"/></svg> Scan All &amp; Add</button></div>
-        </div>
-        <div class="exp-toolbar"><div class="exp-total">Total: <strong id="bradford-exp-total">—</strong></div><div class="exp-search-wrap" style="flex:1;max-width:260px;position:relative"><svg class="ico" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3);pointer-events:none"><use href="#ico-search"/></svg><input id="search-bradford" type="text" placeholder="Search expenses..." oninput="searchE('bradford',this.value)" style="width:100%;padding:5px 8px 5px 28px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--text);outline:none"></div><button class="btn btn-sm" style="background:#c0392b;border-color:#c0392b;color:#fff;font-weight:700" onclick="openAddExp('bradford')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button><button class="btn btn-sm" style="background:#1a7a4a;border-color:#1a7a4a;color:#fff;font-weight:700" onclick="openAddCr('bradford')"><svg class="ico"><use href="#ico-plus"/></svg> Credit / Refund</button></div>
-        <div id="bradford-exp-list"></div>
-      </div>
-      <div class="tab-pane" id="tb-bdocs"><div class="sec-hd" style="margin-bottom:.75rem"><span style="font-size:13px;color:var(--text2)">Property documents &amp; files</span><div style="display:flex;gap:6px"><label class="btn btn-ghost btn-sm" style="cursor:pointer"><svg class="ico"><use href="#ico-camera"/></svg> Camera<input type="file" accept="image/*" capture="environment" style="display:none" onchange="handleDocFileInput(event,'bradford')"></label><label class="btn btn-primary btn-sm" style="cursor:pointer"><svg class="ico"><use href="#ico-upload"/></svg> Upload<input type="file" accept="image/*,.pdf,.doc,.docx" style="display:none" onchange="handleDocFileInput(event,'bradford')"></label></div></div><div id="docs-bradford"></div><input type="file" id="doc-inp-bradford" accept="*/*" multiple style="display:none" onchange="handleDocFiles(this,'bradford')"></div>
-      <div class="tab-pane" id="tb-broi">
-        <div class="roi-grid" style="margin-bottom:1.25rem">
-          <div class="roi-item"><div class="roi-lbl">Purchase Price</div><div class="roi-val" id="bradford-roi-purchase">—</div></div>
-          <div class="roi-item"><div class="roi-lbl">Total Expenses</div><div class="roi-val" style="color:var(--red)" id="bradford-roi-exp">—</div></div>
-          <div class="roi-item"><div class="roi-lbl">All-In Cost</div><div class="roi-val" id="bradford-roi-allin">—</div></div>
-          <div class="roi-item"><div class="roi-lbl">Status</div><div class="roi-val" style="color:var(--amber);font-size:14px">Renovation</div></div>
-        </div>
-
-      </div>
-      <div class="tab-pane" id="tb-banalysis"><div id="analysis-bradford"></div></div>
-    </div>
-  </div>
-</div>
-
-<div class="page" id="page-boston">
-  <button class="btn btn-ghost btn-sm" style="margin-bottom:1rem" onclick="goBack()"><svg class="ico"><use href="#ico-arrow-left"/></svg> Dashboard</button>
-  <div class="pdg">
-    <div class="pd-left">
-      <div class="prop-hero-wrap" onclick="triggerPropImg('boston')" id="hero-boston"><div class="prop-hero-empty"><svg class="ico"><use href="#ico-camera"/></svg><span>Upload Property Photo</span></div></div>
-      <div class="info-card">
-      <div style="border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:.6rem;margin-bottom:.6rem"><div style="font-size:14px;font-weight:700;color:var(--text)">1650 East Boston Road</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Broadview Heights, OH 44147</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:.5rem"><span class="badge b-reno" id="status-badge-boston" style="font-size:12px;padding:5px 12px;cursor:pointer" onclick="openStatusDropdown('boston',event)"><svg class="ico"><use href="#ico-circle-filled"/></svg><span id="status-badge-boston-txt">Loading...</span></span><button class="btn btn-ghost btn-sm" onclick="openEditProp('boston')"><svg class="ico"><use href="#ico-pencil"/></svg> Edit Property</button></div></div>
-      
-        <div class="ir"><span class="ir-lbl">Purchase Price</span><span class="ir-val" id="boston-ir-purchase">—</span></div>
-        <div class="ir"><span class="ir-lbl">Offer Accepted</span><span class="ir-val" id="boston-offer-date">—</span></div>
-        <div class="ir"><span class="ir-lbl">Purchase Date (Deed)</span><span class="ir-val" id="boston-ir-pdate">—</span></div>
-        <div class="ir"><span class="ir-lbl">Sold Price</span><span class="ir-val" style="color:var(--green)" id="boston-ir-sold">—</span></div>
-        <div class="ir"><span class="ir-lbl">Sold Date</span><span class="ir-val" id="boston-ir-sdate">—</span></div>
-        <div class="ir"><span class="ir-lbl">Total Expenses</span><span class="ir-val" style="color:var(--red)" id="boston-meta-exp">—</span></div>
-        <div class="ir"><span class="ir-lbl">Net Profit</span><span class="ir-val" style="color:var(--green)" id="boston-ir-profit">—</span></div>
-      </div>
-    </div>
-    <div class="card" style="padding:1.25rem">
-      <div class="tab-bar">
-        <button class="tb active" onclick="stab(this,'tb-boex')">Expenses</button>
-        
-        
-        <button class="tb" onclick="stab(this,'tb-bodocs')">Docs</button>
-        <button class="tb" onclick="stab(this,'tb-boroi')">ROI</button>
-        <button class="tb" onclick="stab(this,'tb-boanalysis');renderAnalysis('boston')">Analysis</button>
-      </div>
-      <div class="tab-pane active" id="tb-boex">
-        <div class="receipt-panel" style="margin-bottom:1rem">
-          <div class="receipt-panel-title"><svg class="ico" style="color:#c4b5fd;width:16px;height:16px"><use href="#ico-sparkles"/></svg> AI Receipt Scanner — take or upload multiple</div>
-          <div class="drop-zone" id="dz-boston" onclick="document.getElementById('scan-inp-boston').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event,'boston')">
-            <svg class="ico dz-icon"><use href="#ico-photo-scan"/></svg><p>Tap to take/upload receipts</p><span>JPG, PNG, HEIC, PDF — select multiple</span>
-          </div>
-          <input type="file" id="scan-inp-boston" accept="image/*,.pdf,application/pdf" multiple capture="environment" style="display:none" onchange="handleScanFiles(this.files,'boston')">
-          <div class="scan-queue" id="sq-boston"></div><div id="sr-boston"></div>
-          <div style="display:flex;gap:8px;margin-top:.85rem"><button class="btn btn-ai" id="scan-btn-boston" onclick="runScan('boston')" style="display:none"><svg class="ico"><use href="#ico-sparkles"/></svg> Scan All &amp; Add</button></div>
-        </div>
-        <div class="exp-toolbar"><div class="exp-total">Total: <strong id="boston-exp-total">—</strong></div><div class="exp-search-wrap" style="flex:1;max-width:260px;position:relative"><svg class="ico" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3);pointer-events:none"><use href="#ico-search"/></svg><input id="search-boston" type="text" placeholder="Search expenses..." oninput="searchE('boston',this.value)" style="width:100%;padding:5px 8px 5px 28px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--text);outline:none"></div><button class="btn btn-sm" style="background:#c0392b;border-color:#c0392b;color:#fff;font-weight:700" onclick="openAddExp('boston')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button><button class="btn btn-sm" style="background:#1a7a4a;border-color:#1a7a4a;color:#fff;font-weight:700" onclick="openAddCr('boston')"><svg class="ico"><use href="#ico-plus"/></svg> Credit / Refund</button></div>
-        <div id="boston-exp-list"></div>
-      </div>
-      <div class="tab-pane" id="tb-bodocs"><div class="sec-hd" style="margin-bottom:.75rem"><span style="font-size:13px;color:var(--text2)">Property documents &amp; files</span><div style="display:flex;gap:6px"><label class="btn btn-ghost btn-sm" style="cursor:pointer"><svg class="ico"><use href="#ico-camera"/></svg> Camera<input type="file" accept="image/*" capture="environment" style="display:none" onchange="handleDocFileInput(event,'boston')"></label><label class="btn btn-primary btn-sm" style="cursor:pointer"><svg class="ico"><use href="#ico-upload"/></svg> Upload<input type="file" accept="image/*,.pdf,.doc,.docx" style="display:none" onchange="handleDocFileInput(event,'boston')"></label></div></div><div id="docs-boston"></div><input type="file" id="doc-inp-boston" accept="*/*" multiple style="display:none" onchange="handleDocFiles(this,'boston')"></div>
-      <div class="tab-pane" id="tb-boroi">
-        <div class="roi-grid" style="margin-bottom:1.25rem">
-          <div class="roi-item"><div class="roi-lbl">Purchase Price</div><div class="roi-val" id="boston-roi-purchase">—</div></div>
-          <div class="roi-item"><div class="roi-lbl">Sold Price</div><div class="roi-val" style="color:var(--green)" id="boston-roi-sold">—</div></div>
-          <div class="roi-item"><div class="roi-lbl">Total Expenses</div><div class="roi-val" style="color:var(--red)" id="boston-roi-exp">—</div></div>
-          <div class="roi-item"><div class="roi-lbl">Net Profit</div><div class="roi-val" style="color:var(--green)" id="boston-roi-profit">—</div></div>
-          <div class="roi-item"><div class="roi-lbl">ROI %</div><div class="roi-val" style="color:var(--green)" id="boston-roi-pct">—</div></div>
-          <div class="roi-item"><div class="roi-lbl">Sold Date</div><div class="roi-val" style="font-size:13px" id="boston-roi-sdate">—</div></div>
-        </div>
-
-      </div>
-      <div class="tab-pane" id="tb-boanalysis"><div id="analysis-boston"></div></div>
-    </div>
-  </div>
-</div>
-
-<div class="page" id="page-warblers">
-  <button class="btn btn-ghost btn-sm" style="margin-bottom:1rem" onclick="goBack()"><svg class="ico"><use href="#ico-arrow-left"/></svg> Dashboard</button>
-  <div class="pdg">
-    <div class="pd-left">
-      <div class="prop-hero-wrap" onclick="triggerPropImg('warblers')" id="hero-warblers"><div class="prop-hero-empty"><svg class="ico"><use href="#ico-camera"/></svg><span>Upload Property Photo</span></div></div>
-      <div class="info-card">
-      <div style="border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:.6rem;margin-bottom:.6rem"><div style="font-size:14px;font-weight:700;color:var(--text)">7312 Warblers Lane</div><div style="font-size:12px;color:var(--text3);margin-top:2px">North Ridgeville, OH 44039</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:.5rem"><span class="badge b-reno" id="status-badge-warblers" style="font-size:12px;padding:5px 12px;cursor:pointer" onclick="openStatusDropdown('warblers',event)"><svg class="ico"><use href="#ico-circle-filled"/></svg><span id="status-badge-warblers-txt">Loading...</span></span><button class="btn btn-ghost btn-sm" onclick="openEditProp('warblers')"><svg class="ico"><use href="#ico-pencil"/></svg> Edit Property</button></div></div>
-      
-        <div class="ir"><span class="ir-lbl">Purchase Price</span><span class="ir-val" id="warblers-ir-purchase">—</span></div>
-        <div class="ir"><span class="ir-lbl">Offer Accepted</span><span class="ir-val" id="warblers-offer-date">—</span></div>
-        <div class="ir"><span class="ir-lbl">Purchase Date (Deed)</span><span class="ir-val" id="warblers-ir-pdate">—</span></div>
-        <div class="ir"><span class="ir-lbl">Sold Price</span><span class="ir-val" style="color:var(--green)" id="warblers-ir-sold">—</span></div>
-        <div class="ir"><span class="ir-lbl">Sold Date</span><span class="ir-val" id="warblers-ir-sdate">—</span></div>
-        <div class="ir"><span class="ir-lbl">Total Expenses</span><span class="ir-val" style="color:var(--red)" id="warblers-meta-exp">—</span></div>
-        <div class="ir"><span class="ir-lbl">Net Profit</span><span class="ir-val" style="color:var(--green)" id="warblers-ir-profit">—</span></div>
-      </div>
-    </div>
-    <div class="card" style="padding:1.25rem">
-      <div class="tab-bar">
-        <button class="tb active" onclick="stab(this,'tb-wex')">Expenses</button>
-        
-        
-        <button class="tb" onclick="stab(this,'tb-wdocs')">Docs</button>
-        <button class="tb" onclick="stab(this,'tb-wroi')">ROI</button>
-        <button class="tb" onclick="stab(this,'tb-wanalysis');renderAnalysis('warblers')">Analysis</button>
-      </div>
-      <div class="tab-pane active" id="tb-wex">
-        <div class="receipt-panel" style="margin-bottom:1rem">
-          <div class="receipt-panel-title"><svg class="ico" style="color:#c4b5fd;width:16px;height:16px"><use href="#ico-sparkles"/></svg> AI Receipt Scanner — take or upload multiple</div>
-          <div class="drop-zone" id="dz-warblers" onclick="document.getElementById('scan-inp-warblers').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event,'warblers')">
-            <svg class="ico dz-icon"><use href="#ico-photo-scan"/></svg><p>Tap to take/upload receipts</p><span>JPG, PNG, HEIC, PDF — select multiple</span>
-          </div>
-          <input type="file" id="scan-inp-warblers" accept="image/*,.pdf,application/pdf" multiple capture="environment" style="display:none" onchange="handleScanFiles(this.files,'warblers')">
-          <div class="scan-queue" id="sq-warblers"></div><div id="sr-warblers"></div>
-          <div style="display:flex;gap:8px;margin-top:.85rem"><button class="btn btn-ai" id="scan-btn-warblers" onclick="runScan('warblers')" style="display:none"><svg class="ico"><use href="#ico-sparkles"/></svg> Scan All &amp; Add</button></div>
-        </div>
-        <div class="exp-toolbar"><div class="exp-total">Total: <strong id="warblers-exp-total">—</strong></div><div class="exp-search-wrap" style="flex:1;max-width:260px;position:relative"><svg class="ico" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3);pointer-events:none"><use href="#ico-search"/></svg><input id="search-warblers" type="text" placeholder="Search expenses..." oninput="searchE('warblers',this.value)" style="width:100%;padding:5px 8px 5px 28px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--text);outline:none"></div><button class="btn btn-sm" style="background:#c0392b;border-color:#c0392b;color:#fff;font-weight:700" onclick="openAddExp('warblers')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button><button class="btn btn-sm" style="background:#1a7a4a;border-color:#1a7a4a;color:#fff;font-weight:700" onclick="openAddCr('warblers')"><svg class="ico"><use href="#ico-plus"/></svg> Credit / Refund</button></div>
-        <div id="warblers-exp-list"></div>
-      </div>
-      <div class="tab-pane" id="tb-wdocs"><div class="sec-hd" style="margin-bottom:.75rem"><span style="font-size:13px;color:var(--text2)">Property documents &amp; files</span><div style="display:flex;gap:6px"><label class="btn btn-ghost btn-sm" style="cursor:pointer"><svg class="ico"><use href="#ico-camera"/></svg> Camera<input type="file" accept="image/*" capture="environment" style="display:none" onchange="handleDocFileInput(event,'warblers')"></label><label class="btn btn-primary btn-sm" style="cursor:pointer"><svg class="ico"><use href="#ico-upload"/></svg> Upload<input type="file" accept="image/*,.pdf,.doc,.docx" style="display:none" onchange="handleDocFileInput(event,'warblers')"></label></div></div><div id="docs-warblers"></div><input type="file" id="doc-inp-warblers" accept="*/*" multiple style="display:none" onchange="handleDocFiles(this,'warblers')"></div>
-      <div class="tab-pane" id="tb-wroi">
-        <div class="roi-grid" style="margin-bottom:1.25rem">
-          <div class="roi-item"><div class="roi-lbl">Purchase Price</div><div class="roi-val" id="warblers-roi-purchase">—</div></div>
-          <div class="roi-item"><div class="roi-lbl">Sold Price</div><div class="roi-val" style="color:var(--green)" id="warblers-roi-sold">—</div></div>
-          <div class="roi-item"><div class="roi-lbl">Total Expenses</div><div class="roi-val" style="color:var(--red)" id="warblers-roi-exp">—</div></div>
-          <div class="roi-item"><div class="roi-lbl">Net Profit</div><div class="roi-val" style="color:var(--green)" id="warblers-roi-profit">—</div></div>
-          <div class="roi-item"><div class="roi-lbl">ROI %</div><div class="roi-val" style="color:var(--green)" id="warblers-roi-pct">—</div></div>
-          <div class="roi-item"><div class="roi-lbl">Sold Date</div><div class="roi-val" style="font-size:13px" id="warblers-roi-sdate">—</div></div>
-        </div>
-
-      </div>
-      <div class="tab-pane" id="tb-wanalysis"><div id="analysis-warblers"></div></div>
-    </div>
-  </div>
-</div>
-
+<!-- PROPERTY PAGES — built dynamically by buildPropPage() after loadData -->
 <!-- POTENTIAL -->
 <div class="page" id="page-potential">
   <div class="ph"><div class="ph-title">Potential Properties</div><div class="ph-sub">Auctions and acquisitions on your radar</div></div>
@@ -2760,13 +2594,10 @@ function saveEditProp(){
   pr.notes=document.getElementById("ep-notes").value.trim();
   const statusEl=document.getElementById("ep-status");
   if(statusEl)pr.status=statusEl.value||"Renovation";
-  save();renderPropCards();refreshSite();closeModal("m-edit-prop");
-  // Refresh property page if open and return to Expenses tab
-  const pg=document.getElementById("page-"+p);
-  if(pg){
-    const exBtn=pg.querySelector('.tb[onclick*="ex"]');
-    if(exBtn){const exId=exBtn.getAttribute("onclick").match(/'([^']+)'/)?.[1];if(exId)stab(exBtn,exId);}
-  }
+  save();renderPropCards();closeModal("m-edit-prop");
+  // Rebuild property page so address/city header reflects changes, then restore state
+  buildPropPage(p, true);
+  renderE(p);renderDocs(p);restorePropImg(p);refreshSite();
 }
 function deleteProp(p){
   if(!confirm('Delete "'+getProp(p).addr+'" and ALL its expenses, docs, and data? This cannot be undone.'))return;
@@ -3573,9 +3404,10 @@ function getPropKeys(){
   return Object.keys(propData).filter(k=>!k.startsWith('_') && typeof propData[k]==='object' && propData[k]!==null);
 }
 
-function buildPropPage(key){
+function buildPropPage(key, force){
   const existing = document.getElementById('page-'+key);
-  if(existing) return; // already exists
+  if(existing && !force) return; // already exists
+  if(existing) existing.remove();
   const p = getProp(key);
   const addr = p.addr||key;
   const city  = p.city||'';
@@ -4127,6 +3959,8 @@ loadData().then(()=>{
   try{
     // Apply logo from cloud if available (beats localStorage)
     if(propData._logo){applyCustomLogo(propData._logo,true);}else{const ls=localStorage.getItem('apex_logo');if(ls)applyCustomLogo(ls,true);}
+    // Build all property pages dynamically (includes bradford/boston/warblers)
+    getPropKeys().forEach(k=>buildPropPage(k));
     [...getPropKeys(),'general'].forEach(renderE);
     renderTasks();renderPropTasks();renderCal();
     getPropKeys().forEach(renderDocs);
