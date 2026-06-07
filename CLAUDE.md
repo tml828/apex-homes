@@ -26,8 +26,10 @@ window._mileage — mileage trip log array
 Supabase credentials are hardcoded in the file — **do not remove them**. They are the fallback so receipt scanning and sync work on every device without setup.
 
 ### Properties
-Three hardcoded property pages: `bradford`, `boston`, `warblers`.
-Additional properties are created dynamically via `buildPropPage(key)` and stored in `propData[key]`.
+ALL properties are built dynamically via `buildPropPage(key)` — no hardcoded pages.
+Bradford, Boston, and Warblers are stored in `propData` like any other property.
+At startup, `loadData().then()` calls `getPropKeys().forEach(k => buildPropPage(k))`.
+`buildPropPage(key, force=false)` — pass `force=true` to rebuild (used by `saveEditProp` so address changes reflect).
 Property keys are always lowercase, no spaces.
 
 ### Sync
@@ -87,6 +89,10 @@ Property keys are always lowercase, no spaces.
 - `openEditExpByIndex(p, origIdx)` / `saveEditExp()` — edit expense
 - `openAddCr(p)` / `saveCr()` — add credit/refund (stored with `credit:true`)
 - `delExpByIndex(p, idx)` — delete expense
+- `triggerCSVImport(pid)` / `importExpCSV(event, pid)` — bulk import from CSV file
+  - CSV columns (header optional, auto-detected): `amount`, `date`, `description`, `category`, `vendor`
+  - Rows missing a valid amount are skipped; reports added vs skipped count
+  - `parseCSVLine(line)` — handles quoted fields and commas inside quotes
 
 ### Mileage
 - `addMileage()` — logs a trip to `window._mileage`
@@ -114,7 +120,11 @@ Property keys are always lowercase, no spaces.
 ### Receipt Scanning
 - `handleExpReceipt(file)` — processes receipt for new expense modal
 - `processReceiptImage(file, crop)` — resizes/crops image, returns base64
+- `_cropToReceipt(canvas)` — auto-crops to receipt paper area using brightness projection (called with `crop=true`)
 - `scanExpReceipt(file, b64, mime)` — sends to Claude API (`claude-sonnet-4-6`), extracts fields
+- `handleScanFiles(files, p)` — queues multiple files for batch scanning on property p
+- `runScan(p)` — scans all queued files for property p, bulk-adds as expenses
+- Every property expenses tab has an AI Receipt Scanner panel (tap to take/upload, select multiple, Scan All & Add)
 - Category suggestion uses `claude-haiku-4-5-20251001`
 
 ---
@@ -159,7 +169,11 @@ Property keys are always lowercase, no spaces.
 - Balance sheet — inputs were ignored, equity never subtracted liabilities
 - Mileage tracker — was showing all years, now filters by taxYear
 - Balance sheet header — was hardcoded "2026", now uses taxYear variable
-- Button styles — Add Expense (solid red), Credit/Refund and Add Income (solid green), all with white text
+- Button styles — Add Expense (solid red `#c0392b`), Credit/Refund and Add Income (solid green `#1a7a4a`), all with white text
+- Hardcoded property pages removed — Bradford, Boston, Warblers now use `buildPropPage` like all other properties
+- `buildPropPage` updated to accept `force` param; `saveEditProp` passes `true` so address header updates on edit
+- Multi-receipt AI scanner added to every property's Expenses tab (was previously only on general expenses)
+- CSV bulk import added: Import CSV button on every property and general expenses tab
 
 ---
 
