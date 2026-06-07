@@ -798,15 +798,6 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
         <div style="font-size:16px;font-weight:700;color:#ef4444">&#9660; Expenses</div>
         <button class="btn btn-sm" style="background:#c0392b;border:1px solid #c0392b;color:#fff;font-weight:700" onclick="openAddExp('general')"><svg class="ico" style="width:13px;height:13px"><use href="#ico-plus"/></svg> Add</button>
       </div>
-      <div class="receipt-panel" style="margin-bottom:1rem">
-        <div class="receipt-panel-title"><svg class="ico" style="color:#c4b5fd;width:16px;height:16px"><use href="#ico-sparkles"/></svg> AI Receipt Scanner</div>
-        <div class="drop-zone" id="dz-general" onclick="document.getElementById('scan-inp-general').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event,'general')">
-          <svg class="ico dz-icon"><use href="#ico-photo-scan"/></svg><p>Click to upload or drag &amp; drop receipts</p><span>JPG, PNG, HEIC, PDF</span>
-        </div>
-        <input type="file" id="scan-inp-general" accept="image/*,.pdf,application/pdf" multiple style="display:none" onchange="handleScanFiles(this.files,'general')">
-        <div class="scan-queue" id="sq-general"></div><div id="sr-general"></div>
-        <div style="display:flex;gap:8px;margin-top:.85rem"><button class="btn btn-ai" id="scan-btn-general" onclick="runScan('general')" style="display:none"><svg class="ico"><use href="#ico-sparkles"/></svg> Scan All &amp; Add</button></div>
-      </div>
       <div class="exp-toolbar" style="margin-bottom:.75rem">
         <div class="exp-total" style="color:#ef4444">Total: <strong id="general-exp-total">$0.00</strong></div>
         <div class="exp-search-wrap" style="flex:1;max-width:220px;position:relative"><svg class="ico" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3);pointer-events:none"><use href="#ico-search"/></svg><input id="search-general" type="text" placeholder="Search expenses..." oninput="searchE('general',this.value)" style="width:100%;padding:5px 8px 5px 28px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--text)"></div>
@@ -1129,13 +1120,14 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <input type="hidden" id="exp-pid">
     <!-- SCAN SECTION -->
     <div style="background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);padding:1rem;margin-bottom:1.1rem">
-      <div style="display:flex;align-items:center;gap:7px;margin-bottom:.4rem;font-size:13px;font-weight:600;color:var(--gold2)"><svg class="ico" style="color:#c4b5fd;width:15px;height:15px"><use href="#ico-sparkles"/></svg> Scan Receipt with AI</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Upload a receipt photo and Claude will fill in all fields automatically.</div>
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:.4rem;font-size:13px;font-weight:600;color:var(--gold2)"><svg class="ico" style="color:#c4b5fd;width:15px;height:15px"><use href="#ico-sparkles"/></svg> Scan Receipt(s) with AI</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Select one receipt to fill the form, or select multiple to bulk-add them all at once.</div>
       <div class="drop-zone" id="exp-dz" onclick="document.getElementById('exp-receipt-inp').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleExpDrop(event)" style="padding:1.1rem">
         <svg class="ico dz-icon" style="width:26px;height:26px;margin-bottom:.4rem"><use href="#ico-photo-scan"/></svg>
-        <p style="font-size:12.5px">Click or drag &amp; drop a receipt photo</p>
+        <p style="font-size:12.5px">Tap to take photo or choose from library</p>
+        <span style="font-size:11px">Select multiple for bulk add</span>
       </div>
-      <input type="file" id="exp-receipt-inp" accept="image/*,application/pdf" style="display:none" onchange="handleExpReceipt(this.files[0])">
+      <input type="file" id="exp-receipt-inp" accept="image/*,application/pdf" multiple style="display:none" onchange="handleExpReceiptMulti(this.files)">
       <div id="exp-receipt-preview" style="margin-top:.6rem"></div>
       <div id="exp-scan-status" style="margin-top:.5rem"></div>
     </div>
@@ -3126,6 +3118,28 @@ async function processReceiptImage(f,crop=false){
     img.src=url;
   });
 }
+async function handleExpReceiptMulti(files){
+  if(!files||!files.length)return;
+  if(files.length===1){handleExpReceipt(files[0]);return;}
+  // Multiple files — bulk scan and add directly
+  if(!checkApiReady())return;
+  const p=document.getElementById('exp-pid')?.value;if(!p)return;
+  const status=document.getElementById('exp-scan-status');
+  const prev=document.getElementById('exp-receipt-preview');
+  if(status)status.innerHTML=`<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)"><div class="spin"></div> Scanning ${files.length} receipts...</div>`;
+  if(prev)prev.innerHTML='';
+  const arr=Array.from(files);const results=[];
+  for(let i=0;i<arr.length;i++){
+    if(status)status.innerHTML=`<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)"><div class="spin"></div> Scanning ${i+1} of ${arr.length}...</div>`;
+    results.push(await scanOne(arr[i],p,i));
+  }
+  const ok=results.filter(r=>r.ok&&r.data?.amount);const fail=results.length-ok.length;
+  if(!extra[p])extra[p]=[];
+  ok.forEach(r=>{extra[p].unshift({a:r.data.amount,d:r.data.desc||'Receipt',c:r.data.cat||'Other',v:r.data.vendor||'',dt:r.data.date||new Date().toISOString().split('T')[0],receipt:`data:${r.mime};base64,${r.b64}`});});
+  save();renderE(p);refreshSite();renderContractors();
+  closeModal('m-exp');
+  setTimeout(()=>alert(`${ok.length} receipt${ok.length!==1?'s':''} added${fail?' ('+fail+' could not be read)':''}.`),200);
+}
 async function handleExpReceipt(f){
   if(!f)return;
   var prev=document.getElementById("exp-receipt-preview");
@@ -3153,8 +3167,8 @@ async function handleExpReceipt(f){
 function handleExpDrop(ev){
   ev.preventDefault();
   const dz=ev.currentTarget;if(dz)dz.classList.remove("over");
-  const f=ev.dataTransfer&&ev.dataTransfer.files&&ev.dataTransfer.files[0];
-  if(f)handleExpReceipt(f);
+  const files=ev.dataTransfer&&ev.dataTransfer.files;
+  if(files&&files.length)handleExpReceiptMulti(files);
 }
 async function scanExpReceipt(f,preB64=null,preMime=null){
   if(!f)return;const status=document.getElementById("exp-scan-status");
@@ -3482,15 +3496,6 @@ function buildPropPage(key, force){
           <button class="tb" onclick="stab(this,'tb-${key}analysis');renderAnalysis('${key}')">Analysis</button>
         </div>
         <div class="tab-pane active" id="tb-${key}ex">
-          <div class="receipt-panel" style="margin-bottom:1rem">
-            <div class="receipt-panel-title"><svg class="ico" style="color:#c4b5fd;width:16px;height:16px"><use href="#ico-sparkles"/></svg> AI Receipt Scanner — take or upload multiple</div>
-            <div class="drop-zone" id="dz-${key}" onclick="document.getElementById('scan-inp-${key}').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event,'${key}')">
-              <svg class="ico dz-icon"><use href="#ico-photo-scan"/></svg><p>Tap to take/upload receipts</p><span>JPG, PNG, HEIC, PDF — select multiple</span>
-            </div>
-            <input type="file" id="scan-inp-${key}" accept="image/*,.pdf,application/pdf" multiple style="display:none" onchange="handleScanFiles(this.files,'${key}')">
-            <div class="scan-queue" id="scan-queue-${key}"></div><div id="sr-${key}"></div>
-            <div style="display:flex;gap:8px;margin-top:.85rem"><button class="btn btn-ai" id="scan-btn-${key}" onclick="runScan('${key}')" style="display:none"><svg class="ico"><use href="#ico-sparkles"/></svg> Scan All &amp; Add</button></div>
-          </div>
           <div class="exp-toolbar">
             <div class="exp-total">Total: <strong id="${key}-exp-total">—</strong></div>
             <div class="exp-search-wrap" style="flex:1;max-width:260px;position:relative">
