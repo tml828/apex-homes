@@ -3382,9 +3382,11 @@ function renderMileage(){
     getPropKeys().forEach(k=>{const opt=document.createElement("option");opt.value=k;opt.textContent=getProp(k).addr||k;miProp.appendChild(opt);});
   }
   if(!window._mileage.length){el.innerHTML='<div class="empty"><svg class="ico"><use href="#ico-car"/></svg>No trips logged</div>';return;}
-  const total=window._mileage.reduce((s,t)=>s+t.miles,0);
-  el.innerHTML=window._mileage.map(t=>`<div class="exp-item"><div class="exp-left"><div><div class="exp-desc">${t.purpose}</div><div class="exp-meta">${t.prop||""}${t.date?" · "+fmtD(t.date):""}</div></div></div><div class="exp-right"><div><div class="exp-amt">${t.miles.toFixed(1)} mi</div><div style="font-size:11px;color:var(--text3)">${fmt(t.miles*rate)}</div></div><button class="btn btn-danger btn-sm btn-icon" onclick="deleteMileage('${t.id}')"><svg class="ico" style="width:12px;height:12px"><use href="#ico-trash"/></svg></button><button class="btn btn-sm btn-icon" style="margin-left:3px;border-color:var(--border2);color:var(--text1)" onclick="openEditMileage('${t.id}')"><svg class="ico" style="width:12px;height:12px"><use href="#ico-edit"/></svg></button></div></div>`).join("")+`<div class="exp-item" style="background:var(--bg3);font-weight:700"><div class="exp-left"><div class="exp-desc">Total Deduction</div></div><div class="exp-right"><div class="exp-amt">${fmt(total*rate)}</div></div></div>`;
+  const yearMileage=window._mileage.filter(t=>String(t.date||t.dt||'').startsWith(String(taxYear)));
+  const total=yearMileage.reduce((s,t)=>s+t.miles,0);
+  el.innerHTML=(yearMileage.length?yearMileage:window._mileage).map(t=>`<div class="exp-item"><div class="exp-left"><div><div class="exp-desc">${t.purpose}</div><div class="exp-meta">${t.prop||""}${t.date?" · "+fmtD(t.date):""}</div></div></div><div class="exp-right"><div><div class="exp-amt">${t.miles.toFixed(1)} mi</div><div style="font-size:11px;color:var(--text3)">${fmt(t.miles*rate)}</div></div><button class="btn btn-danger btn-sm btn-icon" onclick="deleteMileage('${t.id}')"><svg class="ico" style="width:12px;height:12px"><use href="#ico-trash"/></svg></button><button class="btn btn-sm btn-icon" style="margin-left:3px;border-color:var(--border2);color:var(--text1)" onclick="openEditMileage('${t.id}')"><svg class="ico" style="width:12px;height:12px"><use href="#ico-edit"/></svg></button></div></div>`).join("")+`<div class="exp-item" style="background:var(--bg3);font-weight:700"><div class="exp-left"><div class="exp-desc">Total Deduction</div></div><div class="exp-right"><div class="exp-amt">${fmt(total*rate)}</div></div></div>`;
   setEl("mi-total-miles",total.toFixed(1)+" mi");setEl("mi-total-deduction",fmt(total*rate));
+  setEl("mi-stat-miles",total.toFixed(1));setEl("mi-stat-deduction",fmt(total*rate));
 }
 
 // ====== TAXES ======
@@ -3403,8 +3405,13 @@ function updateBalanceSheet(){
   // Populate each active property row in balance sheet
   const bsRows=document.getElementById('bs-prop-rows');
   if(bsRows)bsRows.innerHTML=activeProps.map(p=>`<div class="pl-row"><span>${getProp(p).addr||p} (${propStatus(p)} — at cost)</span><span id="bs-prop-val-${p}">${fmt(propAllin(p))}</span></div>`).join('');
-  setEl("bs-cash","$0.00");setEl("bs-loans","$0.00");setEl("bs-payable","$0.00");
-  setEl("bs-total-assets",fmt(activeAllin));setEl("bs-total-liab","$0.00");setEl("bs-equity",fmt(activeAllin));
+  const cash=parseFloat(document.getElementById('bs-cash-inp')?.value)||0;
+  const loans=parseFloat(document.getElementById('bs-loans-inp')?.value)||0;
+  const payable=parseFloat(document.getElementById('bs-payable-inp')?.value)||0;
+  const totalAssets=activeAllin+cash;
+  const totalLiab=loans+payable;
+  setEl("bs-cash",fmt(cash));setEl("bs-loans",fmt(loans));setEl("bs-payable",fmt(payable));
+  setEl("bs-total-assets",fmt(totalAssets));setEl("bs-total-liab",fmt(totalLiab));setEl("bs-equity",fmt(totalAssets-totalLiab));
 }
 function updateBudget(p){
   const budget=parseFloat(propData[p]?.budget)||0;if(!budget)return;const spent=eTotal(p);
