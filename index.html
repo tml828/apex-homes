@@ -1037,6 +1037,17 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
   </div>
 
   <div class="card" style="padding:1.5rem;margin-bottom:1rem">
+    <div class="sec-title" style="margin-bottom:.5rem">AI Receipt Scanner Key</div>
+    <div style="font-size:12.5px;color:var(--text2);margin-bottom:1rem">Required for AI receipt scanning. Get a key at console.anthropic.com → API Keys.</div>
+    <div id="co-apikey-status" style="font-size:12.5px;margin-bottom:.75rem"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input type="password" id="co-apikey-input" placeholder="sk-ant-api03-..." style="flex:1;min-width:200px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px">
+      <button class="btn btn-primary btn-sm" onclick="saveApiKeyFromCompany()"><svg class="ico"><use href="#ico-check"/></svg> Save Key</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearApiKeyFromCompany()">Clear</button>
+    </div>
+  </div>
+
+  <div class="card" style="padding:1.5rem;margin-bottom:1rem">
     <div class="sec-title" style="margin-bottom:.5rem">Cloud Receipt Sync</div>
     <div style="font-size:12.5px;color:var(--text2);margin-bottom:1rem">Upload all receipt photos currently stored on this device to the cloud so they appear on all your other devices.</div>
     <div id="receipt-sync-status" style="font-size:12.5px;min-height:18px;margin-bottom:.75rem"></div>
@@ -2253,6 +2264,26 @@ function restoreCompanyInfo(){
   const c=propData._company||{};
   const einInp=document.getElementById('co-ein');const nameInp=document.getElementById('co-name');const disp=document.getElementById('co-ein-display');
   if(einInp&&c.ein)einInp.value=c.ein;if(nameInp&&c.name)nameInp.value=c.name;if(disp)disp.textContent=c.ein||'—';
+  renderCoApiKeyStatus();
+}
+function renderCoApiKeyStatus(){
+  const el=document.getElementById('co-apikey-status');if(!el)return;
+  const stored=localStorage.getItem('apex_anthropic_key');
+  el.innerHTML=stored?'<span style="color:var(--green)">✓ Custom key saved on this device</span>':'<span style="color:var(--text2)">Using built-in key</span>';
+}
+function saveApiKeyFromCompany(){
+  const k=document.getElementById('co-apikey-input')?.value.trim();
+  if(!k){alert('Please enter an API key.');return;}
+  localStorage.setItem('apex_anthropic_key',k);
+  document.getElementById('co-apikey-input').value='';
+  renderCoApiKeyStatus();updateApiKeyBtn();
+  alert('API key saved.');
+}
+function clearApiKeyFromCompany(){
+  localStorage.removeItem('apex_anthropic_key');
+  const inp=document.getElementById('co-apikey-input');if(inp)inp.value='';
+  renderCoApiKeyStatus();updateApiKeyBtn();
+  alert('Custom key cleared — using built-in key.');
 }
 
 // ====== BANK ACCOUNTS ======
