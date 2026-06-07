@@ -3150,7 +3150,7 @@ async function handleExpReceipt(f){
     var dataUrl='data:'+processed.mime+';base64,'+processed.b64;
     expReceiptB64=processed.b64;expReceiptMime=processed.mime;
     expReceiptUrl=dataUrl;
-    if(prev)prev.innerHTML='<img src="'+dataUrl+'" style="max-height:160px;border-radius:8px;border:1px solid var(--border2);display:block;margin:0 auto">';if(prev)prev.scrollIntoView({behavior:"smooth",block:"nearest"});
+    if(prev)prev.innerHTML='<div style="position:relative;display:inline-block;margin:0 auto;display:flex;justify-content:center"><img src="'+dataUrl+'" style="max-height:160px;border-radius:8px;border:1px solid var(--border2)"><button onclick="clearExpReceipt()" style="position:absolute;top:-8px;right:-8px;background:#c0392b;border:none;color:#fff;border-radius:50%;width:22px;height:22px;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button></div>';if(prev)prev.scrollIntoView({behavior:"smooth",block:"nearest"});
     if(status)status.innerHTML='';
     fetch(dataUrl).then(function(r){return r.blob();}).then(function(blob){
       var path='receipts/exp-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+'.jpg';
@@ -3159,10 +3159,18 @@ async function handleExpReceipt(f){
     if(getApiKey()||IS_CLAUDE_AI)scanExpReceipt(f,processed.b64,processed.mime);
   }catch(err){
     var fr=new FileReader();
-    fr.onload=function(ev){expReceiptUrl=ev.target.result;if(prev)prev.innerHTML='<img src="'+ev.target.result+'" style="max-height:160px;border-radius:8px;border:1px solid var(--border2);display:block;margin:0 auto">';if(prev)prev.scrollIntoView({behavior:"smooth",block:"nearest"});};
+    fr.onload=function(ev){expReceiptUrl=ev.target.result;if(prev)prev.innerHTML='<div style="position:relative;display:inline-block;display:flex;justify-content:center"><img src="'+ev.target.result+'" style="max-height:160px;border-radius:8px;border:1px solid var(--border2)"><button onclick="clearExpReceipt()" style="position:absolute;top:-8px;right:-8px;background:#c0392b;border:none;color:#fff;border-radius:50%;width:22px;height:22px;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button></div>';if(prev)prev.scrollIntoView({behavior:"smooth",block:"nearest"});};
     fr.readAsDataURL(f);
     if(getApiKey()||IS_CLAUDE_AI)scanExpReceipt(f);
   }
+}
+function clearExpReceipt(){
+  expReceiptUrl=null;expReceiptB64='';expReceiptMime='';
+  const prev=document.getElementById('exp-receipt-preview');if(prev)prev.innerHTML='';
+  const status=document.getElementById('exp-scan-status');if(status)status.innerHTML='';
+  const inp=document.getElementById('exp-receipt-inp');if(inp)inp.value='';
+  // Reset scanned fields so user can enter manually
+  ['exp-amt','exp-desc','exp-date','exp-vendor'].forEach(id=>{const el=document.getElementById(id);if(el&&!el.value.trim())return;});
 }
 function handleExpDrop(ev){
   ev.preventDefault();
