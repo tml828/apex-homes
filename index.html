@@ -755,6 +755,15 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
         <button class="tb" onclick="stab(this,'tb-banalysis');renderAnalysis('bradford')">Analysis</button>
       </div>
       <div class="tab-pane active" id="tb-bex">
+        <div class="receipt-panel" style="margin-bottom:1rem">
+          <div class="receipt-panel-title"><svg class="ico" style="color:#c4b5fd;width:16px;height:16px"><use href="#ico-sparkles"/></svg> AI Receipt Scanner — take or upload multiple</div>
+          <div class="drop-zone" id="dz-bradford" onclick="document.getElementById('scan-inp-bradford').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event,'bradford')">
+            <svg class="ico dz-icon"><use href="#ico-photo-scan"/></svg><p>Tap to take/upload receipts</p><span>JPG, PNG, HEIC, PDF — select multiple</span>
+          </div>
+          <input type="file" id="scan-inp-bradford" accept="image/*,.pdf,application/pdf" multiple capture="environment" style="display:none" onchange="handleScanFiles(this.files,'bradford')">
+          <div class="scan-queue" id="sq-bradford"></div><div id="sr-bradford"></div>
+          <div style="display:flex;gap:8px;margin-top:.85rem"><button class="btn btn-ai" id="scan-btn-bradford" onclick="runScan('bradford')" style="display:none"><svg class="ico"><use href="#ico-sparkles"/></svg> Scan All &amp; Add</button></div>
+        </div>
         <div class="exp-toolbar"><div class="exp-total">Total: <strong id="bradford-exp-total">—</strong></div><div class="exp-search-wrap" style="flex:1;max-width:260px;position:relative"><svg class="ico" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3);pointer-events:none"><use href="#ico-search"/></svg><input id="search-bradford" type="text" placeholder="Search expenses..." oninput="searchE('bradford',this.value)" style="width:100%;padding:5px 8px 5px 28px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--text);outline:none"></div><button class="btn btn-sm" style="background:#c0392b;border-color:#c0392b;color:#fff;font-weight:700" onclick="openAddExp('bradford')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button><button class="btn btn-sm" style="background:#1a7a4a;border-color:#1a7a4a;color:#fff;font-weight:700" onclick="openAddCr('bradford')"><svg class="ico"><use href="#ico-plus"/></svg> Credit / Refund</button></div>
         <div id="bradford-exp-list"></div>
       </div>
@@ -800,6 +809,15 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
         <button class="tb" onclick="stab(this,'tb-boanalysis');renderAnalysis('boston')">Analysis</button>
       </div>
       <div class="tab-pane active" id="tb-boex">
+        <div class="receipt-panel" style="margin-bottom:1rem">
+          <div class="receipt-panel-title"><svg class="ico" style="color:#c4b5fd;width:16px;height:16px"><use href="#ico-sparkles"/></svg> AI Receipt Scanner — take or upload multiple</div>
+          <div class="drop-zone" id="dz-boston" onclick="document.getElementById('scan-inp-boston').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event,'boston')">
+            <svg class="ico dz-icon"><use href="#ico-photo-scan"/></svg><p>Tap to take/upload receipts</p><span>JPG, PNG, HEIC, PDF — select multiple</span>
+          </div>
+          <input type="file" id="scan-inp-boston" accept="image/*,.pdf,application/pdf" multiple capture="environment" style="display:none" onchange="handleScanFiles(this.files,'boston')">
+          <div class="scan-queue" id="sq-boston"></div><div id="sr-boston"></div>
+          <div style="display:flex;gap:8px;margin-top:.85rem"><button class="btn btn-ai" id="scan-btn-boston" onclick="runScan('boston')" style="display:none"><svg class="ico"><use href="#ico-sparkles"/></svg> Scan All &amp; Add</button></div>
+        </div>
         <div class="exp-toolbar"><div class="exp-total">Total: <strong id="boston-exp-total">—</strong></div><div class="exp-search-wrap" style="flex:1;max-width:260px;position:relative"><svg class="ico" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3);pointer-events:none"><use href="#ico-search"/></svg><input id="search-boston" type="text" placeholder="Search expenses..." oninput="searchE('boston',this.value)" style="width:100%;padding:5px 8px 5px 28px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--text);outline:none"></div><button class="btn btn-sm" style="background:#c0392b;border-color:#c0392b;color:#fff;font-weight:700" onclick="openAddExp('boston')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button><button class="btn btn-sm" style="background:#1a7a4a;border-color:#1a7a4a;color:#fff;font-weight:700" onclick="openAddCr('boston')"><svg class="ico"><use href="#ico-plus"/></svg> Credit / Refund</button></div>
         <div id="boston-exp-list"></div>
       </div>
@@ -847,6 +865,15 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
         <button class="tb" onclick="stab(this,'tb-wanalysis');renderAnalysis('warblers')">Analysis</button>
       </div>
       <div class="tab-pane active" id="tb-wex">
+        <div class="receipt-panel" style="margin-bottom:1rem">
+          <div class="receipt-panel-title"><svg class="ico" style="color:#c4b5fd;width:16px;height:16px"><use href="#ico-sparkles"/></svg> AI Receipt Scanner — take or upload multiple</div>
+          <div class="drop-zone" id="dz-warblers" onclick="document.getElementById('scan-inp-warblers').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event,'warblers')">
+            <svg class="ico dz-icon"><use href="#ico-photo-scan"/></svg><p>Tap to take/upload receipts</p><span>JPG, PNG, HEIC, PDF — select multiple</span>
+          </div>
+          <input type="file" id="scan-inp-warblers" accept="image/*,.pdf,application/pdf" multiple capture="environment" style="display:none" onchange="handleScanFiles(this.files,'warblers')">
+          <div class="scan-queue" id="sq-warblers"></div><div id="sr-warblers"></div>
+          <div style="display:flex;gap:8px;margin-top:.85rem"><button class="btn btn-ai" id="scan-btn-warblers" onclick="runScan('warblers')" style="display:none"><svg class="ico"><use href="#ico-sparkles"/></svg> Scan All &amp; Add</button></div>
+        </div>
         <div class="exp-toolbar"><div class="exp-total">Total: <strong id="warblers-exp-total">—</strong></div><div class="exp-search-wrap" style="flex:1;max-width:260px;position:relative"><svg class="ico" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3);pointer-events:none"><use href="#ico-search"/></svg><input id="search-warblers" type="text" placeholder="Search expenses..." oninput="searchE('warblers',this.value)" style="width:100%;padding:5px 8px 5px 28px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--text);outline:none"></div><button class="btn btn-sm" style="background:#c0392b;border-color:#c0392b;color:#fff;font-weight:700" onclick="openAddExp('warblers')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button><button class="btn btn-sm" style="background:#1a7a4a;border-color:#1a7a4a;color:#fff;font-weight:700" onclick="openAddCr('warblers')"><svg class="ico"><use href="#ico-plus"/></svg> Credit / Refund</button></div>
         <div id="warblers-exp-list"></div>
       </div>
@@ -3592,13 +3619,22 @@ function buildPropPage(key){
           <button class="tb" onclick="stab(this,'tb-${key}analysis');renderAnalysis('${key}')">Analysis</button>
         </div>
         <div class="tab-pane active" id="tb-${key}ex">
+          <div class="receipt-panel" style="margin-bottom:1rem">
+            <div class="receipt-panel-title"><svg class="ico" style="color:#c4b5fd;width:16px;height:16px"><use href="#ico-sparkles"/></svg> AI Receipt Scanner — take or upload multiple</div>
+            <div class="drop-zone" id="dz-${key}" onclick="document.getElementById('scan-inp-${key}').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event,'${key}')">
+              <svg class="ico dz-icon"><use href="#ico-photo-scan"/></svg><p>Tap to take/upload receipts</p><span>JPG, PNG, HEIC, PDF — select multiple</span>
+            </div>
+            <input type="file" id="scan-inp-${key}" accept="image/*,.pdf,application/pdf" multiple capture="environment" style="display:none" onchange="handleScanFiles(this.files,'${key}')">
+            <div class="scan-queue" id="scan-queue-${key}"></div><div id="sr-${key}"></div>
+            <div style="display:flex;gap:8px;margin-top:.85rem"><button class="btn btn-ai" id="scan-btn-${key}" onclick="runScan('${key}')" style="display:none"><svg class="ico"><use href="#ico-sparkles"/></svg> Scan All &amp; Add</button></div>
+          </div>
           <div class="exp-toolbar">
             <div class="exp-total">Total: <strong id="${key}-exp-total">—</strong></div>
             <div class="exp-search-wrap" style="flex:1;max-width:260px;position:relative">
               <svg class="ico" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3);pointer-events:none"><use href="#ico-search"/></svg>
               <input id="search-${key}" type="text" placeholder="Search expenses..." oninput="searchE('${key}',this.value)" style="width:100%;padding:5px 8px 5px 28px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px">
             </div>
-            <button class="btn btn-sm" style="background:#c0392b;border-color:#c0392b;color:#fff;font-weight:700" onclick="openAddExp('${key}')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button><button class="btn btn-sm" style="background:#1a7a4a;border-color:#1a7a4a;color:#fff;font-weight:700" onclick="openAddCr('${key}')"><svg class="ico"><use href="#ico-plus"/></svg> Credit / Refund</button><button class="btn btn-sm" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-weight:600" onclick="triggerCSVImport('${key}')" title="Import expenses from CSV file"><svg class="ico"><use href="#ico-upload"/></svg> Import CSV</button><input type="file" id="csv-inp-${key}" accept=".csv,text/csv" style="display:none" onchange="importExpCSV(event,'${key}')">
+            <button class="btn btn-sm" style="background:#c0392b;border-color:#c0392b;color:#fff;font-weight:700" onclick="openAddExp('${key}')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button><button class="btn btn-sm" style="background:#1a7a4a;border-color:#1a7a4a;color:#fff;font-weight:700" onclick="openAddCr('${key}')"><svg class="ico"><use href="#ico-plus"/></svg> Credit / Refund</button>
           </div>
           <div id="${key}-exp-list"></div>
         </div>
