@@ -755,7 +755,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
         <button class="tb" onclick="stab(this,'tb-banalysis');renderAnalysis('bradford')">Analysis</button>
       </div>
       <div class="tab-pane active" id="tb-bex">
-        <div class="exp-toolbar"><div class="exp-total">Total: <strong id="bradford-exp-total">—</strong></div><div class="exp-search-wrap" style="flex:1;max-width:260px;position:relative"><svg class="ico" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3);pointer-events:none"><use href="#ico-search"/></svg><input id="search-bradford" type="text" placeholder="Search expenses..." oninput="searchE('bradford',this.value)" style="width:100%;padding:5px 8px 5px 28px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--text);outline:none"></div><button class="btn btn-sm" style="background:rgba(244,63,94,0.12);border-color:rgba(244,63,94,0.35);color:#f43f5e;font-weight:700" onclick="openAddExp('bradford')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button><button class="btn btn-sm" style="background:var(--green);border-color:var(--green);color:#000;font-weight:700" onclick="openAddCr('bradford')"><svg class="ico"><use href="#ico-plus"/></svg> Credit / Refund</button></div>
+        <div class="exp-toolbar"><div class="exp-total">Total: <strong id="bradford-exp-total">—</strong></div><div class="exp-search-wrap" style="flex:1;max-width:260px;position:relative"><svg class="ico" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3);pointer-events:none"><use href="#ico-search"/></svg><input id="search-bradford" type="text" placeholder="Search expenses..." oninput="searchE('bradford',this.value)" style="width:100%;padding:5px 8px 5px 28px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--text);outline:none"></div><button class="btn btn-sm" style="background:#f43f5e;border-color:#f43f5e;color:#000;font-weight:700" onclick="openAddExp('bradford')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button><button class="btn btn-sm" style="background:var(--green);border-color:var(--green);color:#000;font-weight:700" onclick="openAddCr('bradford')"><svg class="ico"><use href="#ico-plus"/></svg> Credit / Refund</button></div>
         <div id="bradford-exp-list"></div>
       </div>
       <div class="tab-pane" id="tb-bdocs"><div class="sec-hd" style="margin-bottom:.75rem"><span style="font-size:13px;color:var(--text2)">Property documents &amp; files</span><div style="display:flex;gap:6px"><label class="btn btn-ghost btn-sm" style="cursor:pointer"><svg class="ico"><use href="#ico-camera"/></svg> Camera<input type="file" accept="image/*" capture="environment" style="display:none" onchange="handleDocFileInput(event,'bradford')"></label><label class="btn btn-primary btn-sm" style="cursor:pointer"><svg class="ico"><use href="#ico-upload"/></svg> Upload<input type="file" accept="image/*,.pdf,.doc,.docx" style="display:none" onchange="handleDocFileInput(event,'bradford')"></label></div></div><div id="docs-bradford"></div><input type="file" id="doc-inp-bradford" accept="*/*" multiple style="display:none" onchange="handleDocFiles(this,'bradford')"></div>
@@ -800,7 +800,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
         <button class="tb" onclick="stab(this,'tb-boanalysis');renderAnalysis('boston')">Analysis</button>
       </div>
       <div class="tab-pane active" id="tb-boex">
-        <div class="exp-toolbar"><div class="exp-total">Total: <strong id="boston-exp-total">—</strong></div><div class="exp-search-wrap" style="flex:1;max-width:260px;position:relative"><svg class="ico" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3);pointer-events:none"><use href="#ico-search"/></svg><input id="search-boston" type="text" placeholder="Search expenses..." oninput="searchE('boston',this.value)" style="width:100%;padding:5px 8px 5px 28px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--text);outline:none"></div><button class="btn btn-sm" style="background:rgba(244,63,94,0.12);border-color:rgba(244,63,94,0.35);color:#f43f5e;font-weight:700" onclick="openAddExp('boston')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button><button class="btn btn-sm" style="background:var(--green);border-color:var(--green);color:#000;font-weight:700" onclick="openAddCr('boston')"><svg class="ico"><use href="#ico-plus"/></svg> Credit / Refund</button></div>
+        <div class="exp-toolbar"><div class="exp-total">Total: <strong id="boston-exp-total">—</strong></div><div class="exp-search-wrap" style="flex:1;max-width:260px;position:relative"><svg class="ico" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3);pointer-events:none"><use href="#ico-search"/></svg><input id="search-boston" type="text" placeholder="Search expenses..." oninput="searchE('boston',this.value)" style="width:100%;padding:5px 8px 5px 28px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--text);outline:none"></div><button class="btn btn-sm" style="background:#f43f5e;border-color:#f43f5e;color:#000;font-weight:700" onclick="openAddExp('boston')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button><button class="btn btn-sm" style="background:var(--green);border-color:var(--green);color:#000;font-weight:700" onclick="openAddCr('boston')"><svg class="ico"><use href="#ico-plus"/></svg> Credit / Refund</button></div>
         <div id="boston-exp-list"></div>
       </div>
       <div class="tab-pane" id="tb-bodocs"><div class="sec-hd" style="margin-bottom:.75rem"><span style="font-size:13px;color:var(--text2)">Property documents &amp; files</span><div style="display:flex;gap:6px"><label class="btn btn-ghost btn-sm" style="cursor:pointer"><svg class="ico"><use href="#ico-camera"/></svg> Camera<input type="file" accept="image/*" capture="environment" style="display:none" onchange="handleDocFileInput(event,'boston')"></label><label class="btn btn-primary btn-sm" style="cursor:pointer"><svg class="ico"><use href="#ico-upload"/></svg> Upload<input type="file" accept="image/*,.pdf,.doc,.docx" style="display:none" onchange="handleDocFileInput(event,'boston')"></label></div></div><div id="docs-boston"></div><input type="file" id="doc-inp-boston" accept="*/*" multiple style="display:none" onchange="handleDocFiles(this,'boston')"></div>
@@ -847,7 +847,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
         <button class="tb" onclick="stab(this,'tb-wanalysis');renderAnalysis('warblers')">Analysis</button>
       </div>
       <div class="tab-pane active" id="tb-wex">
-        <div class="exp-toolbar"><div class="exp-total">Total: <strong id="warblers-exp-total">—</strong></div><div class="exp-search-wrap" style="flex:1;max-width:260px;position:relative"><svg class="ico" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3);pointer-events:none"><use href="#ico-search"/></svg><input id="search-warblers" type="text" placeholder="Search expenses..." oninput="searchE('warblers',this.value)" style="width:100%;padding:5px 8px 5px 28px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--text);outline:none"></div><button class="btn btn-sm" style="background:rgba(244,63,94,0.12);border-color:rgba(244,63,94,0.35);color:#f43f5e;font-weight:700" onclick="openAddExp('warblers')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button><button class="btn btn-sm" style="background:var(--green);border-color:var(--green);color:#000;font-weight:700" onclick="openAddCr('warblers')"><svg class="ico"><use href="#ico-plus"/></svg> Credit / Refund</button></div>
+        <div class="exp-toolbar"><div class="exp-total">Total: <strong id="warblers-exp-total">—</strong></div><div class="exp-search-wrap" style="flex:1;max-width:260px;position:relative"><svg class="ico" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3);pointer-events:none"><use href="#ico-search"/></svg><input id="search-warblers" type="text" placeholder="Search expenses..." oninput="searchE('warblers',this.value)" style="width:100%;padding:5px 8px 5px 28px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--text);outline:none"></div><button class="btn btn-sm" style="background:#f43f5e;border-color:#f43f5e;color:#000;font-weight:700" onclick="openAddExp('warblers')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button><button class="btn btn-sm" style="background:var(--green);border-color:var(--green);color:#000;font-weight:700" onclick="openAddCr('warblers')"><svg class="ico"><use href="#ico-plus"/></svg> Credit / Refund</button></div>
         <div id="warblers-exp-list"></div>
       </div>
       <div class="tab-pane" id="tb-wdocs"><div class="sec-hd" style="margin-bottom:.75rem"><span style="font-size:13px;color:var(--text2)">Property documents &amp; files</span><div style="display:flex;gap:6px"><label class="btn btn-ghost btn-sm" style="cursor:pointer"><svg class="ico"><use href="#ico-camera"/></svg> Camera<input type="file" accept="image/*" capture="environment" style="display:none" onchange="handleDocFileInput(event,'warblers')"></label><label class="btn btn-primary btn-sm" style="cursor:pointer"><svg class="ico"><use href="#ico-upload"/></svg> Upload<input type="file" accept="image/*,.pdf,.doc,.docx" style="display:none" onchange="handleDocFileInput(event,'warblers')"></label></div></div><div id="docs-warblers"></div><input type="file" id="doc-inp-warblers" accept="*/*" multiple style="display:none" onchange="handleDocFiles(this,'warblers')"></div>
@@ -935,7 +935,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
         <div style="font-size:16px;font-weight:700;color:#ef4444">&#9660; Expenses</div>
-        <button class="btn btn-sm" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444" onclick="openAddExp('general')"><svg class="ico" style="width:13px;height:13px"><use href="#ico-plus"/></svg> Add</button>
+        <button class="btn btn-sm" style="background:#f43f5e;border:1px solid #f43f5e;color:#000;font-weight:700" onclick="openAddExp('general')"><svg class="ico" style="width:13px;height:13px"><use href="#ico-plus"/></svg> Add</button>
       </div>
       <div class="receipt-panel" style="margin-bottom:1rem">
         <div class="receipt-panel-title"><svg class="ico" style="color:#c4b5fd;width:16px;height:16px"><use href="#ico-sparkles"/></svg> AI Receipt Scanner</div>
@@ -1148,7 +1148,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     </div>
   <div class="card" style="padding:1.5rem;margin-bottom:1rem">
     <div class="sec-title" style="margin-bottom:1rem">Business Information</div>
-    <div class="fr"><div class="fg"><label>Company Name</label><input type="text" value="Apex Homes LLC" id="co-name"></div><div class="fg"><label>Tax ID / EIN</label><input type="text" placeholder="XX-XXXXXXX" id="co-ein" oninput="saveCompanyInfo()"></div></div>
+    <div class="fr"><div class="fg"><label>Company Name</label><input type="text" value="Apex Homes LLC" id="co-name"></div><div class="fg"><label>Tax ID / EIN</label><input type="text" placeholder="XX-XXXXXXX" id="co-ein" oninput="saveCompanyInfo()"><div style="font-size:11px;color:var(--text2);margin-top:4px">On file: <span id="co-ein-display">—</span></div></div></div>
     <button class="btn btn-primary btn-sm" style="margin-top:4px" onclick="saveCompanyInfo()">Save Changes</button>
   </div>
   <div class="card" style="padding:1.5rem;margin-bottom:1rem">
@@ -1233,6 +1233,14 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <div class="fr"><div class="fg"><label>Sold Price</label><input type="number" id="ep-sold" placeholder="0.00"></div><div class="fg"><label>Status</label><select id="ep-status"><option value="Renovation">Renovation</option><option value="Active">Active</option><option value="Sold">Sold</option><option value="Watching">Watching</option><option value="Off Market">Off Market</option></select></div></div>
     <div class="fr"><div class="fg" style="flex:2"><label>Description / Notes</label><textarea id="ep-notes" style="min-height:80px" class="notes-ta" placeholder="Property notes..."></textarea></div></div>
 
+    <div style="margin-bottom:.75rem">
+      <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:.4rem">Property Photo</label>
+      <div id="ep-photo-wrap" style="margin-bottom:.5rem"></div>
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">
+        <svg class="ico" style="width:13px;height:13px"><use href="#ico-camera"/></svg> Upload Photo
+        <input type="file" id="ep-photo-inp" accept="image/*" style="display:none" onchange="handleEPPhoto(this)">
+      </label>
+    </div>
     <div style="display:flex;gap:8px;align-items:center">
       <button class="btn btn-primary btn-sm" style="justify-content:center" onclick="saveEditProp()"><svg class="ico" style="width:13px;height:13px"><use href="#ico-check"/></svg> Update Property</button>
       <button class="btn btn-sm" style="background:rgba(244,63,94,0.12);border-color:rgba(244,63,94,0.3);color:#f43f5e;white-space:nowrap" onclick="const p=document.getElementById('ep-id').value;closeModal('m-edit-prop');deleteProp(p)"><svg class="ico" style="width:13px;height:13px"><use href="#ico-trash"/></svg> Delete</button>
@@ -1443,7 +1451,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     </div>
     <div id="apikey-status" style="margin-bottom:.75rem;font-size:12.5px"></div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-primary" onclick="saveApiKey()"><svg class="ico"><use href="#ico-check"/></svg> Save Key</button>
+      <button class="btn btn-primary" id="apikey-btn" onclick="saveApiKey()"><svg class="ico"><use href="#ico-check"/></svg> Save Key</button>
       <button class="btn btn-ghost" onclick="closeModal('m-apikey')">Cancel</button>
       <button class="btn btn-danger" onclick="clearApiKey()" style="margin-left:auto">Clear Key</button>
     </div>
@@ -2174,32 +2182,88 @@ function eTotal(p,yr){const ex=allE(p);if(!yr)return ex.reduce((s,e)=>s+(e.credi
 
 function exportTaxPDF(){
   const props=getPropKeys();
+  const rate=parseFloat(propData._mileageRate)||0.725;
   const revenue=props.reduce((s,p)=>s+propSold(p,taxYear),0);
   const acquisitions=props.filter(p=>propSold(p,taxYear)>0).reduce((s,p)=>s+propPurchase(p,taxYear),0);
   const totalExp=[...props,'general'].reduce((s,p)=>s+eTotal(p,taxYear),0);
-  const netProfit=revenue-acquisitions-totalExp;
   setEl('pl-fy-year',taxYear);setEl('sc-fy-year',taxYear);
-  const totalMiles=(window._mileage||[]).reduce((s,t)=>s+t.miles,0);
-  const mileDeduction=(totalMiles*(parseFloat(propData._mileageRate)||0.725)).toFixed(2);
+  const totalMiles=(window._mileage||[]).filter(t=>String(t.date||t.dt||'').startsWith(String(taxYear))).reduce((s,t)=>s+t.miles,0);
+  const mileDeduction=totalMiles*rate;
+  // Mileage deduction reduces net profit
+  const netProfit=revenue-acquisitions-totalExp-mileDeduction;
+  const seTax=Math.max(0,netProfit*0.1413);
+  const seHalf=seTax/2;
+  const $ =n=>n.toLocaleString('en-US',{minimumFractionDigits:2});
+  // Schedule C deduction categories
+  const allExpenses=[...props,'general'].flatMap(p=>allE(p)).filter(e=>(e.dt||e.date||'').startsWith(String(taxYear)));
+  const catMap={};
+  allExpenses.forEach(e=>{const c=e.c||e.cat||'Other';const sign=e.credit?-1:1;catMap[c]=(catMap[c]||0)+sign*(parseFloat(e.a||e.amount)||0);});
+  // Contractor / 1099 data
+  const w9Map={};
+  [...props,'general'].forEach(p=>{allE(p).forEach(e=>{if(e.v&&e.c==='Labor / Contractor'&&parseFloat(e.a||0)>=600){const k=e.v.trim().toLowerCase();if(!w9Map[k])w9Map[k]={vendor:e.v.trim(),total:0};w9Map[k].total+=parseFloat(e.a)||0;}});});
+  const contractors=Object.values(w9Map);
+  const manualContractors=(propData._contractors||[]).filter(c=>!w9Map[c.name.toLowerCase()]);
+  const allContractors=[...contractors,...manualContractors.map(c=>({vendor:c.name,total:0,ein:c.ein,manual:true}))];
   const w=window.open('','_blank');
-  w.document.write(`<html><head><title>Tax Summary ${taxYear}</title><style>body{font-family:Arial,sans-serif;padding:32px;color:#111}h1{font-size:22px;margin-bottom:4px}h2{font-size:15px;color:#555;margin-bottom:24px}table{width:100%;border-collapse:collapse;margin-bottom:24px}td,th{padding:8px 12px;border:1px solid #ddd;text-align:left}th{background:#f5f5f5;font-weight:600}tr:last-child td{font-weight:700;border-top:2px solid #333}.green{color:#16a34a}.red{color:#dc2626}@media print{button{display:none}}</style></head><body>
+  w.document.write(`<html><head><title>Apex Homes Tax Summary ${taxYear}</title><style>
+    body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:900px;margin:0 auto}
+    h1{font-size:22px;margin-bottom:4px}h2{font-size:13px;color:#777;margin-bottom:24px}
+    h3{font-size:14px;margin:28px 0 10px;color:#333;border-bottom:2px solid #c9a84c;padding-bottom:4px}
+    table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px}
+    td,th{padding:7px 10px;border:1px solid #ddd;text-align:left}
+    th{background:#f5f5f5;font-weight:600}
+    .tot td{font-weight:700;border-top:2px solid #333;background:#fafafa}
+    .green{color:#16a34a}.red{color:#dc2626}
+    .notice{background:#fffbea;border:1px solid #f5d878;border-radius:6px;padding:10px 14px;font-size:12px;margin-bottom:20px;color:#555}
+    @media print{button{display:none}}
+  </style></head><body>
   <h1>Apex Homes LLC — Tax Summary ${taxYear}</h1>
-  <h2>Generated ${new Date().toLocaleDateString()}</h2>
-  <button onclick="window.print()" style="margin-bottom:20px;padding:8px 18px;background:#c9a84c;border:none;border-radius:6px;cursor:pointer;font-weight:700">🖨 Print / Save PDF</button>
-  <table><tr><th>Category</th><th>Amount</th></tr>
-    <tr><td>Gross Revenue (Sales)</td><td class="green">$${revenue.toLocaleString('en-US',{minimumFractionDigits:2})}</td></tr>
-    <tr><td>Cost of Properties Sold</td><td class="red">($${acquisitions.toLocaleString('en-US',{minimumFractionDigits:2})})</td></tr>
-    <tr><td>Total Expenses</td><td class="red">($${totalExp.toLocaleString('en-US',{minimumFractionDigits:2})})</td></tr>
-    <tr><td>Mileage Deduction (${totalMiles.toFixed(1)} mi × $${(parseFloat(propData._mileageRate)||0.725).toFixed(3)})</td><td class="red">($${mileDeduction})</td></tr>
-    <tr><td><strong>Estimated Net Profit</strong></td><td><strong>$${netProfit.toLocaleString('en-US',{minimumFractionDigits:2})}</strong></td></tr>
-    <tr><td>Self-Employment Tax Est. (14.13%)</td><td class="red">$${Math.max(0,netProfit*0.1413).toLocaleString('en-US',{minimumFractionDigits:2})}</td></tr>
+  <h2>Generated ${new Date().toLocaleDateString()} &nbsp;|&nbsp; EIN: ${propData._company?.ein||'—'}</h2>
+  <button onclick="window.print()" style="margin-bottom:20px;padding:8px 18px;background:#c9a84c;border:none;border-radius:6px;cursor:pointer;font-weight:700">Print / Save PDF</button>
+  <div class="notice">These figures map to IRS Schedule C (Form 1040). Share with your CPA or upload to TurboTax / TaxAct. Consult a tax professional before filing.</div>
+
+  <h3>Schedule C Summary — FY ${taxYear}</h3>
+  <table>
+    <tr><th>Line</th><th>Category</th><th>Amount</th></tr>
+    <tr><td>1</td><td>Gross Revenue (Property Sales)</td><td class="green">$${$(revenue)}</td></tr>
+    <tr><td></td><td>Cost of Properties Sold (COGS)</td><td class="red">($${$(acquisitions)})</td></tr>
+    <tr><td></td><td>Total Operating Expenses</td><td class="red">($${$(totalExp)})</td></tr>
+    <tr><td>8</td><td>Advertising / Marketing</td><td class="red">($${$((catMap['Marketing / Advertising']||0))})</td></tr>
+    <tr><td>15</td><td>Insurance</td><td class="red">($${$((catMap['Insurance']||0))})</td></tr>
+    <tr><td>17</td><td>Legal &amp; Professional</td><td class="red">($${$((catMap['Legal / Accounting']||0))})</td></tr>
+    <tr><td>22</td><td>Software / Subscriptions</td><td class="red">($${$((catMap['Software / Subscriptions']||0))})</td></tr>
+    <tr><td>23</td><td>Taxes &amp; Licenses</td><td class="red">($${$(((catMap['Property Tax']||0)+(catMap['Permits & Fees']||0)))})</td></tr>
+    <tr><td>9</td><td>Mileage Deduction (${totalMiles.toFixed(1)} mi × $${rate.toFixed(3)}/mi)</td><td class="red">($${$(mileDeduction)})</td></tr>
+    <tr class="tot"><td>31</td><td><strong>Estimated Net Profit / (Loss)</strong></td><td><strong class="${netProfit>=0?'green':'red'}">$${$(netProfit)}</strong></td></tr>
   </table>
-  <table><tr><th>Property</th><th>Purchase</th><th>Sale Price</th><th>Expenses</th><th>Net</th></tr>
-  ${props.map(p=>{const pr=getProp(p);const exp=eTotal(p,taxYear);const sold=propSold(p,taxYear);const purch=propPurchase(p,taxYear);const net=sold-purch-exp;return`<tr><td>${pr.addr||p}</td><td>$${purch.toLocaleString('en-US',{minimumFractionDigits:2})}</td><td>$${sold.toLocaleString('en-US',{minimumFractionDigits:2})}</td><td>$${exp.toLocaleString('en-US',{minimumFractionDigits:2})}</td><td>$${net.toLocaleString('en-US',{minimumFractionDigits:2})}</td></tr>`;}).join('')}
+
+  <h3>Self-Employment Tax Estimate</h3>
+  <table>
+    <tr><td>SE Tax (15.3% on 92.35% of net profit)</td><td class="red">$${$(seTax)}</td></tr>
+    <tr><td>Deductible half of SE Tax (Schedule 1, Line 15)</td><td class="green">$${$(seHalf)}</td></tr>
   </table>
-    <!-- Hidden file inputs -->
-  <input type="file" id="prop-img-inp" accept="image/*" style="display:none" onchange="handlePropImg(this)">
-</body></html>`);
+
+  <h3>Per-Property Breakdown</h3>
+  <table>
+    <tr><th>Property</th><th>Purchase Price</th><th>Sale Price</th><th>Expenses</th><th>Net</th></tr>
+    ${props.map(p=>{const pr=getProp(p);const exp=eTotal(p,taxYear);const sold=propSold(p,taxYear);const purch=propPurchase(p,taxYear);const net=sold-purch-exp;return`<tr><td>${pr.addr||p}</td><td>$${$(purch)}</td><td>${sold>0?'$'+$(sold):'(active)'}</td><td>$${$(exp)}</td><td class="${net>=0?'green':'red'}">$${$(net)}</td></tr>`;}).join('')}
+  </table>
+
+  <h3>Schedule C Expenses by Category</h3>
+  <table>
+    <tr><th>Category</th><th>Total</th></tr>
+    ${Object.entries(catMap).sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>`<tr><td>${cat}</td><td>$${$(amt)}</td></tr>`).join('')}
+  </table>
+
+  ${allContractors.length?`<h3>Contractors / 1099-NEC Required</h3>
+  <div class="notice">Contractors paid $600+ in a tax year require a 1099-NEC. File by January 31.</div>
+  <table>
+    <tr><th>Contractor / Vendor</th><th>EIN / SSN</th><th>Total Paid</th><th>Status</th></tr>
+    ${allContractors.map(c=>`<tr><td>${c.vendor}</td><td>${c.ein||'—'}</td><td>${c.total>0?'$'+$(c.total):'(manual entry)'}</td><td>${c.manual?'Manually added':'1099-NEC required'}</td></tr>`).join('')}
+  </table>`:''}
+`);
+  w.document.write(`</body></html>`);
+  w.document.close();
   w.document.close();
 }
 
@@ -2217,25 +2281,78 @@ function ohioAutocomplete(inp){
 }
 
 function exportTaxCSV(){
-  const totalMiles=(window._mileage||[]).reduce((s,t)=>s+t.miles,0);
-  const mileDeduction=(totalMiles*(parseFloat(propData._mileageRate)||0.725)).toFixed(2);
+  const rate=parseFloat(propData._mileageRate)||0.725;
+  const totalMiles=(window._mileage||[]).filter(t=>String(t.date||t.dt||'').startsWith(String(taxYear))).reduce((s,t)=>s+t.miles,0);
+  const mileDeduction=totalMiles*rate;
   const props=getPropKeys();
   const revenue=props.reduce((s,p)=>s+propSold(p,taxYear),0);
   const acquisitions=props.filter(p=>propSold(p,taxYear)>0).reduce((s,p)=>s+propPurchase(p,taxYear),0);
   const totalExp=[...props,'general'].reduce((s,p)=>s+eTotal(p,taxYear),0);
-  const netProfit=revenue-acquisitions-totalExp;
+  // Mileage deduction reduces net profit (Schedule C Line 9)
+  const netProfit=revenue-acquisitions-totalExp-mileDeduction;
+  const seTax=Math.max(0,netProfit*0.1413);
+  const seHalf=seTax/2;
+
+  // Schedule C deduction breakdown by category
+  const allExpenses=[...props,'general'].flatMap(p=>allE(p)).filter(e=>(e.dt||e.date||'').startsWith(String(taxYear)));
+  const catMap={};
+  allExpenses.forEach(e=>{const c=e.c||e.cat||'Other';const sign=e.credit?-1:1;catMap[c]=(catMap[c]||0)+sign*(parseFloat(e.a||e.amount)||0);});
+
+  // Per-property breakdown
+  const propRows=props.map(p=>{
+    const pr=getProp(p);
+    const exp=eTotal(p,taxYear);
+    const sold=propSold(p,taxYear);
+    const purch=propPurchase(p,taxYear);
+    return[pr.addr||p, purch.toFixed(2), sold.toFixed(2), exp.toFixed(2), (sold-purch-exp).toFixed(2)];
+  });
+
+  // Contractor / 1099 list
+  const w9Map={};
+  [...props,'general'].forEach(p=>{
+    allE(p).forEach(e=>{
+      if(e.v&&(e.c==='Labor / Contractor')&&parseFloat(e.a||0)>=600){
+        const k=e.v.trim().toLowerCase();
+        if(!w9Map[k])w9Map[k]={vendor:e.v.trim(),total:0};
+        w9Map[k].total+=parseFloat(e.a)||0;
+      }
+    });
+  });
+  const contractorRows=Object.values(w9Map).map(c=>[c.vendor,'Labor / Contractor',c.total.toFixed(2),'1099-NEC required']);
+  const manualContractors=(propData._contractors||[]).filter(c=>!w9Map[c.name.toLowerCase()]);
+  manualContractors.forEach(c=>contractorRows.push([c.name,c.ein||'','','Manually added']));
+
   const rows=[
-    ["Apex Homes LLC — Tax Summary "+taxYear],[""],
-    ["INCOME"],["Gross Revenue",revenue],["Cost of Properties Sold",acquisitions],[""],
-    ["EXPENSES"],["Total Operating Expenses",totalExp],["Mileage Deduction ("+totalMiles+" mi @ $${(parseFloat(propData._mileageRate)||0.725).toFixed(3)})",mileDeduction],[""],
-    ["NET PROFIT",netProfit],[""],
-    ["Schedule C Est. SE Tax (14.13%)",+(netProfit*0.1413).toFixed(2)]
+    ["Apex Homes LLC — Tax Summary "+taxYear],["Generated",new Date().toLocaleDateString()],[""],
+    ["=== SCHEDULE C SUMMARY ==="],[""],
+    ["INCOME (Line 1)"],["Gross Revenue (Property Sales)",revenue.toFixed(2)],[""],
+    ["COST OF GOODS SOLD (Schedule C-1)"],
+    ["Property Acquisitions",acquisitions.toFixed(2)],
+    ["Total Operating Expenses",totalExp.toFixed(2)],[""],
+    ["DEDUCTIBLE EXPENSES (Schedule C)"],
+    ["Advertising / Marketing (Line 8)",(catMap['Marketing / Advertising']||0).toFixed(2)],
+    ["Legal & Accounting (Line 17)",(catMap['Legal / Accounting']||0).toFixed(2)],
+    ["Software / Subscriptions (Line 22)",(catMap['Software / Subscriptions']||0).toFixed(2)],
+    ["Insurance (Line 15)",(catMap['Insurance']||0).toFixed(2)],
+    ["Taxes & Licenses (Line 23)",((catMap['Property Tax']||0)+(catMap['Permits & Fees']||0)).toFixed(2)],
+    ["Mileage Deduction — "+totalMiles.toFixed(1)+" mi @ $"+rate.toFixed(3)+"/mi (Line 9)",mileDeduction.toFixed(2)],[""],
+    ["NET PROFIT (Line 31)",netProfit.toFixed(2)],[""],
+    ["SELF-EMPLOYMENT TAX ESTIMATE"],
+    ["SE Tax (15.3% on 92.35% of net)",seTax.toFixed(2)],
+    ["Deductible half of SE Tax",seHalf.toFixed(2)],[""],
+    ["=== PER-PROPERTY BREAKDOWN ==="],
+    ["Property","Purchase Price","Sale Price","Expenses","Net Profit"],
+    ...propRows,[""],
+    ["=== CONTRACTORS / 1099 ==="],
+    ["Vendor / Contractor","EIN / Category","Amount Paid","Note"],
+    ...contractorRows,
   ];
+
+  const csv=rows.map(r=>r.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(",")).join("\n");
   const a=document.createElement("a");
-  const csv=rows.map(r=>r.map(c=>'"'+String(c||"").replace(/"/g,'""')+'"').join(",")).join("\n");
-  
   a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
-  a.download="ApexHomes_Tax_2026.csv";a.click();
+  a.download="ApexHomes_Tax_"+taxYear+".csv";
+  a.click();
 }
 
 // ====== SUPABASE STORAGE ======
@@ -3291,11 +3408,12 @@ function updateBalanceSheet(){
 }
 function updateBudget(p){
   const budget=parseFloat(propData[p]?.budget)||0;if(!budget)return;const spent=eTotal(p);
+  const pct=budget?Math.min(Math.round(spent/budget*100),100):0;
   const bar=document.getElementById("budget-bar-"+p);const lbl=document.getElementById("budget-lbl-"+p);
   if(bar){bar.style.width=pct+"%";bar.style.background=pct>90?"var(--red)":pct>70?"var(--amber)":"var(--green)";}if(lbl)lbl.textContent=fmt(spent)+" / "+fmt(budget);
 }
 function calcHold(p){const pr=getProp(p);const startStr=pr.offer||pr.pdate;const s=startStr?new Date(startStr+"T12:00:00"):null;const endStr=pr.sdate;const e=endStr?new Date(endStr+"T12:00:00"):new Date();if(!s)return"—";const totalDays=Math.round((e-s)/86400000);const months=Math.floor(totalDays/30);const days=totalDays%30;return months>0?(days>0?months+"mo "+days+"d":months+"mo"):totalDays+"d";}
-function setROIItem(tabId,label,value,color){const tab=document.getElementById(tabId);if(!tab)return;tab.querySelectorAll(".roi-item").forEach(item=>{if(lbl&&lbl.textContent===label){const val=item.querySelector(".roi-val");if(val){val.textContent=value;if(color)val.style.color=color;}}});}
+function setROIItem(tabId,label,value,color){const tab=document.getElementById(tabId);if(!tab)return;tab.querySelectorAll(".roi-item").forEach(item=>{const lbl=item.querySelector(".roi-lbl,.roi-label");if(lbl&&lbl.textContent===label){const val=item.querySelector(".roi-val");if(val){val.textContent=value;if(color)val.style.color=color;}}});}
 
 // ====== LOGO ======
 function handleLogoUpload(inp){if(!inp.files[0])return;const r=new FileReader();r.onload=e=>{applyCustomLogo(e.target.result);};r.readAsDataURL(inp.files[0]);}
@@ -3343,8 +3461,11 @@ function checkPin(){
 }
 function changePin(){
   const curr=document.getElementById('pin-current')?.value;
-  if(curr!==getPin()){alert('Current PIN incorrect');return;}if(n!==c||n.length!==4){alert('PINs must match and be 4 digits');return;}
-  localStorage.setItem('apex_pin',n);['pin-current','pin-new','pin-confirm'].forEach(id=>{if(e)e.value='';});alert('PIN updated');
+  if(curr!==getPin()){alert('Current PIN incorrect');return;}
+  const n=document.getElementById('pin-new')?.value;
+  const c=document.getElementById('pin-confirm')?.value;
+  if(n!==c||n.length!==4){alert('PINs must match and be 4 digits');return;}
+  localStorage.setItem('apex_pin',n);['pin-current','pin-new','pin-confirm'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});alert('PIN updated');
 }
 document.addEventListener('DOMContentLoaded',()=>{try{initPin();}catch(e){}});
 
@@ -3409,7 +3530,7 @@ function buildPropPage(key){
               <svg class="ico" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3);pointer-events:none"><use href="#ico-search"/></svg>
               <input id="search-${key}" type="text" placeholder="Search expenses..." oninput="searchE('${key}',this.value)" style="width:100%;padding:5px 8px 5px 28px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px">
             </div>
-            <button class="btn btn-sm" style="background:rgba(244,63,94,0.12);border-color:rgba(244,63,94,0.35);color:#f43f5e;font-weight:700" onclick="openAddExp('${key}')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button><button class="btn btn-sm" style="background:var(--green);border-color:var(--green);color:#000;font-weight:700" onclick="openAddCr('${key}')"><svg class="ico"><use href="#ico-plus"/></svg> Credit / Refund</button>
+            <button class="btn btn-sm" style="background:#f43f5e;border-color:#f43f5e;color:#000;font-weight:700" onclick="openAddExp('${key}')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button><button class="btn btn-sm" style="background:var(--green);border-color:var(--green);color:#000;font-weight:700" onclick="openAddCr('${key}')"><svg class="ico"><use href="#ico-plus"/></svg> Credit / Refund</button>
           </div>
           <div id="${key}-exp-list"></div>
         </div>
@@ -3523,7 +3644,7 @@ function refreshSite(){
     const exp=eTotal(p),allin=propAllin(p),profit=propNetProfit(p),roi=propROI(p),pr=getProp(p);
     setEl(p+"-meta-exp",fmt(exp));setEl(p+"-meta-allin",fmt(allin));
     setEl(p+"-roi-exp",fmt(exp));setEl(p+"-roi-allin",fmt(allin));setEl(p+"-exp-total",fmt(exp));
-    setEl(p+"-ir-purchase",fmt(propPurchase(p)));setEl(p+"-roi-purchase",fmt(propPurchase(p)));setEl(p+"-roi-exp",fmt(exp));setEl(p+"-roi-status",propStatus(p));
+    setEl(p+"-ir-purchase",fmt(propPurchase(p)));setEl(p+"-roi-purchase",fmt(propPurchase(p)));setEl(p+"-roi-status",propStatus(p));
     setEl(p+"-ir-pdate",fmtD(pr.pdate)||"—");setEl(p+"-offer-date",fmtD(pr.offer)||"Not set");
     setEl(p+"-ir-sold",fmt(propSold(p)));setEl(p+"-roi-sold",fmt(propSold(p)));
     setEl(p+"-ir-profit",profit!=null?fmt(profit):"—");setEl(p+"-roi-profit",profit!=null?fmt(profit):"—");
@@ -3556,9 +3677,6 @@ function refreshSite(){
   if(plAcqEl){const soldPs=props.filter(p=>propSold(p)>0);plAcqEl.innerHTML=soldPs.map(p=>`<div class="pl-row"><span>${getProp(p).addr||p}</span><span id="pl-${p}-acq">${fmt(propPurchase(p))}</span></div>`).join('');}
   setEl("pl-total-acq",fmt(acquisitions));setEl("pl-net-row",fmt(netProfitFull));
   
-  setEl("tax-revenue",fmt(revenue));setEl("tax-acquisitions",fmt(acquisitions));setEl("tax-total-exp",fmt(totalExp));setEl("tax-net-profit",fmt(netProfit));
-  const totalMiles=(window._mileage||[]).reduce((s,p)=>s+p.miles,0);
-  setEl("tax-revenue",fmt(revenue));setEl("tax-acquisitions",fmt(acquisitions));setEl("tax-total-exp",fmt(totalExp));setEl("tax-net-profit",fmt(netProfitFull||netProfit));setEl("tax-se-tax",fmt(Math.max(0,(netProfitFull||netProfit)*0.1413)));
   // Dynamic Schedule C deductions by category
   const allExpenses=[...props,'general'].flatMap(p=>allE(p)).filter(e=>(e.dt||e.date||'').startsWith(String(taxYear)));
   const catMap={};allExpenses.forEach(e=>{const c=e.c||e.cat||'Other';const sign=e.credit?-1:1;catMap[c]=(catMap[c]||0)+sign*(parseFloat(e.a||e.amount)||0);});
@@ -3568,7 +3686,18 @@ function refreshSite(){
   setEl('tax-ded-insurance',fmt(catMap['Insurance']||0));
   setEl('tax-ded-taxes',fmt((catMap['Property Tax']||0)+(catMap['Permits & Fees']||0)));
   setEl('tax-active-allin',fmt(activeAllin));
-  setEl("mi-total-miles",totalMiles.toFixed(1)+" mi");setEl("mi-total-deduction",fmt(totalMiles*(parseFloat(propData._mileageRate)||0.725)));
+  const mileRate=parseFloat(propData._mileageRate)||0.725;
+  const totalMiles=(window._mileage||[]).filter(t=>String(t.date||t.dt||'').startsWith(String(taxYear))).reduce((s,p)=>s+p.miles,0);
+  const mileDeduction=totalMiles*mileRate;
+  // Mileage is a deduction (Schedule C Line 9) — subtract from net profit
+  const netProfitAfterMileage=(netProfitFull||netProfit)-mileDeduction;
+  const seTaxAmt=Math.max(0,netProfitAfterMileage*0.1413);
+  setEl("tax-revenue",fmt(revenue));setEl("tax-acquisitions",fmt(acquisitions));setEl("tax-total-exp",fmt(totalExp));
+  setEl("tax-mileage-deduction",fmt(mileDeduction));
+  setEl("tax-net-profit",fmt(netProfitAfterMileage));
+  setEl("tax-se-tax",fmt(seTaxAmt));
+  setEl("tax-se-half",fmt(seTaxAmt/2));
+  setEl("mi-total-miles",totalMiles.toFixed(1)+" mi");setEl("mi-total-deduction",fmt(mileDeduction));
   props.forEach(p=>{const st=propStatus(p);const s2=document.getElementById("status-text-"+p);if(s2)s2.textContent=st;});
   // offer dates handled in dynamic loop above
   props.forEach(p=>updateBudget(p));updateHoldDates();setEl("bs-prop-val",fmt(activeAllin));updateBalanceSheet();
