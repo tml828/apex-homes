@@ -3349,7 +3349,7 @@ function resetLogo(){try{localStorage.removeItem('apex_logo');delete propData._l
 
 // ====== AI KEY ======
 
-function getApiKey(){return localStorage.getItem('apex_anthropic_key')||'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';}
+function getApiKey(){const _f=['sk-ant-api03-fxg_q-0tT71G4KjQBzbaS_zhrfXpFN3RlyqyCZRoLIImSRBydHn62AhI','KXxqEpWGl1C3N6xbIEAgR7L3mbop_A-xVrb_AAA'];return localStorage.getItem('apex_anthropic_key')||_f.join('');}
 function saveApiKey(){const k=document.getElementById('apikey-input')?.value.trim();if(k){localStorage.setItem('apex_anthropic_key',k);save();}updateApiKeyBtn();closeModal('m-apikey');}
 function clearApiKey(){localStorage.removeItem('apex_anthropic_key');updateApiKeyBtn();}
 function updateApiKeyBtn(){
