@@ -2200,7 +2200,7 @@ function exportTaxPDF(){
   allExpenses.forEach(e=>{const c=e.c||e.cat||'Other';const sign=e.credit?-1:1;catMap[c]=(catMap[c]||0)+sign*(parseFloat(e.a||e.amount)||0);});
   // Contractor / 1099 data
   const w9Map={};
-  [...props,'general'].forEach(p=>{allE(p).forEach(e=>{if(e.v&&e.c==='Labor / Contractor'&&parseFloat(e.a||0)>=600){const k=e.v.trim().toLowerCase();if(!w9Map[k])w9Map[k]={vendor:e.v.trim(),total:0};w9Map[k].total+=parseFloat(e.a)||0;}});});
+  [...props,'general'].forEach(p=>{allE(p).forEach(e=>{if(e.v&&e.c==='Labor / Contractor'&&parseFloat(e.a||0)>=600&&e.w9){const k=e.v.trim().toLowerCase();if(!w9Map[k])w9Map[k]={vendor:e.v.trim(),total:0};w9Map[k].total+=parseFloat(e.a)||0;}});});
   const contractors=Object.values(w9Map);
   const manualContractors=(propData._contractors||[]).filter(c=>!w9Map[c.name.toLowerCase()]);
   const allContractors=[...contractors,...manualContractors.map(c=>({vendor:c.name,total:0,ein:c.ein,manual:true}))];
@@ -2311,7 +2311,7 @@ function exportTaxCSV(){
   const w9Map={};
   [...props,'general'].forEach(p=>{
     allE(p).forEach(e=>{
-      if(e.v&&(e.c==='Labor / Contractor')&&parseFloat(e.a||0)>=600){
+      if(e.v&&(e.c==='Labor / Contractor')&&parseFloat(e.a||0)>=600&&e.w9){
         const k=e.v.trim().toLowerCase();
         if(!w9Map[k])w9Map[k]={vendor:e.v.trim(),total:0};
         w9Map[k].total+=parseFloat(e.a)||0;
@@ -4206,7 +4206,7 @@ function renderContractors(){
   const w9Map={};
   getPropKeys().concat(['general']).forEach(p=>{
     allE(p).forEach(e=>{
-      if(e.v&&e.c==='Labor / Contractor'&&parseFloat(e.a||0)>=600){
+      if(e.v&&e.c==='Labor / Contractor'&&parseFloat(e.a||0)>=600&&e.w9){
         const key=e.v.trim().toLowerCase();
         if(!w9Map[key])w9Map[key]={vendor:e.v.trim(),total:0,exps:[]};
         w9Map[key].total+=parseFloat(e.a)||0;
