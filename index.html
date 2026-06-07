@@ -3456,7 +3456,7 @@ function buildPropPage(key, force){
             <div class="drop-zone" id="dz-${key}" onclick="document.getElementById('scan-inp-${key}').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event,'${key}')">
               <svg class="ico dz-icon"><use href="#ico-photo-scan"/></svg><p>Tap to take/upload receipts</p><span>JPG, PNG, HEIC, PDF — select multiple</span>
             </div>
-            <input type="file" id="scan-inp-${key}" accept="image/*,.pdf,application/pdf" multiple capture="environment" style="display:none" onchange="handleScanFiles(this.files,'${key}')">
+            <input type="file" id="scan-inp-${key}" accept="image/*,.pdf,application/pdf" multiple style="display:none" onchange="handleScanFiles(this.files,'${key}')">
             <div class="scan-queue" id="scan-queue-${key}"></div><div id="sr-${key}"></div>
             <div style="display:flex;gap:8px;margin-top:.85rem"><button class="btn btn-ai" id="scan-btn-${key}" onclick="runScan('${key}')" style="display:none"><svg class="ico"><use href="#ico-sparkles"/></svg> Scan All &amp; Add</button></div>
           </div>
