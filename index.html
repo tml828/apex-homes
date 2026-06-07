@@ -1148,7 +1148,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     </div>
   <div class="card" style="padding:1.5rem;margin-bottom:1rem">
     <div class="sec-title" style="margin-bottom:1rem">Business Information</div>
-    <div class="fr"><div class="fg"><label>Company Name</label><input type="text" value="Apex Homes LLC" id="co-name"></div><div class="fg"><label>Tax ID / EIN</label><input type="text" placeholder="XX-XXXXXXX" id="co-ein" oninput="saveCompanyInfo()"></div></div>
+    <div class="fr"><div class="fg"><label>Company Name</label><input type="text" value="Apex Homes LLC" id="co-name"></div><div class="fg"><label>Tax ID / EIN</label><input type="text" placeholder="XX-XXXXXXX" id="co-ein" oninput="saveCompanyInfo()"><div style="font-size:11px;color:var(--text2);margin-top:4px">On file: <span id="co-ein-display">—</span></div></div></div>
     <button class="btn btn-primary btn-sm" style="margin-top:4px" onclick="saveCompanyInfo()">Save Changes</button>
   </div>
   <div class="card" style="padding:1.5rem;margin-bottom:1rem">
@@ -1233,6 +1233,14 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <div class="fr"><div class="fg"><label>Sold Price</label><input type="number" id="ep-sold" placeholder="0.00"></div><div class="fg"><label>Status</label><select id="ep-status"><option value="Renovation">Renovation</option><option value="Active">Active</option><option value="Sold">Sold</option><option value="Watching">Watching</option><option value="Off Market">Off Market</option></select></div></div>
     <div class="fr"><div class="fg" style="flex:2"><label>Description / Notes</label><textarea id="ep-notes" style="min-height:80px" class="notes-ta" placeholder="Property notes..."></textarea></div></div>
 
+    <div style="margin-bottom:.75rem">
+      <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:.4rem">Property Photo</label>
+      <div id="ep-photo-wrap" style="margin-bottom:.5rem"></div>
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">
+        <svg class="ico" style="width:13px;height:13px"><use href="#ico-camera"/></svg> Upload Photo
+        <input type="file" id="ep-photo-inp" accept="image/*" style="display:none" onchange="handleEPPhoto(this)">
+      </label>
+    </div>
     <div style="display:flex;gap:8px;align-items:center">
       <button class="btn btn-primary btn-sm" style="justify-content:center" onclick="saveEditProp()"><svg class="ico" style="width:13px;height:13px"><use href="#ico-check"/></svg> Update Property</button>
       <button class="btn btn-sm" style="background:rgba(244,63,94,0.12);border-color:rgba(244,63,94,0.3);color:#f43f5e;white-space:nowrap" onclick="const p=document.getElementById('ep-id').value;closeModal('m-edit-prop');deleteProp(p)"><svg class="ico" style="width:13px;height:13px"><use href="#ico-trash"/></svg> Delete</button>
@@ -1443,7 +1451,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     </div>
     <div id="apikey-status" style="margin-bottom:.75rem;font-size:12.5px"></div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-primary" onclick="saveApiKey()"><svg class="ico"><use href="#ico-check"/></svg> Save Key</button>
+      <button class="btn btn-primary" id="apikey-btn" onclick="saveApiKey()"><svg class="ico"><use href="#ico-check"/></svg> Save Key</button>
       <button class="btn btn-ghost" onclick="closeModal('m-apikey')">Cancel</button>
       <button class="btn btn-danger" onclick="clearApiKey()" style="margin-left:auto">Clear Key</button>
     </div>
@@ -3636,7 +3644,7 @@ function refreshSite(){
     const exp=eTotal(p),allin=propAllin(p),profit=propNetProfit(p),roi=propROI(p),pr=getProp(p);
     setEl(p+"-meta-exp",fmt(exp));setEl(p+"-meta-allin",fmt(allin));
     setEl(p+"-roi-exp",fmt(exp));setEl(p+"-roi-allin",fmt(allin));setEl(p+"-exp-total",fmt(exp));
-    setEl(p+"-ir-purchase",fmt(propPurchase(p)));setEl(p+"-roi-purchase",fmt(propPurchase(p)));setEl(p+"-roi-exp",fmt(exp));setEl(p+"-roi-status",propStatus(p));
+    setEl(p+"-ir-purchase",fmt(propPurchase(p)));setEl(p+"-roi-purchase",fmt(propPurchase(p)));setEl(p+"-roi-status",propStatus(p));
     setEl(p+"-ir-pdate",fmtD(pr.pdate)||"—");setEl(p+"-offer-date",fmtD(pr.offer)||"Not set");
     setEl(p+"-ir-sold",fmt(propSold(p)));setEl(p+"-roi-sold",fmt(propSold(p)));
     setEl(p+"-ir-profit",profit!=null?fmt(profit):"—");setEl(p+"-roi-profit",profit!=null?fmt(profit):"—");
