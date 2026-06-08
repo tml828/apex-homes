@@ -1556,7 +1556,7 @@ async function renderCloudBackups(){
       const ts=parseInt(row.id.replace('backup-',''));
       const d=new Date(ts);
       const label=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' at '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border2)"><span style="color:var(--text)">'+label+'</span><button class="btn btn-sm" style="font-size:11px;padding:3px 10px" onclick="restoreCloudBackup(''+row.id+'')">Restore</button></div>';
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border2)"><span style="color:var(--text)">'+label+'</span><button class="btn btn-sm" style="font-size:11px;padding:3px 10px" data-id="'+row.id+'" onclick="restoreCloudBackup(this.dataset.id)">Restore</button></div>';
     }).join('');
   }catch(e){el.innerHTML='<span style="color:var(--text2)">'+e.message+'</span>';}
 }
