@@ -3520,8 +3520,6 @@ function changePin(){
   if(n!==c||n.length!==4){alert('PINs must match and be 4 digits');return;}
   localStorage.setItem('apex_pin',n);['pin-current','pin-new','pin-confirm'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});alert('PIN updated');
 }
-document.addEventListener('DOMContentLoaded',()=>{try{initPin();}catch(e){}});
-
 // ====== REFRESH SITE ======
 
 
@@ -4369,8 +4367,6 @@ _dateObserver.observe(document.body||document.documentElement,{childList:true,su
 
 
 
-document.addEventListener('DOMContentLoaded', fixDateInputs);
-
 function startAutoSync(){
   setInterval(autoSyncPull,5000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)autoSyncPull();});
@@ -4380,10 +4376,6 @@ function startAutoSync(){
 
 
 
-
-
-
-document.addEventListener('DOMContentLoaded', fixDateInputs);
 
 
 
