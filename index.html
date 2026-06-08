@@ -3988,9 +3988,9 @@ async function scanClosingStatement(b64, mime){
   "netAmount": number (due from buyer, or net proceeds to seller)
 }
 For category use one of: Closing Costs, Property Tax, Marketing / Advertising, Insurance, Legal / Accounting, HOA Fees, Other.
-BUYER statement: debits=charges to buyer, credits=amounts buyer gets back (deposit, prorations, seller credits). Do NOT include purchase price in debits.
+BUYER statement: debits=ALL charges to buyer including earnest money deposit (even if marked POC/paid outside closing — it is still a real out-of-pocket cost). credits=prorations in buyer favor, seller-paid credits. Do NOT include purchase price in debits. Do NOT put earnest deposit in credits.
 SELLER statement: debits=charges to seller (commissions, fees, payoffs), credits=amounts seller receives (sale price, prorations in seller favor). Do NOT include sale price in debits.
-netAmount = debitTotal - creditTotal (positive = due from buyer / owed by seller, negative = proceeds to seller).`}
+netAmount = total amount buyer actually paid out of pocket (sum of all debits including POC items, minus credits).`}
       ]}]
     })
   });
