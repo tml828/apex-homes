@@ -3186,8 +3186,7 @@ function clearExpReceipt(){
   const prev=document.getElementById('exp-receipt-preview');if(prev)prev.innerHTML='';
   const status=document.getElementById('exp-scan-status');if(status)status.innerHTML='';
   const inp=document.getElementById('exp-receipt-inp');if(inp)inp.value='';
-  // Reset scanned fields so user can enter manually
-  ['exp-amt','exp-desc','exp-date','exp-vendor'].forEach(id=>{const el=document.getElementById(id);if(el&&!el.value.trim())return;});
+  ['exp-amt','exp-desc','exp-date','exp-vendor'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
 }
 function handleExpDrop(ev){
   ev.preventDefault();
@@ -3957,6 +3956,7 @@ async function syncAllReceiptsToCloud(){
 async function migrateHardcodedExpenses(){
   if(propData._migrated)return;
   [...getPropKeys(),'general'].forEach(p=>{
+    if(!extra[p])extra[p]=[];
     (BEXP[p]||[]).forEach(be=>{
       const dup=extra[p].find(ex=>
         parseFloat(ex.a||ex.amount)===parseFloat(be.a||be.amount)&&
@@ -4040,7 +4040,7 @@ loadData().then(()=>{
   startAutoSync();
 }).catch(e=>console.warn('Load error:',e));
 
-// ====== AUTO-SYNC (pull latest from cloud every 20s) ======
+// ====== AUTO-SYNC (pull latest from cloud every 5s) ======
 let _lastSyncHash="";
 async function autoSyncPull(){
   // Skip if a modal is open or user is typing, to avoid disrupting input
