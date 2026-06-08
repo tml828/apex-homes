@@ -3973,22 +3973,24 @@ async function scanClosingStatement(b64, mime){
         {type:'image',source:{type:'base64',media_type:mime,data:b64}},
         {type:'text',text:`Extract all data from this closing/settlement statement and return ONLY valid JSON (no markdown):
 {
+  "statementType": "buyer" or "seller",
   "address": "street address only",
   "city": "city",
   "state": "state abbreviation",
   "zip": "zip code",
-  "purchasePrice": number,
+  "transactionPrice": number (purchase price if buyer statement, sale price if seller statement),
   "settlementDate": "YYYY-MM-DD",
-  "seller": "seller name",
+  "otherParty": "seller name if buyer statement, buyer name if seller statement",
   "debits": [{"description":"...","amount":number,"category":"...","vendor":"..."}],
   "credits": [{"description":"...","amount":number,"category":"..."}],
   "debitTotal": number,
   "creditTotal": number,
-  "dueFromBuyer": number
+  "netAmount": number (due from buyer, or net proceeds to seller)
 }
-For category use one of: Purchase Price, Closing Costs, Property Tax, Marketing / Advertising, Insurance, Legal / Accounting, HOA Fees, Other.
-Credits are amounts the buyer receives back (deposit, seller credits, tax prorations). Debits are charges.
-Do not include the purchase price in debits array — it goes in purchasePrice field only.`}
+For category use one of: Closing Costs, Property Tax, Marketing / Advertising, Insurance, Legal / Accounting, HOA Fees, Other.
+BUYER statement: debits=charges to buyer, credits=amounts buyer gets back (deposit, prorations, seller credits). Do NOT include purchase price in debits.
+SELLER statement: debits=charges to seller (commissions, fees, payoffs), credits=amounts seller receives (sale price, prorations in seller favor). Do NOT include sale price in debits.
+netAmount = debitTotal - creditTotal (positive = due from buyer / owed by seller, negative = proceeds to seller).`}
       ]}]
     })
   });
@@ -4005,22 +4007,30 @@ function renderClosingPreview(key, data){
   const importBtn = document.getElementById('closing-import-btn-'+key);
   if(!preview) return;
 
+  const isSeller = data.statementType === 'seller';
   const fmt = n => '$'+parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   const debitTotal = parseFloat(data.debitTotal||0);
   const creditTotal = parseFloat(data.creditTotal||0);
-  const due = parseFloat(data.dueFromBuyer||0);
-  const calcDue = debitTotal - creditTotal;
-  const verified = Math.abs(calcDue - due) < 0.10;
+  const net = parseFloat(data.netAmount||0);
+  const calcNet = debitTotal - creditTotal;
+  const verified = Math.abs(calcNet - net) < 0.10;
+
+  const priceLabel = isSeller ? 'Sale Price' : 'Purchase Price';
+  const netLabel = isSeller ? 'Net Proceeds' : 'Due from Buyer';
+  const netColor = isSeller ? 'var(--green)' : 'var(--gold2)';
+  const typeTag = isSeller
+    ? '<span style="background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:8px">SELLER</span>'
+    : '<span style="background:var(--blue);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:8px">BUYER</span>';
 
   let html = `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1rem">
+    <div style="font-size:14px;font-weight:700;margin-bottom:.75rem;color:var(--gold2)">Closing Statement ${typeTag}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem .75rem;margin-bottom:1rem;font-size:13px">
       <div><span style="color:var(--text2)">Address:</span> <strong>${data.address||'—'}, ${data.city||''} ${data.state||''} ${data.zip||''}</strong></div>
       <div><span style="color:var(--text2)">Settlement Date:</span> <strong>${data.settlementDate||'—'}</strong></div>
-      <div><span style="color:var(--text2)">Purchase Price:</span> <strong style="color:var(--gold2)">${fmt(data.purchasePrice)}</strong></div>
-      <div><span style="color:var(--text2)">Seller:</span> <strong>${data.seller||'—'}</strong></div>
+      <div><span style="color:var(--text2)">${priceLabel}:</span> <strong style="color:var(--gold2)">${fmt(data.transactionPrice)}</strong></div>
+      <div><span style="color:var(--text2)">${isSeller?'Buyer':'Seller'}:</span> <strong>${data.otherParty||'—'}</strong></div>
     </div>`;
 
-  // Debits table
   if(data.debits&&data.debits.length){
     html += `<div style="font-weight:700;font-size:13px;color:var(--red);margin-bottom:.4rem">Debits (Charges)</div>
     <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:1rem">
@@ -4031,7 +4041,6 @@ function renderClosingPreview(key, data){
     html += `</tbody></table>`;
   }
 
-  // Credits table
   if(data.credits&&data.credits.length){
     html += `<div style="font-weight:700;font-size:13px;color:var(--green);margin-bottom:.4rem">Credits</div>
     <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:1rem">
@@ -4042,13 +4051,12 @@ function renderClosingPreview(key, data){
     html += `</tbody></table>`;
   }
 
-  // Totals + verification
   const verColor = verified ? 'var(--green)' : 'var(--red)';
   const verIcon = verified ? '✓ Verified' : '✗ Mismatch — check manually';
   html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;font-size:13px;border-top:1px solid var(--border2);padding-top:.75rem">
     <div style="text-align:center"><div style="color:var(--text2);font-size:11px;margin-bottom:2px">Total Debits</div><div style="color:var(--red);font-weight:700">${fmt(debitTotal)}</div></div>
     <div style="text-align:center"><div style="color:var(--text2);font-size:11px;margin-bottom:2px">Total Credits</div><div style="color:var(--green);font-weight:700">${fmt(creditTotal)}</div></div>
-    <div style="text-align:center"><div style="color:var(--text2);font-size:11px;margin-bottom:2px">Due from Buyer</div><div style="color:${verColor};font-weight:700">${fmt(due)} ${verIcon}</div></div>
+    <div style="text-align:center"><div style="color:var(--text2);font-size:11px;margin-bottom:2px">${netLabel}</div><div style="color:${verColor};font-weight:700">${fmt(Math.abs(net))} ${verIcon}</div></div>
   </div></div>`;
 
   preview.innerHTML = html;
@@ -4058,41 +4066,32 @@ function renderClosingPreview(key, data){
 function importClosingStatement(key){
   const data = window._closingData[key];
   if(!data) return;
-  if(!confirm('Import this closing statement into '+key+'? This will set the purchase price, settlement date, and add all line items as expenses.')) return;
+  const isSeller = data.statementType === 'seller';
+  const typeLabel = isSeller ? 'sale price, settlement date' : 'purchase price, settlement date';
+  if(!confirm('Import this closing statement into '+key+'? This will set the '+typeLabel+' and add all line items as expenses.')) return;
 
-  // Set property details
   if(!propData[key]) propData[key] = {};
-  if(data.purchasePrice) propData[key].purchase = parseFloat(data.purchasePrice);
-  if(data.settlementDate) propData[key].pdate = data.settlementDate;
+  if(data.transactionPrice){
+    if(isSeller) propData[key].sold = parseFloat(data.transactionPrice);
+    else propData[key].purchase = parseFloat(data.transactionPrice);
+  }
+  if(data.settlementDate){
+    if(isSeller) propData[key].sdate = data.settlementDate;
+    else propData[key].pdate = data.settlementDate;
+  }
   if(data.address && !propData[key].addr) propData[key].addr = data.address;
   if(data.city && !propData[key].city) propData[key].city = data.city;
   if(data.state && !propData[key].state) propData[key].state = data.state;
   if(data.zip && !propData[key].zip) propData[key].zip = data.zip;
+  if(isSeller && propData[key].status !== 'Sold') propData[key].status = 'Sold';
 
-  // Add debit expenses
   if(!extra[key]) extra[key] = [];
   const dt = data.settlementDate || new Date().toISOString().split('T')[0];
   (data.debits||[]).forEach(d=>{
-    extra[key].unshift({
-      a: parseFloat(d.amount).toFixed(2),
-      d: d.description,
-      c: d.category||'Closing Costs',
-      v: d.vendor||'',
-      dt: dt,
-      credit: false
-    });
+    extra[key].unshift({a:parseFloat(d.amount).toFixed(2),d:d.description,c:d.category||'Closing Costs',v:d.vendor||'',dt,credit:false});
   });
-
-  // Add credits (negative — credit:true)
   (data.credits||[]).forEach(c=>{
-    extra[key].unshift({
-      a: parseFloat(c.amount).toFixed(2),
-      d: c.description,
-      c: c.category||'Closing Costs',
-      v: '',
-      dt: dt,
-      credit: true
-    });
+    extra[key].unshift({a:parseFloat(c.amount).toFixed(2),d:c.description,c:c.category||'Closing Costs',v:'',dt,credit:true});
   });
 
   save();
@@ -4100,13 +4099,11 @@ function importClosingStatement(key){
   refreshSite();
   buildPropPage(key, true);
 
-  // Hide import button, show success
   const importBtn = document.getElementById('closing-import-btn-'+key);
   if(importBtn) importBtn.style.display = 'none';
   const status = document.getElementById('closing-scan-status-'+key);
-  if(status) status.innerHTML = '<span style="color:var(--green)">✓ Closing statement imported. Check Expenses tab.</span>';
+  if(status) status.innerHTML = '<span style="color:var(--green)">✓ '+(isSeller?'Sale':'Purchase')+' closing statement imported. Check Expenses tab.</span>';
 
-  // Switch to expenses tab to show result
   const expTab = document.querySelector('#page-'+key+' .tb');
   if(expTab){ expTab.click(); }
 }
