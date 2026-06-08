@@ -601,9 +601,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
 .fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start}
 
 .md-ft{position:sticky;bottom:0;background:var(--bg2);padding:1rem 0 0;margin-top:1rem;border-top:1px solid var(--border2);z-index:1}
-.mo.open{display:flex}
-
-.ph{background:rgba(0,0,0,0.55);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.25rem}</style>
+.mo.open{display:flex}</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
@@ -2650,7 +2648,7 @@ async function handleEPPhoto(inp){
 }
 
 // ====== PROPERTY PHOTOS ======
-var curPropImg="bradford";
+var curPropImg="";
 function triggerPropImg(p){curPropImg=p;document.getElementById("prop-img-inp").click();}
 async function handlePropImg(inp){
   if(!inp.files[0])return;const file=inp.files[0];inp.value="";
@@ -4351,7 +4349,7 @@ function deleteContractor(name){
 
 <style id="bg-style">
 .main,.page{background:transparent !important}
-.card,.stat,.info-card,.bank-item,.md{background:rgba(0,0,0,0.45) !important;backdrop-filter:blur(20px) !important;-webkit-backdrop-filter:blur(20px) !important;border:1px solid rgba(255,255,255,0.15) !important}
+.card,.stat,.info-card,.bank-item,.md{background:var(--bg3) !important;border:1px solid var(--border) !important}
 #pin-screen{background:#c49e3c !important}
 
 .vendor-dd div:hover{background:var(--bg4)}
