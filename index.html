@@ -1050,13 +1050,16 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
 
   <div class="card" style="padding:1.5rem;margin-bottom:1rem">
     <div class="sec-title" style="margin-bottom:.5rem">Backup &amp; Restore</div>
-    <div style="font-size:12.5px;color:var(--text2);margin-bottom:1rem">Download a complete backup of all your data as a file you can save to iCloud or Google Drive. Restore anytime if needed.</div>
+    <div style="font-size:12.5px;color:var(--text2);margin-bottom:1rem">Hourly cloud snapshots save automatically — last 24 kept. Restore any point in time instantly.</div>
     <div id="backup-status" style="font-size:12.5px;min-height:18px;margin-bottom:.75rem"></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem">
       <button class="btn btn-primary btn-sm" onclick="exportBackup()"><svg class="ico"><use href="#ico-download"/></svg> Download Backup</button>
-      <button class="btn btn-sm" onclick="document.getElementById('restore-file-inp').click()"><svg class="ico"><use href="#ico-upload"/></svg> Restore from Backup</button>
+      <button class="btn btn-sm" onclick="document.getElementById('restore-file-inp').click()"><svg class="ico"><use href="#ico-upload"/></svg> Restore from File</button>
+      <button class="btn btn-sm" onclick="saveHourlyBackup(true)"><svg class="ico"><use href="#ico-save"/></svg> Save Snapshot Now</button>
       <input type="file" id="restore-file-inp" accept=".json,application/json" style="display:none" onchange="restoreBackup(this.files[0])">
     </div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:.5rem;font-weight:600">Cloud Snapshots (last 24)</div>
+    <div id="cloud-backups-list" style="font-size:12px;color:var(--text2)">Loading...</div>
   </div>
 </div>
 
@@ -1521,6 +1524,61 @@ let syncTimer=null,syncStatus='idle',syncEnabled=true;
 
 
 function exportBackup(){try{const backup={version:1,exportDate:new Date().toISOString(),propData:propData,extra:(typeof extra!=='undefined')?extra:{},tasks:tasks,mileage:window._mileage||[]};const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;const _d=new Date();const _ds=_d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');a.download='apex-homes-backup-'+_ds+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{a.remove();URL.revokeObjectURL(url);},100);const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--green)">✓ Backup downloaded</span>';}catch(err){const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--red)">✗ '+err.message+'</span>';}}
+// ====== HOURLY CLOUD SNAPSHOTS ======
+const MAX_SNAPSHOTS=24;
+async function saveHourlyBackup(manual){
+  if(!syncEnabled)return;
+  try{
+    const ts=Date.now();
+    const id='backup-'+ts;
+    const payload={extra,tasks,propData,mileage:window._mileage||[]};
+    await sbFetch('/rest/v1/apex_data',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({id,data:payload})});
+    const r=await sbFetch('/rest/v1/apex_data?id=like.backup-*&select=id&order=id.asc',{method:'GET'});
+    if(r.ok){
+      const rows=await r.json();
+      if(rows.length>MAX_SNAPSHOTS){
+        const toDelete=rows.slice(0,rows.length-MAX_SNAPSHOTS);
+        await Promise.all(toDelete.map(row=>sbFetch('/rest/v1/apex_data?id=eq.'+row.id,{method:'DELETE'})));
+      }
+    }
+    if(manual){const st=document.getElementById('backup-status');if(st){st.innerHTML='<span style="color:var(--green)">✓ Snapshot saved</span>';setTimeout(()=>st.innerHTML='',3000);}}
+    renderCloudBackups();
+  }catch(e){if(manual){const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--red)">✗ Snapshot failed: '+e.message+'</span>';}}
+}
+async function renderCloudBackups(){
+  const el=document.getElementById('cloud-backups-list');if(!el)return;
+  try{
+    const r=await sbFetch('/rest/v1/apex_data?id=like.backup-*&select=id&order=id.desc',{method:'GET'});
+    if(!r.ok){el.innerHTML='<span style="color:var(--text2)">Could not load snapshots</span>';return;}
+    const rows=await r.json();
+    if(!rows.length){el.innerHTML='<span style="color:var(--text2)">No snapshots yet — one saves automatically each hour.</span>';return;}
+    el.innerHTML=rows.map(row=>{
+      const ts=parseInt(row.id.replace('backup-',''));
+      const d=new Date(ts);
+      const label=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' at '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border2)"><span style="color:var(--text)">'+label+'</span><button class="btn btn-sm" style="font-size:11px;padding:3px 10px" onclick="restoreCloudBackup(''+row.id+'')">Restore</button></div>';
+    }).join('');
+  }catch(e){el.innerHTML='<span style="color:var(--text2)">'+e.message+'</span>';}
+}
+async function restoreCloudBackup(id){
+  if(!confirm('Restore this snapshot? Current data will be replaced.'))return;
+  try{
+    const r=await sbFetch('/rest/v1/apex_data?id=eq.'+id+'&select=data',{method:'GET'});
+    if(!r.ok)throw new Error('fetch failed');
+    const rows=await r.json();
+    if(!rows||!rows[0]||!rows[0].data)throw new Error('Snapshot not found');
+    const d=rows[0].data;
+    Object.keys(propData).forEach(k=>delete propData[k]);Object.assign(propData,d.propData||{});
+    Object.keys(extra).forEach(k=>delete extra[k]);Object.assign(extra,d.extra||{general:[]});
+    tasks.length=0;(d.tasks||[]).forEach(t=>tasks.push(t));
+    if(d.mileage){window._mileage=d.mileage;localStorage.setItem('apex_mileage',JSON.stringify(window._mileage));}
+    save();refreshSite();
+    const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--green)">✓ Restored</span>';
+    setTimeout(()=>{alert('Snapshot restored! Reloading.');location.reload();},500);
+  }catch(e){const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--red)">✗ '+e.message+'</span>';}
+}
+setInterval(()=>saveHourlyBackup(false),60*60*1000);
+
 function restoreBackup(file){if(!file)return;const st=document.getElementById('backup-status');if(!confirm('This will REPLACE all current data with the backup. Continue?'))return;const reader=new FileReader();reader.onload=function(ev){try{const backup=JSON.parse(ev.target.result);if(!backup.propData)throw new Error('Invalid backup file');Object.keys(propData).forEach(k=>delete propData[k]);Object.assign(propData,backup.propData);if(backup.extra&&typeof extra!=='undefined'){Object.keys(extra).forEach(k=>delete extra[k]);Object.assign(extra,backup.extra);}if(backup.tasks){tasks.length=0;backup.tasks.forEach(t=>tasks.push(t));}if(backup.mileage){window._mileage=backup.mileage;localStorage.setItem('apex_mileage',JSON.stringify(window._mileage));}save();refreshSite();if(st)st.innerHTML='<span style="color:var(--green)">✓ Restored</span>';setTimeout(()=>{alert('Backup restored! Reloading.');location.reload();},500);}catch(err){if(st)st.innerHTML='<span style="color:var(--red)">✗ '+err.message+'</span>';}};reader.readAsText(file);}
 
 // On mobile, move status dot under logo
@@ -2480,7 +2538,7 @@ function showPage(btn,id){
   // Also highlight the matching mob-item
   document.querySelectorAll(".mob-item").forEach(b=>{if(b.getAttribute("onclick")&&b.getAttribute("onclick").includes("'"+id+"'"))b.classList.add("active");});
   closeMob();
-  if(id==="company"){restoreCompanyInfo();renderAccounts();}
+  if(id==="company"){restoreCompanyInfo();renderAccounts();renderCloudBackups();}
   if(id==="expenses"){renderE("general");renderIncome();loadBalanceSheetInputs();}
   if(id==="taxes"){refreshSite();}
   if(id==="dashboard"){renderPropCards();refreshSite();}
@@ -4035,6 +4093,7 @@ loadData().then(()=>{
     migrateHardcodedExpenses();
     autoUploadPendingDocs();
     recoverPhotosFromStorage();
+    saveHourlyBackup(false);
     setTimeout(checkStatusAll,800);
   }catch(e){console.warn('Init error:',e);}
   startAutoSync();
