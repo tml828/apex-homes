@@ -1524,7 +1524,7 @@ let syncTimer=null,syncStatus='idle',syncEnabled=true;
 
 function exportBackup(){try{const backup={version:1,exportDate:new Date().toISOString(),propData:propData,extra:(typeof extra!=='undefined')?extra:{},tasks:tasks,mileage:window._mileage||[]};const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;const _d=new Date();const _ds=_d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');a.download='apex-homes-backup-'+_ds+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{a.remove();URL.revokeObjectURL(url);},100);const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--green)">✓ Backup downloaded</span>';}catch(err){const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--red)">✗ '+err.message+'</span>';}}
 // ====== HOURLY CLOUD SNAPSHOTS ======
-const MAX_SNAPSHOTS=24;
+const MAX_SNAPSHOTS=2;
 async function saveHourlyBackup(manual){
   if(!syncEnabled)return;
   try{
