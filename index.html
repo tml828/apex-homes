@@ -4200,6 +4200,9 @@ async function syncAllReceiptsToCloud(){
 // ====== ONE-TIME MIGRATION: move all BEXP data into Supabase ======
 async function migrateHardcodedExpenses(){
   if(propData._migrated)return;
+  // If propData has no real properties, Supabase data is missing/empty — skip migration
+  // so we don't overwrite Supabase with an empty payload
+  if(getPropKeys().length===0)return;
   [...getPropKeys(),'general'].forEach(p=>{
     if(!extra[p])extra[p]=[];
     (BEXP[p]||[]).forEach(be=>{
