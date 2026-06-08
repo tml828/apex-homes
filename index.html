@@ -2692,6 +2692,22 @@ function restorePropImg(p){if(propImgs[p])applyPropImg(p);}
 function openLightbox(src){document.getElementById("lbox-img").src=src;showModal("m-lbox");}
 Object.keys(propImgs).forEach(applyPropImg);
 
+// Auto-recover property photos from Supabase Storage if propImgs mapping is missing
+async function recoverPhotosFromStorage(){
+  const keys=getPropKeys();
+  if(!keys.length)return;
+  let recovered=false;
+  await Promise.all(keys.map(async p=>{
+    if(propImgs[p])return; // already have it
+    const url=SB_URL+'/storage/v1/object/public/apex-media/props/'+p+'.jpg';
+    try{
+      const r=await fetch(url,{method:'HEAD'});
+      if(r.ok){propImgs[p]=url;applyPropImg(p);recovered=true;}
+    }catch(e){}
+  }));
+  if(recovered)save();
+}
+
 // ====== HOLD DATES ======
 function updateHoldDates(){
   getPropKeys().forEach(p=>{
@@ -4018,6 +4034,7 @@ loadData().then(()=>{
     renderDashTasks();
     migrateHardcodedExpenses();
     autoUploadPendingDocs();
+    recoverPhotosFromStorage();
     setTimeout(checkStatusAll,800);
   }catch(e){console.warn('Init error:',e);}
   startAutoSync();
