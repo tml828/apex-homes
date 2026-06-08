@@ -4,9 +4,9 @@
 Single-file (`index.html`) property management web app for a house-flipping business. No build toolchain — all HTML, CSS, and JavaScript are inline. Deployed on Netlify, syncs data to Supabase every 5 seconds. ~4300 lines.
 
 ## Deployment
-- **Live site:** radiant-khapse-945235.netlify.app
+- **Live site:** tml828.github.io/apex-homes
 - **Repo:** github.com/tml828/apex-homes
-- **Deploy branch:** `main` — Netlify auto-deploys on every push to main
+- **Deploy branch:** `main` — GitHub Pages auto-deploys on every push to main
 - **Push directly to main** — no PRs needed unless explicitly requested
 
 ## Architecture
