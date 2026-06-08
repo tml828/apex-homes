@@ -3573,6 +3573,7 @@ function buildPropPage(key, force){
       <div class="card" style="padding:1.25rem">
         <div class="tab-bar">
           <button class="tb active" onclick="stab(this,'tb-${key}ex')">Expenses</button>
+          <button class="tb" onclick="stab(this,'tb-${key}closing')">Closing</button>
           <button class="tb" onclick="stab(this,'tb-${key}docs')">Docs</button>
           <button class="tb" onclick="stab(this,'tb-${key}roi')">ROI</button>
           <button class="tb" onclick="stab(this,'tb-${key}analysis');renderAnalysis('${key}')">Analysis</button>
@@ -3587,6 +3588,20 @@ function buildPropPage(key, force){
             <button class="btn btn-sm" style="background:#c0392b;border-color:#c0392b;color:#fff;font-weight:700" onclick="openAddExp('${key}')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button><button class="btn btn-sm" style="background:#1a7a4a;border-color:#1a7a4a;color:#fff;font-weight:700" onclick="openAddCr('${key}')"><svg class="ico"><use href="#ico-plus"/></svg> Credit / Refund</button>
           </div>
           <div id="${key}-exp-list"></div>
+        </div>
+        <div class="tab-pane" id="tb-${key}closing">
+          <div style="padding:1.25rem 0">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+              <div style="font-weight:700;font-size:15px;color:var(--gold2)">Closing Statement</div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-sm" onclick="document.getElementById('closing-inp-${key}').click()"><svg class="ico"><use href="#ico-upload"/></svg> Upload PDF / Image</button>
+                <button class="btn btn-sm" id="closing-import-btn-${key}" style="display:none;background:#1a7a4a;border-color:#1a7a4a;color:#fff;font-weight:700" onclick="importClosingStatement('${key}')">Import to Property</button>
+              </div>
+              <input type="file" id="closing-inp-${key}" accept="image/*,.pdf,application/pdf" style="display:none" onchange="handleClosingFile(this.files[0],'${key}')">
+            </div>
+            <div id="closing-scan-status-${key}" style="font-size:13px;color:var(--text2);margin-bottom:.75rem"></div>
+            <div id="closing-preview-${key}"></div>
+          </div>
         </div>
         <div class="tab-pane" id="tb-${key}docs">
           <div id="docs-${key}"></div>
@@ -3919,6 +3934,181 @@ function openDoc(src,name){
     document.body.appendChild(a);a.click();
     setTimeout(()=>a.remove(),100);
   }
+}
+
+
+// ====== CLOSING STATEMENT SCANNER ======
+window._closingData = {};
+
+async function handleClosingFile(file, key){
+  if(!file)return;
+  if(!checkApiReady())return;
+  const status = document.getElementById('closing-scan-status-'+key);
+  const preview = document.getElementById('closing-preview-'+key);
+  const importBtn = document.getElementById('closing-import-btn-'+key);
+  if(status) status.innerHTML = '<div style="display:flex;align-items:center;gap:8px"><div class="spin"></div> Scanning closing statement...</div>';
+  if(preview) preview.innerHTML = '';
+  if(importBtn) importBtn.style.display = 'none';
+  try{
+    const processed = await processReceiptImage(file, false);
+    const b64 = processed.b64; const mime = processed.mime;
+    const data = await scanClosingStatement(b64, mime);
+    window._closingData[key] = data;
+    renderClosingPreview(key, data);
+    if(status) status.innerHTML = '';
+  }catch(e){
+    if(status) status.innerHTML = '<span style="color:var(--red)">✗ '+e.message+'</span>';
+  }
+}
+
+async function scanClosingStatement(b64, mime){
+  const key = getApiKey();
+  const resp = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-6',
+      max_tokens:2000,
+      messages:[{role:'user',content:[
+        {type:'image',source:{type:'base64',media_type:mime,data:b64}},
+        {type:'text',text:`Extract all data from this closing/settlement statement and return ONLY valid JSON (no markdown):
+{
+  "address": "street address only",
+  "city": "city",
+  "state": "state abbreviation",
+  "zip": "zip code",
+  "purchasePrice": number,
+  "settlementDate": "YYYY-MM-DD",
+  "seller": "seller name",
+  "debits": [{"description":"...","amount":number,"category":"...","vendor":"..."}],
+  "credits": [{"description":"...","amount":number,"category":"..."}],
+  "debitTotal": number,
+  "creditTotal": number,
+  "dueFromBuyer": number
+}
+For category use one of: Purchase Price, Closing Costs, Property Tax, Marketing / Advertising, Insurance, Legal / Accounting, HOA Fees, Other.
+Credits are amounts the buyer receives back (deposit, seller credits, tax prorations). Debits are charges.
+Do not include the purchase price in debits array — it goes in purchasePrice field only.`}
+      ]}]
+    })
+  });
+  if(!resp.ok) throw new Error('API error '+resp.status);
+  const json = await resp.json();
+  const text = json.content?.[0]?.text||'';
+  const m = text.match(/\{[\s\S]*\}/);
+  if(!m) throw new Error('Could not parse response');
+  return JSON.parse(m[0]);
+}
+
+function renderClosingPreview(key, data){
+  const preview = document.getElementById('closing-preview-'+key);
+  const importBtn = document.getElementById('closing-import-btn-'+key);
+  if(!preview) return;
+
+  const fmt = n => '$'+parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const debitTotal = parseFloat(data.debitTotal||0);
+  const creditTotal = parseFloat(data.creditTotal||0);
+  const due = parseFloat(data.dueFromBuyer||0);
+  const calcDue = debitTotal - creditTotal;
+  const verified = Math.abs(calcDue - due) < 0.10;
+
+  let html = `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1rem">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem .75rem;margin-bottom:1rem;font-size:13px">
+      <div><span style="color:var(--text2)">Address:</span> <strong>${data.address||'—'}, ${data.city||''} ${data.state||''} ${data.zip||''}</strong></div>
+      <div><span style="color:var(--text2)">Settlement Date:</span> <strong>${data.settlementDate||'—'}</strong></div>
+      <div><span style="color:var(--text2)">Purchase Price:</span> <strong style="color:var(--gold2)">${fmt(data.purchasePrice)}</strong></div>
+      <div><span style="color:var(--text2)">Seller:</span> <strong>${data.seller||'—'}</strong></div>
+    </div>`;
+
+  // Debits table
+  if(data.debits&&data.debits.length){
+    html += `<div style="font-weight:700;font-size:13px;color:var(--red);margin-bottom:.4rem">Debits (Charges)</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:1rem">
+      <thead><tr style="border-bottom:1px solid var(--border2);color:var(--text2)"><th style="text-align:left;padding:4px 0">Description</th><th style="text-align:left;padding:4px 0">Category</th><th style="text-align:right;padding:4px 0">Amount</th></tr></thead><tbody>`;
+    data.debits.forEach(d=>{
+      html += `<tr style="border-bottom:1px solid var(--border2)"><td style="padding:5px 0">${d.description}</td><td style="padding:5px 0;color:var(--text2)">${d.category}</td><td style="padding:5px 0;text-align:right;color:var(--red)">${fmt(d.amount)}</td></tr>`;
+    });
+    html += `</tbody></table>`;
+  }
+
+  // Credits table
+  if(data.credits&&data.credits.length){
+    html += `<div style="font-weight:700;font-size:13px;color:var(--green);margin-bottom:.4rem">Credits</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:1rem">
+      <thead><tr style="border-bottom:1px solid var(--border2);color:var(--text2)"><th style="text-align:left;padding:4px 0">Description</th><th style="text-align:right;padding:4px 0">Amount</th></tr></thead><tbody>`;
+    data.credits.forEach(c=>{
+      html += `<tr style="border-bottom:1px solid var(--border2)"><td style="padding:5px 0">${c.description}</td><td style="padding:5px 0;text-align:right;color:var(--green)">${fmt(c.amount)}</td></tr>`;
+    });
+    html += `</tbody></table>`;
+  }
+
+  // Totals + verification
+  const verColor = verified ? 'var(--green)' : 'var(--red)';
+  const verIcon = verified ? '✓ Verified' : '✗ Mismatch — check manually';
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;font-size:13px;border-top:1px solid var(--border2);padding-top:.75rem">
+    <div style="text-align:center"><div style="color:var(--text2);font-size:11px;margin-bottom:2px">Total Debits</div><div style="color:var(--red);font-weight:700">${fmt(debitTotal)}</div></div>
+    <div style="text-align:center"><div style="color:var(--text2);font-size:11px;margin-bottom:2px">Total Credits</div><div style="color:var(--green);font-weight:700">${fmt(creditTotal)}</div></div>
+    <div style="text-align:center"><div style="color:var(--text2);font-size:11px;margin-bottom:2px">Due from Buyer</div><div style="color:${verColor};font-weight:700">${fmt(due)} ${verIcon}</div></div>
+  </div></div>`;
+
+  preview.innerHTML = html;
+  if(importBtn) importBtn.style.display = '';
+}
+
+function importClosingStatement(key){
+  const data = window._closingData[key];
+  if(!data) return;
+  if(!confirm('Import this closing statement into '+key+'? This will set the purchase price, settlement date, and add all line items as expenses.')) return;
+
+  // Set property details
+  if(!propData[key]) propData[key] = {};
+  if(data.purchasePrice) propData[key].purchase = parseFloat(data.purchasePrice);
+  if(data.settlementDate) propData[key].pdate = data.settlementDate;
+  if(data.address && !propData[key].addr) propData[key].addr = data.address;
+  if(data.city && !propData[key].city) propData[key].city = data.city;
+  if(data.state && !propData[key].state) propData[key].state = data.state;
+  if(data.zip && !propData[key].zip) propData[key].zip = data.zip;
+
+  // Add debit expenses
+  if(!extra[key]) extra[key] = [];
+  const dt = data.settlementDate || new Date().toISOString().split('T')[0];
+  (data.debits||[]).forEach(d=>{
+    extra[key].unshift({
+      a: parseFloat(d.amount).toFixed(2),
+      d: d.description,
+      c: d.category||'Closing Costs',
+      v: d.vendor||'',
+      dt: dt,
+      credit: false
+    });
+  });
+
+  // Add credits (negative — credit:true)
+  (data.credits||[]).forEach(c=>{
+    extra[key].unshift({
+      a: parseFloat(c.amount).toFixed(2),
+      d: c.description,
+      c: c.category||'Closing Costs',
+      v: '',
+      dt: dt,
+      credit: true
+    });
+  });
+
+  save();
+  renderE(key);
+  refreshSite();
+  buildPropPage(key, true);
+
+  // Hide import button, show success
+  const importBtn = document.getElementById('closing-import-btn-'+key);
+  if(importBtn) importBtn.style.display = 'none';
+  const status = document.getElementById('closing-scan-status-'+key);
+  if(status) status.innerHTML = '<span style="color:var(--green)">✓ Closing statement imported. Check Expenses tab.</span>';
+
+  // Switch to expenses tab to show result
+  const expTab = document.querySelector('#page-'+key+' .tb');
+  if(expTab){ expTab.click(); }
 }
 
 function renderDocs(p){
