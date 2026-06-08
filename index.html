@@ -3948,14 +3948,17 @@ async function handleClosingFile(file, key){
   if(preview) preview.innerHTML = '';
   if(importBtn) importBtn.style.display = 'none';
   try{
+    if(status) status.innerHTML = '<div style="display:flex;align-items:center;gap:8px"><div class="spin"></div> Converting file...</div>';
     const processed = await processReceiptImage(file, false);
+    if(status) status.innerHTML = '<div style="display:flex;align-items:center;gap:8px"><div class="spin"></div> Scanning with AI...</div>';
     const b64 = processed.b64; const mime = processed.mime;
     const data = await scanClosingStatement(b64, mime);
     window._closingData[key] = data;
     renderClosingPreview(key, data);
     if(status) status.innerHTML = '';
   }catch(e){
-    if(status) status.innerHTML = '<span style="color:var(--red)">✗ '+e.message+'</span>';
+    console.error('Closing scan error:', e);
+    if(status) status.innerHTML = '<span style="color:var(--red)">✗ '+( e.message||'Unknown error')+' — check browser console for details</span>';
   }
 }
 
@@ -3991,11 +3994,11 @@ netAmount = debitTotal - creditTotal (positive = due from buyer / owed by seller
       ]}]
     })
   });
-  if(!resp.ok) throw new Error('API error '+resp.status);
+  if(!resp.ok){const t=await resp.text().catch(()=>'');throw new Error('API '+resp.status+': '+t.slice(0,120));}
   const json = await resp.json();
   const text = json.content?.[0]?.text||'';
   const m = text.match(/\{[\s\S]*\}/);
-  if(!m) throw new Error('Could not parse response');
+  if(!m) throw new Error('No JSON in response: '+text.slice(0,100));
   return JSON.parse(m[0]);
 }
 
