@@ -2797,6 +2797,7 @@ function openAddExp(p){
   expReceiptB64="";expReceiptMime="";const ss=document.getElementById("exp-scan-status");if(ss)ss.innerHTML="";pendingFiles[p]=[];renderQ(p);showModal("m-exp");const _w9r=document.getElementById("exp-w9-row");if(_w9r)_w9r.style.display="none";const _w9c=document.getElementById("exp-w9");if(_w9c)_w9c.checked=false;
 }
 function saveExp(){
+  try{
   const p=document.getElementById("exp-pid").value;
   const amount=parseFloat(document.getElementById("exp-amt").value);
   const d=document.getElementById("exp-desc").value.trim()||"Expense";
@@ -2815,6 +2816,7 @@ function saveExp(){
   const prev=document.getElementById("exp-receipt-preview");if(prev)prev.innerHTML="";
   const ss=document.getElementById("exp-scan-status");if(ss)ss.innerHTML="";
   save();renderE(p);refreshSite();closeModal("m-exp");renderContractors();
+  }catch(err){console.error('saveExp error:',err);alert('Error saving expense: '+err.message);}
 }
 function triggerCSVImport(pid){const inp=document.getElementById('csv-inp-'+pid);if(inp)inp.click();}
 function importExpCSV(event,pid){
@@ -2975,7 +2977,7 @@ function saveCr(){
   crReceiptUrl=null;crReceiptB64="";crReceiptMime="";
   const prev=document.getElementById("cr-receipt-preview");if(prev)prev.innerHTML="";
   const ss=document.getElementById("cr-scan-status");if(ss)ss.innerHTML="";
-  save();renderE(p);refreshSite();closeModal("m-credit");
+  save();renderE(p);renderCr(p);refreshSite();closeModal("m-credit");renderContractors();
 }
 
 function openEditCrByIndex(p,origIdx){
@@ -3315,8 +3317,8 @@ function handleDocFiles(inp,p){const el=inp.target||inp;if(!el.files||!el.files.
 function renderE(p){
   const el=document.getElementById(p+"-exp-list");
   if(!el)return;
-  const expenses=allE(p).map((e,i)=>({...e,_origIdx:i})).sort((a,b)=>(b.dt||"").localeCompare(a.dt||""));
-  if(!expenses.length){el.innerHTML='<div class="empty"><svg class="ico"><use href="#ico-receipt"/></svg>No expenses yet</div>';return;}
+  const expenses=allE(p).map((e,i)=>({...e,_origIdx:i})).filter(e=>!e.credit).sort((a,b)=>(b.dt||"").localeCompare(a.dt||""));
+  if(!expenses.length){el.innerHTML='<div class="empty"><svg class="ico"><use href="#ico-receipt"/></svg>No expenses yet</div>';renderCr(p);return;}
   const _sq=_expSearchQuery[p]||'';
   if(_sq){renderEFiltered(p,expenses,_sq);return;}
   el.innerHTML=expenses.map(e=>{
@@ -3341,6 +3343,37 @@ function renderE(p){
         <span style="font-size:13px;font-weight:700;color:${amtColor};min-width:72px;text-align:right">${amtPrefix}${fmt(e.a||e.amount||0)}</span>
         <button class="btn btn-ghost btn-sm btn-icon" onclick="${editFn}" title="Edit"><svg class="ico" style="width:13px;height:13px"><use href="#ico-pencil"/></svg></button>
         <button class="btn btn-danger btn-sm btn-icon" onclick="${delFn}" title="Delete"><svg class="ico" style="width:13px;height:13px"><use href="#ico-trash"/></svg></button>
+      </div>
+    </div>`;
+  }).join("");
+  renderCr(p);
+}
+
+function renderCr(p){
+  const el=document.getElementById(p+"-cr-list");
+  const totalEl=document.getElementById(p+"-cr-total");
+  if(!el)return;
+  const credits=allE(p).map((e,i)=>({...e,_origIdx:i})).filter(e=>e.credit).sort((a,b)=>(b.dt||"").localeCompare(a.dt||""));
+  const total=credits.reduce((s,e)=>s+parseFloat(e.a||e.amount||0),0);
+  if(totalEl)totalEl.textContent=fmt(total);
+  if(!credits.length){el.innerHTML='<div class="empty"><svg class="ico"><use href="#ico-receipt"/></svg>No credits yet</div>';return;}
+  el.innerHTML=credits.map(e=>{
+    const cat=e.c||e.cat||"";
+    const vendor=e.v||e.vendor||"";
+    const date=e.dt||e.date||"";
+    const desc=e.d||e.desc||"Credit";
+    const meta=[cat,vendor,date?fmtD(date):""].filter(Boolean).join(" · ");
+    const receipt=e.receipt?`<img src="${e.receipt}" onclick="openLightbox('${e.receipt}')" class="exp-receipt-thumb" alt="receipt" style="width:36px;height:36px;object-fit:cover;border-radius:5px;cursor:zoom-in;flex-shrink:0;border:1px solid var(--border2)">` :"";
+    return `<div class="exp-item" style="display:flex;align-items:center;gap:10px;padding:.7rem 1rem;border-bottom:1px solid var(--border);background:rgba(34,197,94,0.04)">
+      ${receipt}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${desc}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${meta}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <span style="font-size:13px;font-weight:700;color:var(--green);min-width:72px;text-align:right">+${fmt(e.a||e.amount||0)}</span>
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="openEditCrByIndex('${p}',${e._origIdx})" title="Edit"><svg class="ico" style="width:13px;height:13px"><use href="#ico-pencil"/></svg></button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="delCrByIndex('${p}',${e._origIdx})" title="Delete"><svg class="ico" style="width:13px;height:13px"><use href="#ico-trash"/></svg></button>
       </div>
     </div>`;
   }).join("");
@@ -3571,6 +3604,7 @@ function buildPropPage(key, force){
       <div class="card" style="padding:1.25rem">
         <div class="tab-bar">
           <button class="tb active" onclick="stab(this,'tb-${key}ex')">Expenses</button>
+          <button class="tb" onclick="stab(this,'tb-${key}cr')">Credits</button>
           <button class="tb" onclick="stab(this,'tb-${key}closing')">Closing</button>
           <button class="tb" onclick="stab(this,'tb-${key}docs')">Docs</button>
           <button class="tb" onclick="stab(this,'tb-${key}roi')">ROI</button>
@@ -3583,9 +3617,16 @@ function buildPropPage(key, force){
               <svg class="ico" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3);pointer-events:none"><use href="#ico-search"/></svg>
               <input id="search-${key}" type="text" placeholder="Search expenses..." oninput="searchE('${key}',this.value)" style="width:100%;padding:5px 8px 5px 28px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px">
             </div>
-            <button class="btn btn-sm" style="background:#c0392b;border-color:#c0392b;color:#fff;font-weight:700" onclick="openAddExp('${key}')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button><button class="btn btn-sm" style="background:#1a7a4a;border-color:#1a7a4a;color:#fff;font-weight:700" onclick="openAddCr('${key}')"><svg class="ico"><use href="#ico-plus"/></svg> Credit / Refund</button>
+            <button class="btn btn-sm" style="background:#c0392b;border-color:#c0392b;color:#fff;font-weight:700" onclick="openAddExp('${key}')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button>
           </div>
           <div id="${key}-exp-list"></div>
+        </div>
+        <div class="tab-pane" id="tb-${key}cr">
+          <div class="exp-toolbar">
+            <div class="exp-total">Credits: <strong id="${key}-cr-total">—</strong></div>
+            <button class="btn btn-sm" style="background:#1a7a4a;border-color:#1a7a4a;color:#fff;font-weight:700" onclick="openAddCr('${key}')"><svg class="ico"><use href="#ico-plus"/></svg> Add Credit / Refund</button>
+          </div>
+          <div id="${key}-cr-list"></div>
         </div>
         <div class="tab-pane" id="tb-${key}closing">
           <div style="padding:1.25rem 0">
