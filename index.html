@@ -1936,7 +1936,7 @@ async function loadData(){
       const cloudImgs=d.propImgs||{};
       Object.entries(cloudImgs).forEach(([k,v])=>{if(v&&v.startsWith('http'))propImgs[k]=v;});
       if(d.anthropicKey&&!getApiKey()){localStorage.setItem('apex_anthropic_key',d.anthropicKey);updateApiKeyBtn();}
-      const localRaw=localStorage.getItem('apex_v7');
+      const localRaw=localStorage.getItem('apex_v8');
       if(localRaw){
         try{
           const lp=JSON.parse(localRaw);
@@ -1944,7 +1944,7 @@ async function loadData(){
           Object.entries(localImgs).forEach(([k,v])=>{if(v&&!propImgs[k])propImgs[k]=v;});
         }catch(e){}
       }
-      localStorage.setItem('apex_v7',JSON.stringify({extra,tasks,propImgs,propData}));
+      localStorage.setItem('apex_v8',JSON.stringify({extra,tasks,propImgs,propData}));
       syncEnabled=true;
       showSyncStatus('saved');
       return;
@@ -1953,7 +1953,7 @@ async function loadData(){
     if(e.message==='ALLOWLIST'){syncEnabled=false;showSyncBanner();}
   }
   try{
-    const s=localStorage.getItem('apex_v7');
+    const s=localStorage.getItem('apex_v8');
     if(s){const p=JSON.parse(s);extra=p.extra||extra;tasks=p.tasks||[];propImgs=p.propImgs||{};propData=p.propData||{};}
   }catch(e){}
   showSyncStatus('idle');
@@ -1969,8 +1969,8 @@ function showSyncBanner(){
 
 function save(){
   const fullPayload={extra,tasks,propImgs,propData};
-  try{localStorage.setItem('apex_v7',JSON.stringify(fullPayload));}catch(e){
-    try{localStorage.setItem('apex_v7',JSON.stringify({extra,tasks,propData}));}catch(e2){}
+  try{localStorage.setItem('apex_v8',JSON.stringify(fullPayload));}catch(e){
+    try{localStorage.setItem('apex_v8',JSON.stringify({extra,tasks,propData}));}catch(e2){}
   }
   if(!syncEnabled){showSyncStatus('error');return;}
   clearTimeout(syncTimer);
@@ -4077,7 +4077,7 @@ async function autoSyncPull(){
       propData=incoming;changed=true;
     }
     if(changed){
-      localStorage.setItem('apex_v7',JSON.stringify({extra,tasks,propImgs,propData}));
+      localStorage.setItem('apex_v8',JSON.stringify({extra,tasks,propImgs,propData}));
       Object.keys(propImgs).forEach(applyPropImg);
       [...getPropKeys(),'general'].forEach(renderE);
       getPropKeys().forEach(renderDocs);
