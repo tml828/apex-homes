@@ -4741,13 +4741,27 @@ function deleteContractor(name){
     inset 0 -1.5px 0 rgba(0,0,0,0.25) !important;
 }
 
-/* Nav */
+/* Nav — gold glass */
 .nav {
-  background: rgba(180,140,45,0.88) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-  border-bottom: 1px solid rgba(255,255,255,0.15) !important;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.4) !important;
+  background: linear-gradient(135deg, rgba(201,168,76,0.82) 0%, rgba(160,120,40,0.88) 100%) !important;
+  backdrop-filter: blur(28px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.2) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -1px 0 rgba(0,0,0,0.15) !important;
+}
+.nav-tab { font-size: 15px !important; font-weight: 700 !important; }
+.nav-brand-name { font-size: 17px !important; }
+
+/* General expenses page — glass panels */
+.fin-grid > div {
+  background: rgba(18,18,26,0.60) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-top-color: rgba(255,255,255,0.14) !important;
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--glass-shadow), var(--glass-inset) !important;
+  padding: 1.25rem !important;
 }
 
 /* Tab bars */
