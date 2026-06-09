@@ -997,6 +997,15 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
             <input type="file" accept="image/*" style="display:none" onchange="handleLogoUpload(this)">
           </label>
           <button class="btn btn-ghost btn-sm" style="margin-left:6px" onclick="resetLogo()">Reset</button>
+          <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border)">
+            <div style="font-size:13px;color:var(--gold2);font-weight:600;margin-bottom:4px">Background Image</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:.65rem">Replace the wood plank background with any image</div>
+            <label class="btn btn-primary btn-sm" style="cursor:pointer">
+              <svg class="ico"><use href="#ico-upload"/></svg> Upload Background
+              <input type="file" accept="image/*" style="display:none" onchange="handleBgUpload(this)">
+            </label>
+            <button class="btn btn-ghost btn-sm" style="margin-left:6px" onclick="resetBg()">Reset to Default</button>
+          </div>
         </div>
       </div>
     </div>
@@ -3503,6 +3512,9 @@ function setROIItem(tabId,label,value,color){const tab=document.getElementById(t
 function handleLogoUpload(inp){if(!inp.files[0])return;const r=new FileReader();r.onload=e=>{applyCustomLogo(e.target.result);};r.readAsDataURL(inp.files[0]);}
 function applyCustomLogo(src,skipSave){try{const n=document.getElementById('nav-logo-img');if(n)n.src=src;const p=document.getElementById('company-logo-preview');if(p)p.src=src;localStorage.setItem('apex_logo',src);if(!skipSave&&syncEnabled){propData._logo=src;}}catch(e){}}
 function resetLogo(){try{localStorage.removeItem('apex_logo');delete propData._logo;save();const n=document.getElementById('nav-logo-img');const p=document.getElementById('company-logo-preview');const o=n&&n.dataset?n.dataset.original:'';if(n&&o)n.src=o;if(p&&n)p.src=n.src||'';}catch(e){}}
+function applyBg(url){try{document.documentElement.style.backgroundImage='url('+JSON.stringify(url)+')';document.documentElement.style.backgroundSize='cover';document.documentElement.style.backgroundRepeat='no-repeat';document.body.style.backgroundImage='url('+JSON.stringify(url)+')';document.body.style.backgroundSize='cover';document.body.style.backgroundRepeat='no-repeat';}catch(e){}}
+function handleBgUpload(inp){if(!inp.files[0])return;const file=inp.files[0];const status=document.createElement('span');status.style.cssText='font-size:12px;color:var(--text2);margin-left:8px';inp.parentNode.parentNode.appendChild(status);status.textContent='Uploading...';const path='bg/background.'+file.name.split('.').pop();fetch(SB_URL+'/storage/v1/object/'+path,{method:'POST',headers:{...SB_HEADERS,'Content-Type':file.type,'x-upsert':'true'},body:file}).then(r=>{if(!r.ok)throw new Error('Upload failed');const url=SB_URL+'/storage/v1/object/public/'+path;applyBg(url);propData._bg=url;save();localStorage.setItem('apex_bg',url);status.textContent='✓ Background saved';setTimeout(()=>status.remove(),3000);}).catch(e=>{status.style.color='var(--red)';status.textContent='✗ '+e.message;});}
+function resetBg(){delete propData._bg;localStorage.removeItem('apex_bg');document.documentElement.style.backgroundImage='';document.documentElement.style.backgroundSize='';document.body.style.backgroundImage='';document.body.style.backgroundSize='';save();}
 (function(){try{const s=localStorage.getItem('apex_logo');const n=document.getElementById('nav-logo-img');const p=document.getElementById('company-logo-preview');if(s)applyCustomLogo(s);if(n&&n.dataset&&!n.dataset.original)n.dataset.original=n.src;if(p&&n)p.src=n.src||'';}catch(e){}})();
 
 // ====== AI KEY ======
@@ -4313,6 +4325,7 @@ loadData().then(()=>{
   try{
     // Apply logo from cloud if available (beats localStorage)
     if(propData._logo){applyCustomLogo(propData._logo,true);}else{const ls=localStorage.getItem('apex_logo');if(ls)applyCustomLogo(ls,true);}
+    const bgUrl=propData._bg||localStorage.getItem('apex_bg');if(bgUrl)applyBg(bgUrl);
     // Build all property pages dynamically (includes bradford/boston/warblers)
     getPropKeys().forEach(k=>buildPropPage(k));
     [...getPropKeys(),'general'].forEach(renderE);
