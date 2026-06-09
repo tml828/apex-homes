@@ -173,7 +173,7 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#0a0b0
 .nav-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
 /* HAMBURGER */
 .hamburger{display:none;background:none;border:none;cursor:pointer;padding:8px;flex-direction:column;gap:5px;margin-left:auto}
-.hamburger span{display:block;width:22px;height:2px;background:var(--gold2);border-radius:2px;transition:all .2s}
+.hamburger span{display:block;width:22px;height:2px;background:#1a0e00;border-radius:2px;transition:all .2s}
 .mob-menu{display:none;position:fixed;top:var(--nav-h);left:0;right:0;bottom:0;background:rgba(10,11,15,0.98);backdrop-filter:blur(24px);z-index:199;overflow-y:auto;padding:1rem}
 nav.open .mob-menu{display:block}
 .mob-menu.open{display:block}
@@ -4741,18 +4741,37 @@ function deleteContractor(name){
     inset 0 -1.5px 0 rgba(0,0,0,0.25) !important;
 }
 
-/* Nav — dark glass */
+/* Nav — gold farm */
 .nav {
-  background: rgba(12,12,18,0.72) !important;
-  backdrop-filter: blur(28px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
-  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07) !important;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 120px,
+      rgba(0,0,0,0.04) 120px,
+      rgba(0,0,0,0.04) 121px
+    ),
+    repeating-linear-gradient(
+      180deg,
+      rgba(255,255,255,0.03) 0px,
+      rgba(255,255,255,0.03) 1px,
+      transparent 1px,
+      transparent 8px
+    ),
+    linear-gradient(180deg, rgba(232,195,90,0.97) 0%, rgba(185,140,40,0.99) 60%, rgba(160,115,30,1) 100%) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-bottom: 3px solid rgba(120,75,15,0.6) !important;
+  box-shadow:
+    0 4px 20px rgba(0,0,0,0.5),
+    0 1px 0 rgba(255,255,255,0.25) inset,
+    0 -1px 0 rgba(0,0,0,0.3) inset !important;
 }
-.nav-tab { font-size: 15px !important; font-weight: 700 !important; color: var(--text2) !important; }
-.nav-tab:hover { background: rgba(255,255,255,0.08) !important; color: var(--gold2) !important; }
-.nav-tab.active { background: rgba(201,168,76,0.18) !important; color: var(--gold2) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,0.1) !important; }
-.nav-brand-name { font-size: 17px !important; }
+/* Fence post divider on active tab */
+.nav-tab { font-size: 15px !important; font-weight: 800 !important; color: rgba(60,35,5,0.85) !important; letter-spacing: 0.01em !important; text-shadow: 0 1px 0 rgba(255,255,255,0.3) !important; }
+.nav-tab:hover { background: rgba(255,255,255,0.2) !important; color: rgba(30,15,0,0.95) !important; }
+.nav-tab.active { background: rgba(0,0,0,0.12) !important; color: #1a0e00 !important; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15) !important; border-radius: 8px !important; }
+.nav-brand-name { font-size: 17px !important; color: #1a0e00 !important; font-weight: 900 !important; text-shadow: 0 1px 0 rgba(255,255,255,0.3) !important; }
 
 /* General expenses page — glass panels */
 .fin-grid > div {
