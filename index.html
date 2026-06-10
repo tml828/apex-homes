@@ -635,6 +635,17 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <button class="pin-key" onclick="pinDel()">⌫</button>
   </div>
 </div>
+
+<!-- CLOUD LOGIN SCREEN (Supabase Auth) — shows only when no saved session -->
+<div id="login-screen" style="display:none;position:fixed;inset:0;background:#c49e3c;z-index:10000;flex-direction:column;align-items:center;justify-content:center;padding:2rem">
+  <div style="font-size:22px;font-weight:800;color:#0a0b0f;margin-bottom:.4rem">Apex Homes LLC</div>
+  <div style="font-size:13px;color:rgba(10,11,15,0.6);margin-bottom:2rem">Sign in to your cloud account</div>
+  <input class="login-inp" type="email" id="login-email" placeholder="Email" autocomplete="username" autocapitalize="off">
+  <input class="login-inp" type="password" id="login-pw" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+  <div id="login-error" style="font-size:13px;color:#7a1a2a;font-weight:700;min-height:18px;margin:.5rem 0 1rem;text-align:center"></div>
+  <button id="login-btn" onclick="doLogin()" style="width:min(320px,100%);padding:14px;border-radius:12px;border:none;background:#0a0b0f;color:#c49e3c;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">Sign In</button>
+  <a href="#" onclick="skipLogin();return false" style="margin-top:1.5rem;font-size:12px;color:rgba(10,11,15,0.55);text-decoration:underline">Continue without signing in</a>
+</div>
 <style>
 .pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid rgba(10,11,15,0.4);background:transparent;transition:background .15s}
 .pin-dot.filled{background:#0a0b0f}
@@ -642,6 +653,8 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
 .pin-key:hover{background:rgba(10,11,15,0.25);border-color:rgba(10,11,15,0.35)}
 .pin-key:active{transform:scale(.93)}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+.login-inp{width:min(320px,100%);padding:14px 16px;border-radius:12px;border:1px solid rgba(10,11,15,0.3);background:rgba(255,255,255,0.85);color:#0a0b0f;font-size:16px;margin-bottom:12px;font-family:inherit;outline:none}
+.login-inp:focus{border-color:#0a0b0f}
 </style>
 
 <!-- NAVBAR -->
@@ -1025,6 +1038,13 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     </div>
     <div id="pin-change-msg" style="font-size:12.5px;min-height:18px;margin-bottom:.75rem"></div>
     <button class="btn btn-primary btn-sm" onclick="changePin()">Update PIN</button>
+  </div>
+
+  <div class="card" style="padding:1.5rem;margin-bottom:1rem">
+    <div class="sec-title" style="margin-bottom:.5rem">Cloud Account</div>
+    <div style="font-size:12.5px;color:var(--text2);margin-bottom:1rem">Sign in to protect your cloud data with your own account (Supabase Auth + Row Level Security).</div>
+    <div id="auth-status" style="font-size:12.5px;margin-bottom:.75rem"></div>
+    <button class="btn btn-primary btn-sm" id="auth-btn" onclick="showLogin()">Sign In</button>
   </div>
 
   <div class="card" style="padding:1.5rem;margin-bottom:1rem">
@@ -1518,7 +1538,35 @@ const BEXP={
 let extra={general:[]},tasks=[],propImgs={},propData={};
 const SB_URL='https://zpwajiireaheqpecxvxc.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpwd2FqaWlyZWFoZXFwZWN4dnhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMjAxMzksImV4cCI6MjA5NDc5NjEzOX0.lqEFsyjTz3AwtE7pgmNenMAr_WLr7AfA2eezIKvKLbE';
-const SB_HEADERS={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+// ====== SUPABASE AUTH (email/password session) ======
+// If signed in, all Supabase calls use the session token (works with RLS).
+// If not signed in, falls back to the anon key (works until RLS is enabled).
+function _authSession(){try{return JSON.parse(localStorage.getItem('apex_auth')||'null');}catch(e){return null;}}
+function _saveAuthSession(j){
+  if(j&&j.access_token)localStorage.setItem('apex_auth',JSON.stringify({access_token:j.access_token,refresh_token:j.refresh_token,expires_at:j.expires_at||(Math.floor(Date.now()/1000)+(j.expires_in||3600)),email:(j.user&&j.user.email)||(_authSession()||{}).email||''}));
+  else localStorage.removeItem('apex_auth');
+}
+function sbToken(){const s=_authSession();return(s&&s.access_token)?s.access_token:SB_KEY;}
+function sbHeaders(){return{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken()};}
+async function sbLogin(email,pw){
+  const r=await fetch(SB_URL+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY},body:JSON.stringify({email:email,password:pw})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.access_token)throw new Error(j.error_description||j.msg||'Login failed');
+  _saveAuthSession(j);return j;
+}
+async function sbRefreshAuth(force){
+  const s=_authSession();if(!s||!s.refresh_token)return false;
+  if(!force&&s.expires_at&&(s.expires_at-Math.floor(Date.now()/1000))>300)return true;
+  try{
+    const r=await fetch(SB_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY},body:JSON.stringify({refresh_token:s.refresh_token})});
+    const j=await r.json().catch(()=>({}));
+    if(r.ok&&j.access_token){_saveAuthSession(j);return true;}
+    if(r.status===400||r.status===401){_saveAuthSession(null);return false;}
+    return true; // server hiccup — keep existing token
+  }catch(e){return true;} // network blip — keep existing token
+}
+function sbLogout(){_saveAuthSession(null);sessionStorage.removeItem('apex_unlocked');location.reload();}
+setInterval(()=>{sbRefreshAuth().catch(()=>{});},60000);
 let syncTimer=null,syncStatus='idle',syncEnabled=true;
 
 
@@ -1986,7 +2034,10 @@ function showSyncStatus(s){
 
 async function sbFetch(path,opts){
   try{
-    const r=await fetch(SB_URL+path,{...opts,headers:{...SB_HEADERS,...(opts?.headers||{})}});
+    let r=await fetch(SB_URL+path,{...opts,headers:{...sbHeaders(),...(opts?.headers||{})}});
+    if(r.status===401&&_authSession()){ // token expired — refresh and retry once
+      if(await sbRefreshAuth(true))r=await fetch(SB_URL+path,{...opts,headers:{...sbHeaders(),...(opts?.headers||{})}});
+    }
     if(r.status===403){const t=await r.text().catch(()=>'');if(t.includes('allowlist'))throw new Error('ALLOWLIST');}
     return r;
   }catch(e){throw e;}
@@ -2316,7 +2367,7 @@ async function uploadToStorage(file,path){
     blob=file instanceof Blob?file:new Blob([file],{type:file.type||'application/octet-stream'});
     contentType=file.type||'application/octet-stream';
   }
-  const resp=await fetch(SB_STORAGE_UPLOAD+path,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':contentType,'x-upsert':'true'},body:blob});
+  const resp=await fetch(SB_STORAGE_UPLOAD+path,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':contentType,'x-upsert':'true'},body:blob});
   if(!resp.ok)throw new Error('Upload failed: '+resp.status);
   return SB_STORAGE_URL+path;
 }
@@ -2758,7 +2809,7 @@ function applyPropImg(p){
     hw.style.position="relative";hw.appendChild(img);hw.appendChild(edit);hw.appendChild(del);hw.onclick=null;}
 }
 function deletePropImg(p){
-  if(propImgs[p]&&propImgs[p].startsWith('http'))fetch(SB_URL+'/storage/v1/object/apex-media/props/'+p+'.jpg',{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}}).catch(()=>{});
+  if(propImgs[p]&&propImgs[p].startsWith('http'))fetch(SB_URL+'/storage/v1/object/apex-media/props/'+p+'.jpg',{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()}}).catch(()=>{});
   delete propImgs[p];save();
   const di=document.getElementById("dimg-"+p);
   if(di){const empty=document.createElement("div");empty.id="dimg-"+p;empty.className="pc-img-empty";empty.innerHTML='<svg class="ico"><use href="#ico-camera"/></svg><span>Add Photo</span>';di.replaceWith(empty);}
@@ -3568,7 +3619,52 @@ updateApiKeyBtn();
 // ====== PIN ======
 
 function getPin(){return localStorage.getItem('apex_pin')||DEFAULT_PIN;}
+
+// ====== CLOUD LOGIN (Supabase Auth) ======
+function initAuth(){
+  const ls=document.getElementById('login-screen');if(!ls)return;
+  if(_authSession()){ls.style.display='none';sbRefreshAuth().catch(()=>{});updateAuthStatus();return;}
+  if(localStorage.getItem('apex_login_skipped')==='1'){ls.style.display='none';updateAuthStatus();return;}
+  ls.style.display='flex';
+}
+async function doLogin(){
+  const em=(document.getElementById('login-email')?.value||'').trim();
+  const pw=document.getElementById('login-pw')?.value||'';
+  const err=document.getElementById('login-error');const btn=document.getElementById('login-btn');
+  if(!em||!pw){if(err)err.textContent='Enter email and password';return;}
+  if(btn){btn.disabled=true;btn.textContent='Signing in…';}if(err)err.textContent='';
+  try{
+    await sbLogin(em,pw);
+    localStorage.removeItem('apex_login_skipped');
+    location.reload(); // reload so data loads with the authed session
+  }catch(e){
+    if(err)err.textContent=e.message||'Login failed';
+    if(btn){btn.disabled=false;btn.textContent='Sign In';}
+  }
+}
+function skipLogin(){
+  localStorage.setItem('apex_login_skipped','1');
+  const ls=document.getElementById('login-screen');if(ls)ls.style.display='none';
+  updateAuthStatus();
+}
+function showLogin(){
+  localStorage.removeItem('apex_login_skipped');
+  const ls=document.getElementById('login-screen');if(ls)ls.style.display='flex';
+}
+function updateAuthStatus(){
+  const el=document.getElementById('auth-status');if(!el)return;
+  const s=_authSession();
+  if(s&&s.access_token){
+    el.innerHTML='Signed in as <b>'+esc(s.email||'account')+'</b>';
+    const b=document.getElementById('auth-btn');if(b){b.textContent='Sign Out';b.onclick=function(){if(confirm('Sign out of cloud account?'))sbLogout();};}
+  }else{
+    el.innerHTML='<span style="color:var(--text2)">Not signed in — using shared key</span>';
+    const b=document.getElementById('auth-btn');if(b){b.textContent='Sign In';b.onclick=showLogin;}
+  }
+}
+
 function initPin(){console.log("Apex Homes v2026-06-04-A loaded — padding fix active");
+  initAuth();
   const s=document.getElementById('pin-screen');if(!s)return;
   if(sessionStorage.getItem('apex_unlocked')==='1'){s.style.display='none';return;}
   s.style.display='flex';pinEntry='';updatePinDots();
@@ -4281,7 +4377,7 @@ async function syncAllReceiptsToCloud(){
     try{
       const resp=await fetch(e.receipt);const blob=await resp.blob();const mime=e.receipt.split(';')[0].split(':')[1]||'image/jpeg';const ext=mime.includes('png')?'png':'jpg';
       const path=`receipts/${p}-${Date.now()}-${Math.random().toString(36).slice(2,6)}.${ext}`;
-      const up=await fetch(SB_URL+'/storage/v1/object/apex-media/'+path,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':mime,'x-upsert':'true'},body:blob});
+      const up=await fetch(SB_URL+'/storage/v1/object/apex-media/'+path,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':mime,'x-upsert':'true'},body:blob});
       if(up.ok){e.receipt=SB_STORAGE_URL+path;uploaded++;status.innerHTML=`<div style="display:flex;align-items:center;gap:8px"><div class="spin"></div> Uploaded ${uploaded}/${toUpload.length}...</div>`;}
       else failed++;
     }catch(err){failed++;}
