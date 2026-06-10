@@ -1527,11 +1527,14 @@ function exportBackup(){try{const backup={version:1,exportDate:new Date().toISOS
 const MAX_SNAPSHOTS=2;
 async function saveHourlyBackup(manual){
   if(!syncEnabled)return;
+  // Never snapshot empty data — would rotate out good backups with bad ones
+  if(getPropKeys().length===0&&!(extra.general&&extra.general.length))return;
   try{
     const ts=Date.now();
     const id='backup-'+ts;
-    const payload={extra,tasks,propData,mileage:window._mileage||[]};
-    await sbFetch('/rest/v1/apex_data',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({id,data:payload})});
+    const payload={extra,tasks,propData,propImgs,mileage:window._mileage||[]};
+    const ins=await sbFetch('/rest/v1/apex_data',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({id,data:payload})});
+    if(!ins.ok)throw new Error('snapshot insert failed');
     const r=await sbFetch('/rest/v1/apex_data?id=like.backup-*&select=id&order=id.asc',{method:'GET'});
     if(r.ok){
       const rows=await r.json();
@@ -1570,8 +1573,16 @@ async function restoreCloudBackup(id){
     Object.keys(propData).forEach(k=>delete propData[k]);Object.assign(propData,d.propData||{});
     Object.keys(extra).forEach(k=>delete extra[k]);Object.assign(extra,d.extra||{general:[]});
     tasks.length=0;(d.tasks||[]).forEach(t=>tasks.push(t));
+    if(d.propImgs)Object.assign(propImgs,d.propImgs);
     if(d.mileage){window._mileage=d.mileage;localStorage.setItem('apex_mileage',JSON.stringify(window._mileage));}
-    save();refreshSite();
+    // Push restored data to main row SYNCHRONOUSLY — the debounced save() would be
+    // cancelled by the reload, leaving the corrupt data in Supabase to be re-pulled
+    localStorage.setItem('apex_v8',JSON.stringify({extra,tasks,propImgs,propData}));
+    const restoredPayload={extra,tasks,propImgs,propData,mileage:window._mileage||[]};
+    const push=await sbFetch('/rest/v1/apex_data',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({id:'main',data:restoredPayload,updated_at:new Date().toISOString()})});
+    if(!push.ok)throw new Error('Restored locally but cloud push failed — do not reload, try again');
+    _lastSyncHash=JSON.stringify({i:propImgs,e:extra,t:tasks,p:propData});
+    refreshSite();
     const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--green)">✓ Restored</span>';
     setTimeout(()=>{alert('Snapshot restored! Reloading.');location.reload();},500);
   }catch(e){const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--red)">✗ '+e.message+'</span>';}
@@ -1689,7 +1700,7 @@ let _incomeScanFiles=[];
 function handleIncomeFileDrop(ev){ev.preventDefault();handleIncomeScanFiles(ev.dataTransfer.files);}
 function handleIncomeScanFiles(files){_incomeScanFiles=[..._incomeScanFiles,...Array.from(files)];const q=document.getElementById('income-scan-queue');if(q)q.innerHTML=_incomeScanFiles.map(f=>`<div style="font-size:11px;color:var(--text3);padding:3px 0">${f.name}</div>`).join('');const btn=document.getElementById('scan-btn-income');if(btn)btn.style.display=_incomeScanFiles.length?'inline-flex':'none';}
 async function runIncomeScan(){if(!_incomeScanFiles.length)return;const btn=document.getElementById('scan-btn-income');if(btn){btn.disabled=true;btn.innerHTML='Scanning...';}
-for(const file of _incomeScanFiles){try{const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=ev=>res(ev.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:file.type,data:b64}},{type:'text',text:'Extract from this payment/check: amount, date (YYYY-MM-DD), payer name, description. JSON only: {"amount":0,"date":"","payer":"","desc":""}'}]}]})});const data=await resp.json();const parsed=JSON.parse((data.content?.[0]?.text||'{}').replace(/```json|```/g,'').trim());const dataUrl=await new Promise((res,rej)=>{const r=new FileReader();r.onload=ev=>res(ev.target.result);r.onerror=rej;r.readAsDataURL(file);});const inc={id:'inc-'+Date.now().toString(36),amount:parseFloat(parsed.amount)||0,date:parsed.date||new Date().toISOString().split('T')[0],payer:parsed.payer||'',desc:parsed.desc||file.name,cat:'Check',receipt:dataUrl};if(!propData._income)propData._income=[];propData._income.push(inc);}catch(err){console.error(err);}}
+for(const file of _incomeScanFiles){try{const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=ev=>res(ev.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:getAuthHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:file.type,data:b64}},{type:'text',text:'Extract from this payment/check: amount, date (YYYY-MM-DD), payer name, description. JSON only: {"amount":0,"date":"","payer":"","desc":""}'}]}]})});const data=await resp.json();const parsed=JSON.parse((data.content?.[0]?.text||'{}').replace(/```json|```/g,'').trim());const dataUrl=await new Promise((res,rej)=>{const r=new FileReader();r.onload=ev=>res(ev.target.result);r.onerror=rej;r.readAsDataURL(file);});const inc={id:'inc-'+Date.now().toString(36),amount:parseFloat(parsed.amount)||0,date:parsed.date||new Date().toISOString().split('T')[0],payer:parsed.payer||'',desc:parsed.desc||file.name,cat:'Check',receipt:dataUrl};if(!propData._income)propData._income=[];propData._income.push(inc);}catch(err){console.error(err);}}
 _incomeScanFiles=[];const q=document.getElementById('income-scan-queue');if(q)q.innerHTML='';if(btn){btn.disabled=false;btn.innerHTML='<svg class="ico"><use href="#ico-sparkles"/></svg> Scan All & Add';btn.style.display='none';}save();renderIncome();}
 
 function toggleCVV(idx, val){
@@ -1807,6 +1818,7 @@ function deleteCalEvent(evId,ds){
 let _expSearchQuery = {};
 
 function _highlight(text, query) {
+  text = esc(text);
   if (!query) return text;
   const idx = text.toLowerCase().indexOf(query.toLowerCase());
   if (idx === -1) return text;
@@ -1840,7 +1852,7 @@ function renderEFiltered(p, expenses, q) {
   });
 
   if (!matched.length) {
-    el.innerHTML = '<div class="empty" style="padding:1.5rem"><svg class="ico"><use href="#ico-search"/></svg> No expenses match "' + q + '"</div>';
+    el.innerHTML = '<div class="empty" style="padding:1.5rem"><svg class="ico"><use href="#ico-search"/></svg> No expenses match "' + esc(q) + '"</div>';
     return;
   }
 
@@ -1849,9 +1861,9 @@ function renderEFiltered(p, expenses, q) {
     const vendor = e.v || e.vendor || '';
     const date = e.dt || e.date || '';
     const desc = e.d || e.desc || 'Expense';
-    const meta = [cat, vendor, date ? fmtD(date) : ''].filter(Boolean).join(' · ');
+    const rSafe = e.receipt ? esc(e.receipt) : '';
     const receipt = e.receipt
-      ? `<img src="${e.receipt}" onclick="openLightbox('${e.receipt}')" class="exp-receipt-thumb" alt="receipt" style="width:36px;height:36px;object-fit:cover;border-radius:5px;cursor:zoom-in;flex-shrink:0;border:1px solid var(--border2)">`
+      ? `<img src="${rSafe}" data-src="${rSafe}" onclick="openLightbox(this.dataset.src)" class="exp-receipt-thumb" alt="receipt" style="width:36px;height:36px;object-fit:cover;border-radius:5px;cursor:zoom-in;flex-shrink:0;border:1px solid var(--border2)">`
       : '';
     const hDesc = _highlight(desc, q);
     const hVendor = _highlight(vendor, q);
@@ -1915,7 +1927,8 @@ function getAuthHeaders(){
   return h;
 }
 function setEl(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
-function fmt(n){return'$'+parseFloat(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function fmt(n){const v=parseFloat(n);if(isNaN(v))return'$0.00';return'$'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtD(d){if(!d)return'';try{return new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'});}catch(e){return d;}}
 
 // ====== STATUS LIGHT ======
@@ -1987,13 +2000,18 @@ async function loadData(){
     const rows=await r.json();
     if(rows&&rows[0]&&rows[0].data&&Object.keys(rows[0].data).length>0){
       const d=rows[0].data;
-      extra=d.extra||extra;
+      // Load local copy first so receipt images stripped from the cloud copy
+      // can be re-attached by _mergeReceipts
+      const localRaw=localStorage.getItem('apex_v8');
+      if(localRaw){
+        try{const lp=JSON.parse(localRaw);if(lp.extra)extra=lp.extra;}catch(e){}
+      }
+      extra=_mergeReceipts(d.extra)||extra;
       tasks=d.tasks||[];
       propData=d.propData||{};
       const cloudImgs=d.propImgs||{};
       Object.entries(cloudImgs).forEach(([k,v])=>{if(v&&v.startsWith('http'))propImgs[k]=v;});
       if(d.anthropicKey&&!getApiKey()){localStorage.setItem('apex_anthropic_key',d.anthropicKey);updateApiKeyBtn();}
-      const localRaw=localStorage.getItem('apex_v8');
       if(localRaw){
         try{
           const lp=JSON.parse(localRaw);
@@ -2032,6 +2050,7 @@ function save(){
   if(!syncEnabled){showSyncStatus('error');return;}
   clearTimeout(syncTimer);
   showSyncStatus('saving');
+  _pushPending=true;
   syncTimer=setTimeout(async()=>{
     try{
       const cloudExtra={};
@@ -2080,6 +2099,8 @@ function save(){
     }catch(e){
       if(e.message==='ALLOWLIST'){syncEnabled=false;showSyncBanner();}
       showSyncStatus('error');
+    }finally{
+      _pushPending=false;
     }
   },800);
 }
@@ -2922,7 +2943,18 @@ function saveEditExp(){
     if(extra[p]&&extra[p][origIdx])Object.assign(extra[p][origIdx],newData);
   }else{
     const bexpLen=(BEXP[p]||[]).length;
-    if(origIdx<bexpLen){if(!extra[p])extra[p]=[];extra[p].push({...newData,_overrideIdx:origIdx});}
+    if(origIdx<bexpLen){
+      // Editing a hardcoded item before migration: migrate now, then edit the
+      // migrated copy (the old push-with-_overrideIdx approach created an
+      // invisible duplicate that nothing ever read)
+      const be=(BEXP[p]||[])[origIdx];
+      migrateHardcodedExpenses();
+      const target=be&&(extra[p]||[]).find(ex=>
+        parseFloat(ex.a||ex.amount)===parseFloat(be.a||be.amount)&&
+        (ex.dt||ex.date||'')===(be.dt||be.date||'')&&
+        (ex.d||ex.desc||'')===(be.d||be.desc||''));
+      if(target)Object.assign(target,newData);
+    }
     else{const uIdx=origIdx-bexpLen;if(extra[p]&&extra[p][uIdx])Object.assign(extra[p][uIdx],newData);}
   }
   editExpReceiptUrl=null;
@@ -2936,7 +2968,18 @@ function delExpByIndex(p,origIdx){
   }else{
     const bexpLen=(BEXP[p]||[]).length;
     if(origIdx>=bexpLen){const uIdx=origIdx-bexpLen;if(extra[p])extra[p].splice(uIdx,1);}
-    // BEXP items can't be deleted (hardcoded) — migration will handle them
+    else{
+      // Deleting a hardcoded item before migration: migrate, then delete the copy
+      const be=(BEXP[p]||[])[origIdx];
+      migrateHardcodedExpenses();
+      if(be&&extra[p]){
+        const di=extra[p].findIndex(ex=>
+          parseFloat(ex.a||ex.amount)===parseFloat(be.a||be.amount)&&
+          (ex.dt||ex.date||'')===(be.dt||be.date||'')&&
+          (ex.d||ex.desc||'')===(be.d||be.desc||''));
+        if(di>-1)extra[p].splice(di,1);
+      }
+    }
   }
   save();renderE(p);refreshSite();
 }
@@ -2967,6 +3010,8 @@ function saveCr(){
   const c=getExpCat("cr-cat","cr-custom-cat");
   const v=document.getElementById("cr-vendor").value.trim();
   if(!amount){document.getElementById("cr-scan-status").innerHTML='<div style="font-size:12px;color:var(--red)">Please enter an amount.</div>';return;}
+  const crDup=allE(p).find(x=>x.credit&&parseFloat(x.a||x.amount)===amount);
+  if(crDup&&!confirm(`A credit for ${fmt(amount)} already exists ("${crDup.d||crDup.desc||'Credit'}"). Add again?`))return;
   if(!extra[p])extra[p]=[];
   const receipt=crReceiptUrl||(crReceiptB64?`data:${crReceiptMime||'image/jpeg'};base64,${crReceiptB64}`:'');
   saveVendor(v);
@@ -3320,12 +3365,13 @@ function renderE(p){
   const _sq=_expSearchQuery[p]||'';
   if(_sq){renderEFiltered(p,expenses,_sq);return;}
   el.innerHTML=expenses.map(e=>{
-    const cat=e.c||e.cat||"";
-    const vendor=e.v||e.vendor||"";
+    const cat=esc(e.c||e.cat||"");
+    const vendor=esc(e.v||e.vendor||"");
     const date=e.dt||e.date||"";
-    const desc=e.d||e.desc||(e.credit?"Credit":"Expense");
+    const desc=esc(e.d||e.desc||(e.credit?"Credit":"Expense"));
     const meta=[cat,vendor,date?fmtD(date):""].filter(Boolean).join(" · ");
-    const receipt=e.receipt?`<img src="${e.receipt}" onclick="openLightbox('${e.receipt}')" class="exp-receipt-thumb" alt="receipt" style="width:36px;height:36px;object-fit:cover;border-radius:5px;cursor:zoom-in;flex-shrink:0;border:1px solid var(--border2)">` :"";
+    const rSafe=e.receipt?esc(e.receipt):"";
+    const receipt=e.receipt?`<img src="${rSafe}" data-src="${rSafe}" onclick="openLightbox(this.dataset.src)" class="exp-receipt-thumb" alt="receipt" style="width:36px;height:36px;object-fit:cover;border-radius:5px;cursor:zoom-in;flex-shrink:0;border:1px solid var(--border2)">` :"";
     const creditBadge=e.credit?`<span style="font-size:10px;font-weight:700;background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3);border-radius:4px;padding:1px 5px;margin-left:4px">CREDIT</span>`:"";
     const editFn=e.credit?`openEditCrByIndex('${p}',${e._origIdx})`:`openEditExpByIndex('${p}',${e._origIdx})`;
     const delFn=e.credit?`delCrByIndex('${p}',${e._origIdx})`:`delExpByIndex('${p}',${e._origIdx})`;
@@ -3356,12 +3402,13 @@ function renderCr(p){
   if(totalEl)totalEl.textContent=fmt(total);
   if(!credits.length){el.innerHTML='<div class="empty"><svg class="ico"><use href="#ico-receipt"/></svg>No credits yet</div>';return;}
   el.innerHTML=credits.map(e=>{
-    const cat=e.c||e.cat||"";
-    const vendor=e.v||e.vendor||"";
+    const cat=esc(e.c||e.cat||"");
+    const vendor=esc(e.v||e.vendor||"");
     const date=e.dt||e.date||"";
-    const desc=e.d||e.desc||"Credit";
+    const desc=esc(e.d||e.desc||"Credit");
     const meta=[cat,vendor,date?fmtD(date):""].filter(Boolean).join(" · ");
-    const receipt=e.receipt?`<img src="${e.receipt}" onclick="openLightbox('${e.receipt}')" class="exp-receipt-thumb" alt="receipt" style="width:36px;height:36px;object-fit:cover;border-radius:5px;cursor:zoom-in;flex-shrink:0;border:1px solid var(--border2)">` :"";
+    const rSafe=e.receipt?esc(e.receipt):"";
+    const receipt=e.receipt?`<img src="${rSafe}" data-src="${rSafe}" onclick="openLightbox(this.dataset.src)" class="exp-receipt-thumb" alt="receipt" style="width:36px;height:36px;object-fit:cover;border-radius:5px;cursor:zoom-in;flex-shrink:0;border:1px solid var(--border2)">` :"";
     return `<div class="exp-item" style="display:flex;align-items:center;gap:10px;padding:.7rem 1rem;border-bottom:1px solid var(--border);background:rgba(34,197,94,0.04)">
       ${receipt}
       <div style="flex:1;min-width:0">
@@ -3383,7 +3430,7 @@ function renderAnalysis(p){
   const el=document.getElementById("analysis-"+p);if(!el)return;
   const expenses=allE(p);
   if(!expenses.length){el.innerHTML='<div class="empty" style="padding:2rem">No expenses to analyze yet</div>';return;}
-  const totals={},counts={};expenses.forEach(e=>{const cat=e.c||e.cat||"Other";const amt=parseFloat(e.a||e.amount||0);totals[cat]=(totals[cat]||0)+amt;counts[cat]=(counts[cat]||0)+1;});
+  const totals={},counts={};expenses.forEach(e=>{const cat=e.c||e.cat||"Other";const amt=(parseFloat(e.a||e.amount)||0)*(e.credit?-1:1);totals[cat]=(totals[cat]||0)+amt;counts[cat]=(counts[cat]||0)+1;});
   const sorted=Object.entries(totals).sort((a,b)=>b[1]-a[1]);const grandTotal=sorted.reduce((s,[,v])=>s+v,0);
   el.innerHTML=`<div style="margin-bottom:1.25rem"><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.25rem">
     <div class="stat" style="display:block;flex:1;min-width:110px"><div class="stat-lbl">Total Spent</div><div class="stat-val r" style="font-size:17px">${fmt(grandTotal)}</div></div>
@@ -4113,6 +4160,10 @@ function importClosingStatement(key){
   if(!data) return;
   const isSeller = data.statementType === 'seller';
   const typeLabel = isSeller ? 'sale price, settlement date' : 'purchase price, settlement date';
+  const importFlag = isSeller ? '_sellerClosingImported' : '_buyerClosingImported';
+  if(propData[key]&&propData[key][importFlag]){
+    if(!confirm('A '+(isSeller?'SELLER':'BUYER')+' closing statement was already imported for this property. Importing again will DUPLICATE all line items. Are you sure?')) return;
+  }
   if(!confirm('Import this closing statement into '+key+'? This will set the '+typeLabel+' and add all line items as expenses.')) return;
 
   if(!propData[key]) propData[key] = {};
@@ -4129,6 +4180,7 @@ function importClosingStatement(key){
   if(data.state && !propData[key].state) propData[key].state = data.state;
   if(data.zip && !propData[key].zip) propData[key].zip = data.zip;
   if(isSeller && propData[key].status !== 'Sold') propData[key].status = 'Sold';
+  propData[key][importFlag] = true;
 
   if(!extra[key]) extra[key] = [];
   const dt = data.settlementDate || new Date().toISOString().split('T')[0];
@@ -4318,6 +4370,11 @@ loadData().then(()=>{
     [...getPropKeys(),'general'].forEach(renderE);
     renderTasks();renderPropTasks();renderCal();
     getPropKeys().forEach(renderDocs);
+    // Hydrate mileage from cloud (the parse-time init ran before loadData resolved)
+    if(propData._mileage&&propData._mileage.length&&!(window._mileage&&window._mileage.length)){
+      window._mileage=propData._mileage;
+      localStorage.setItem('apex_mileage',JSON.stringify(window._mileage));
+    }
     renderMileage();
     Object.keys(propImgs).forEach(applyPropImg);
     restoreCompanyInfo();
@@ -4336,9 +4393,30 @@ loadData().then(()=>{
 
 // ====== AUTO-SYNC (pull latest from cloud every 5s) ======
 let _lastSyncHash="";
+let _pushPending=false;
+// Cloud copies strip base64 receipts to hasReceipt:true — re-attach the local
+// image when the same expense (amount+date+desc) still has it, so receipts
+// aren't silently lost on the device that scanned them
+function _mergeReceipts(cloudExtra){
+  if(!cloudExtra)return cloudExtra;
+  Object.keys(cloudExtra).forEach(p=>{
+    const local=extra[p];if(!local)return;
+    (cloudExtra[p]||[]).forEach(ce=>{
+      if(ce.receipt||!ce.hasReceipt)return;
+      const match=local.find(le=>le.receipt&&le.receipt.startsWith('data:')&&
+        parseFloat(le.a||le.amount)===parseFloat(ce.a||ce.amount)&&
+        (le.dt||le.date||'')===(ce.dt||ce.date||'')&&
+        (le.d||le.desc||'')===(ce.d||ce.desc||''));
+      if(match)ce.receipt=match.receipt;
+    });
+  });
+  return cloudExtra;
+}
 async function autoSyncPull(){
   // Skip if a modal is open or user is typing, to avoid disrupting input
   if(document.querySelector('.mo.open'))return;
+  // Skip while a local save is waiting to push — pulling now would revert it
+  if(_pushPending)return;
   const ae=document.activeElement;
   if(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'))return;
   try{
@@ -4355,7 +4433,7 @@ async function autoSyncPull(){
     const cloudImgs=d.propImgs||{};
     Object.entries(cloudImgs).forEach(([k,v])=>{if(v&&v.startsWith('http')&&propImgs[k]!==v){propImgs[k]=v;changed=true;}});
     // Merge cloud expenses/tasks/propData
-    if(JSON.stringify(d.extra)!==JSON.stringify(extra)){extra=d.extra||extra;changed=true;}
+    if(JSON.stringify(d.extra)!==JSON.stringify(extra)){extra=_mergeReceipts(d.extra)||extra;changed=true;}
     if(JSON.stringify(d.tasks)!==JSON.stringify(tasks)){tasks=d.tasks||tasks;changed=true;}
     if(JSON.stringify(d.propData)!==JSON.stringify(propData)){
       const incoming=d.propData||{};
@@ -4448,7 +4526,7 @@ function showVendorSuggest(inputId,ddId){
   const q=inp.value.trim().toLowerCase();
   const vendors=getVendors().filter(v=>v.toLowerCase().includes(q)&&v.toLowerCase()!==q);
   if(!q||!vendors.length){dd.style.display='none';return;}
-  dd.innerHTML=vendors.slice(0,8).map(v=>`<div style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)" onmousedown="pickVendor('${inputId}','${ddId}','${v.replace(/'/g,"\'")}')">${v}</div>`).join('');
+  dd.innerHTML=vendors.slice(0,8).map(v=>`<div style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)" data-v="${esc(v)}" onmousedown="pickVendor('${inputId}','${ddId}',this.dataset.v)">${esc(v)}</div>`).join('');
   dd.style.display='block';
 }
 function hideVendorSuggest(ddId){const dd=document.getElementById(ddId);if(dd)dd.style.display='none';}
