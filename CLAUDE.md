@@ -200,6 +200,12 @@ Property keys are always lowercase, no spaces.
 - `esc(s)` HTML escape helper added, used throughout `renderE`, `renderCr`, `renderEFiltered`, `showVendorSuggest`
 - `_pushPending` flag prevents autoSyncPull from overwriting a pending save
 - `fmt(n)` handles NaN — returns `$0.00` instead of crashing
+- Property detail page: photo removed from info view; only info card shown. Photo edit/delete moved into Edit Property modal
+- Edit Property modal scroll fixed for iPhone: `max-height:88dvh` + `touch-action:pan-y`
+- Date inputs on mobile no longer overflow: `width:100%;min-width:0;box-sizing:border-box` on `.fg input`
+- Docs tab Add Document button always rendered by `renderDocs()`; accepts multi-file and multi-page docs
+- Doc upload rewritten: `handleDocFiles()` + `saveDocFile()` — saves to `propData._docs[p]`, then uploads to Supabase storage; no longer routes to receipt scanner queue
+- `buildPropPage()` Expenses tab includes AI Receipt Scanner panel and CSV Import button for all properties
 
 ---
 
