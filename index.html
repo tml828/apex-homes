@@ -3401,7 +3401,25 @@ async function runScan(p){
     if(btn){btn.innerHTML='<svg class="ico"><use href="#ico-sparkles"/></svg> Scan More';btn.disabled=false;}pendingFiles[p]=[];renderQ(p);
   }catch(e){console.warn("Scan error:",e);if(btn){btn.disabled=false;btn.innerHTML='<svg class="ico"><use href="#ico-sparkles"/></svg> Scan Receipts';}}
 }
-function handleDocFiles(inp,p){const el=inp.target||inp;if(!el.files||!el.files.length)return;if(!pendingFiles[p])pendingFiles[p]=[];Array.from(el.files).forEach(f=>pendingFiles[p].push(f));renderQ(p);el.value="";}
+function handleDocFiles(inp,p){const el=inp.target||inp;if(!el.files||!el.files.length)return;Array.from(el.files).forEach(f=>saveDocFile(f,p));el.value="";}
+function saveDocFile(file,p){
+  const uid='doc-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);
+  if(!propData._docs)propData._docs={};
+  if(!propData._docs[p])propData._docs[p]=[];
+  const fr=new FileReader();
+  fr.onload=async(ev2)=>{
+    const dataUrl=ev2.target.result;
+    propData._docs[p].push({id:uid,name:file.name,type:file.type||'document',size:file.size,url:dataUrl,date:new Date().toISOString().split('T')[0]});
+    save();renderDocs(p);
+    try{
+      const path='docs/'+p+'-'+uid+'-'+file.name.replace(/[^a-z0-9.]/gi,'-');
+      const url=await uploadToStorage(file,path);
+      const doc=propData._docs[p].find(d=>d.id===uid);
+      if(doc){doc.url=url;save();}
+    }catch(ex){}
+  };
+  fr.readAsDataURL(file);
+}
 
 // ====== EXPENSE LIST ======
 function renderE(p){
@@ -3985,23 +4003,9 @@ function addDocFile(p,inp){
   inp.value="";
 }
 async function handleDocFileInput(ev,p){
-  const file=ev.target?.files?.[0];if(!file)return;
-  const uid='doc-'+Date.now().toString(36);
-  if(!propData._docs)propData._docs={};
-  if(!propData._docs[p])propData._docs[p]=[];
-  const fr=new FileReader();
-  fr.onload=async(ev2)=>{
-    const dataUrl=ev2.target.result;
-    propData._docs[p].push({id:uid,name:file.name,type:file.type||'document',size:file.size,url:dataUrl,date:new Date().toISOString().split('T')[0]});
-    save();renderDocs(p);
-    try{
-      const path='docs/'+p+'-'+uid+'-'+file.name.replace(/[^a-z0-9.]/gi,'-');
-      const url=await uploadToStorage(file,path);
-      const doc=propData._docs[p].find(d=>d.id===uid);
-      if(doc){doc.url=url;save();}
-    }catch(ex){}
-  };
-  fr.readAsDataURL(file);
+  const files=ev.target?.files;if(!files||!files.length)return;
+  Array.from(files).forEach(f=>saveDocFile(f,p));
+  if(ev.target)ev.target.value='';
 }
 
 const DEFAULT_DOC_CARDS=[
