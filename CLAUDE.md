@@ -1,13 +1,14 @@
 # Apex Homes LLC — Developer Reference
 
 ## What This App Is
-Single-file (`index.html`) property management web app for a house-flipping business. No build toolchain — all HTML, CSS, and JavaScript are inline. Deployed on Netlify, syncs data to Supabase every 5 seconds. ~4300 lines.
+Single-file (`index.html`) property management web app for a house-flipping business. No build toolchain — all HTML, CSS, and JavaScript are inline. Deployed on GitHub Pages, syncs data to Supabase every 5 seconds. ~5700+ lines.
 
 ## Deployment
 - **Live site:** tml828.github.io/apex-homes
 - **Repo:** github.com/tml828/apex-homes
 - **Deploy branch:** `main` — GitHub Pages auto-deploys on every push to main
 - **Push directly to main** — no PRs needed unless explicitly requested
+- **NOT on Netlify** — fully removed, GitHub Pages only
 
 ## Architecture
 
@@ -127,7 +128,10 @@ Property keys are always lowercase, no spaces.
 ### Sync / Save
 - `save()` — localStorage + debounced Supabase push
 - `loadData()` — loads from localStorage first, then Supabase
-- `autoSyncPull()` — every 5s, hash-checked before applying
+- `autoSyncPull()` — every 5s, hash-checked before applying, blocked by `_pushPending` flag while a save is in flight
+- `_mergeReceipts(cloudExtra)` — re-attaches local base64 receipt images stripped by cloud copy; called in `loadData` and `autoSyncPull`
+- `saveHourlyBackup()` — saves a timestamped cloud snapshot (id=`backup-{ts}`), keeps only 2 most recent; guards against empty propData
+- `restoreCloudBackup(id)` — synchronous POST to Supabase then reload; restores propImgs too
 
 ### Receipt Scanning
 - `handleExpReceipt(file)` — processes receipt for new expense modal
@@ -186,6 +190,16 @@ Property keys are always lowercase, no spaces.
 - `buildPropPage` updated to accept `force` param; `saveEditProp` passes `true` so address header updates on edit
 - Multi-receipt AI scanner added to every property's Expenses tab (was previously only on general expenses)
 - CSV bulk import added: Import CSV button on every property and general expenses tab
+- Closing Statement AI import tab added (between Expenses and Docs) — works for buyer and seller statements
+- Credits split into own tab per property; credits excluded from Expenses tab totals; `renderCr()` added
+- Dashboard stats replaced with Net Profit, All-In Cost, Avg ROI (3 cards)
+- Glass morphism UI applied site-wide (backdrop-filter, rgba backgrounds)
+- Background image: `Gemini_Generated_Image_cajjtvcajjtvcajj.png` in repo root, served via raw.githubusercontent.com
+- Hourly cloud snapshots: `saveHourlyBackup()` / `restoreCloudBackup()` on Company tab, max 2 kept
+- Supabase Auth + RLS implemented: login screen, session tokens on all requests, `sbLogin`/`sbRefreshAuth`/`sbLogout`; Cloud Account card on Company tab
+- `esc(s)` HTML escape helper added, used throughout `renderE`, `renderCr`, `renderEFiltered`, `showVendorSuggest`
+- `_pushPending` flag prevents autoSyncPull from overwriting a pending save
+- `fmt(n)` handles NaN — returns `$0.00` instead of crashing
 
 ---
 
