@@ -4297,8 +4297,9 @@ function importClosingStatement(key){
 function renderDocs(p){
   const el=document.getElementById('docs-'+p);if(!el)return;
   const docs=(propData._docs&&propData._docs[p])||[];
-  if(!docs.length){el.innerHTML='<div class="empty"><svg class="ico"><use href="#ico-file-x"/></svg>No documents yet</div>';return;}
-  el.innerHTML=docs.map(d=>{
+  const addBtn='<div style="margin-bottom:1rem"><label class="btn btn-primary btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px"><svg class="ico" style="width:13px;height:13px"><use href="#ico-plus"/></svg> Add Document<input type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" style="display:none" onchange="handleDocFiles(event,\''+p+'\')"></label></div>';
+  if(!docs.length){el.innerHTML=addBtn+'<div class="empty"><svg class="ico"><use href="#ico-file-x"/></svg>No documents yet</div>';return;}
+  el.innerHTML=addBtn+docs.map(d=>{
     const src=(d._pending?'':(d.url||d.data||''));
     const isPdf=(d.type||'').includes('pdf')||(d.name||'').toLowerCase().endsWith('.pdf');
     const isImg=!isPdf&&src&&((d.type||'').startsWith('image')||/\.(jpg|jpeg|png|gif|webp)$/i.test(d.name||'')||src.startsWith('data:image'));
