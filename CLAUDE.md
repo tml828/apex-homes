@@ -63,6 +63,18 @@ Property keys are always lowercase, no spaces.
 
 11. **Lightbox `#m-lbox` must always center** — needs `align-items:center !important; justify-content:center !important`. The global `.mo` rule overrides to `flex-end` on mobile. The ID rule overrides it back.
 
+12. **Supabase RLS is ENABLED — auth session required for all data access.** The `apex_data` table has Row Level Security with a policy allowing only the `authenticated` role. The anon `SB_KEY` alone can no longer read/write the table or upload to storage (public read on `apex-media` remains). All Supabase requests MUST go through `sbHeaders()` / `sbToken()` (which use the logged-in session token from localStorage `apex_auth`, falling back to `SB_KEY`). Never replace `sbToken()` with `SB_KEY` in Authorization headers — uploads and sync will silently fail. The login screen (`#login-screen`, `doLogin`, `sbLogin`, `sbRefreshAuth`) handles email/password sign-in; sessions auto-refresh every 60s and `sbFetch` retries once on 401.
+
+---
+
+## Auth / Security
+
+- **Supabase Auth**: user account (apexhomes100@gmail.com) created in Supabase dashboard → Authentication → Users. Login screen appears when no session in localStorage `apex_auth`. "Continue without signing in" sets `apex_login_skipped` — with RLS on, skipping means no data loads.
+- **RLS policy on `apex_data`**: `authed_full_access` — `for all to authenticated using (true) with check (true)`.
+- **Storage `apex-media` bucket**: Public read (SELECT) kept so photo/receipt URLs display; anon INSERT/UPDATE policies deleted; authenticated-only write policy (`bucket_id = 'apex-media'`).
+- **PIN screen** still gates the UI after login (sessionStorage `apex_unlocked`); Cloud Account card on Company tab shows sign-in status with Sign In/Out button (`updateAuthStatus`).
+- **Emergency unlock**: if locked out, run `alter table apex_data disable row level security;` in Supabase SQL Editor.
+
 ---
 
 ## Key Functions Reference
