@@ -266,7 +266,7 @@ nav.open .mob-menu{display:block}
 .prop-hero-empty i{font-size:36px;color:var(--text3)}
 .prop-hero-empty span{font-size:12.5px;color:var(--text2)}
 .ph-overlay{position:absolute;bottom:0;left:0;right:0;padding:.6rem .85rem;background:linear-gradient(0deg,rgba(0,0,0,.7),transparent);display:flex;align-items:center;gap:6px}
-.info-card{background:rgba(0,0,0,0.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:0 0 var(--r-lg) var(--r-lg);border:none;padding:.7rem 1rem;margin-top:-90px;position:relative;z-index:2}
+.info-card{background:rgba(0,0,0,0.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:var(--r-lg);border:none;padding:.7rem 1rem;margin-top:10px;position:relative;z-index:2}
 .ir{display:flex;justify-content:space-between;align-items:center;padding:.32rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
 .ir:last-child{border-bottom:none}
 .ir-lbl{font-size:12px;color:var(--text2)}.ir-val{font-size:12.5px;font-weight:600;color:var(--gold2)}
@@ -522,8 +522,8 @@ nav.open .mob-menu{display:block}
 
   /* ── Modals — slide up from bottom ── */
   .mo{padding:0;align-items:flex-end !important;justify-content:flex-end !important}
-  #m-edit-prop{align-items:flex-start !important;justify-content:center !important;padding:.5rem !important;overflow-y:auto}
-  #m-edit-prop .md{max-height:96vh;border-radius:12px !important;margin:auto}
+  #m-edit-prop{align-items:flex-start !important;justify-content:center !important;padding:.5rem !important;overflow-y:auto;touch-action:pan-y}
+  #m-edit-prop .md{max-height:85vh;max-height:88dvh;border-radius:12px !important;margin:auto;overflow-y:auto;-webkit-overflow-scrolling:touch}
   .md{width:100% !important;max-width:100% !important;border-radius:16px 16px 0 0 !important;max-height:90vh;padding:1.25rem 1rem;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;overscroll-behavior:contain}
 
   /* ── Cards ── */
@@ -2727,7 +2727,7 @@ function openEditProp(p){
   document.getElementById("ep-purchase").value=pr.purchase||"";document.getElementById("ep-sold").value=pr.sold||"";
   document.getElementById("ep-pdate").value=pr.pdate||"";document.getElementById("ep-sdate").value=pr.sdate||"";
   document.getElementById("ep-offer").value=pr.offer||"";document.getElementById("ep-notes").value=pr.notes||"";
-  if(propImgs[p])renderEPPhoto(propImgs[p]);
+  if(propImgs[p])renderEPPhoto(propImgs[p]);else{const w=document.getElementById("ep-photo-wrap");if(w)w.innerHTML='';}
   const statusSel=document.getElementById("ep-status");if(statusSel)statusSel.value=propStatus(p);
   showModal("m-edit-prop");
 }
@@ -2763,7 +2763,9 @@ function deleteProp(p){
   showPage(document.querySelector('.nav-tab[onclick*="dashboard"]'),'dashboard');
 }
 function renderEPPhoto(src){const w=document.getElementById("ep-photo-wrap");if(!w)return;w.innerHTML=`<div class="ep-photo" style="position:relative"><img src="${src}" onclick="openLightbox('${src}')" style="cursor:zoom-in"><button class="btn btn-danger btn-sm ep-photo-remove" onclick="removeEPPhoto()"><svg class="ico"><use href="#ico-trash"/></svg> Remove</button></div>`;}
-function removeEPPhoto(){const p=document.getElementById("ep-id").value;delete propImgs[p];save();
+function removeEPPhoto(){const p=document.getElementById("ep-id").value;
+  if(!confirm('Remove this property photo?'))return;
+  deletePropImg(p); // deletes from storage + resets hero and dashboard card
   const w=document.getElementById("ep-photo-wrap");if(w)w.innerHTML='';}
 function triggerEPPhoto(){document.getElementById("ep-photo-inp").click();}
 async function handleEPPhoto(inp){
@@ -2796,17 +2798,9 @@ function applyPropImg(p){
   const hw=document.getElementById("hero-"+p);
   if(di){const wrap=document.createElement("div");wrap.style.cssText="width:100%;height:100%;position:relative";const img=document.createElement("img");img.src=src;img.style.cssText="width:100%;height:100%;object-fit:cover;display:block;cursor:pointer";img.onclick=ev=>{ev.stopPropagation();showProp(p);};wrap.appendChild(img);di.replaceWith(wrap);}
   
+  // Photo edit/delete now lives in the Edit Property modal — hero photo is clean, tap to zoom
   if(hw){hw.innerHTML="";const img=document.createElement("img");img.src=src;img.style.cssText="width:100%;height:100%;object-fit:contain;display:block;cursor:zoom-in;background:var(--bg4)";img.onclick=()=>openLightbox(src);
-    const del=document.createElement("button");del.innerHTML='<svg class="ico" style="width:15px;height:15px"><use href="#ico-trash"/></svg>';
-    del.style.cssText="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.62);border:none;border-radius:7px;padding:5px 7px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center";
-    del.onclick=()=>deletePropImg(p);
-    // Edit (camera) button — top left
-    const edit=document.createElement("button");
-    edit.innerHTML='<svg class="ico" style="width:14px;height:14px"><use href="#ico-camera"/></svg>';
-    edit.title="Replace photo";
-    edit.style.cssText="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.62);border:none;border-radius:7px;padding:5px 7px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;z-index:2";
-    edit.onclick=(ev)=>{ev.stopPropagation();triggerPropImg(p);};
-    hw.style.position="relative";hw.appendChild(img);hw.appendChild(edit);hw.appendChild(del);hw.onclick=null;}
+    hw.style.position="relative";hw.appendChild(img);hw.onclick=null;}
 }
 function deletePropImg(p){
   if(propImgs[p]&&propImgs[p].startsWith('http'))fetch(SB_URL+'/storage/v1/object/apex-media/props/'+p+'.jpg',{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()}}).catch(()=>{});
