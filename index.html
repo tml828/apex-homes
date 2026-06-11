@@ -600,7 +600,9 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
 /* Financials split grid */
 .fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start}
 
-.md-ft{position:sticky;bottom:0;background:var(--bg2);padding:1rem 0 0;margin-top:1rem;border-top:1px solid var(--border2);z-index:1}
+.md-ft{position:sticky;bottom:0;background:var(--bg2);padding:1rem 0 0;margin-top:1rem;border-top:1px solid var(--border2);z-index:1;display:flex;gap:8px}
+.md-hd{font-size:15px;font-weight:700;color:var(--gold2);margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center}
+.md-bd .fg{margin-bottom:12px}
 .mo.open{display:flex}</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -1397,11 +1399,11 @@ ck"/></svg> Save Account</button>
       <div class="fg"><label>Date</label><input type="date" id="income-date"></div>
       <div class="fg"><label>Category</label>
         <div style="display:flex;gap:6px">
-          <select id="income-cat" onchange="handleIncomeCatChange()" style="flex:1;padding:8px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:14px">
+          <select id="income-cat" onchange="handleIncomeCatChange()" style="flex:1">
             <option>Check</option><option>Wire Transfer</option><option>Refund</option><option>Rental Income</option><option>Commission</option><option>Other</option>
             <option value="__custom__">+ Custom...</option>
           </select>
-          <input type="text" id="income-cat-custom" placeholder="Custom category" style="display:none;flex:1;padding:8px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:14px">
+          <input type="text" id="income-cat-custom" placeholder="Custom category" style="display:none;flex:1">
         </div>
       </div>
       <div class="fg"><label>Description</label>
