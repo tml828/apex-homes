@@ -1412,6 +1412,9 @@ ck"/></svg> Save Account</button>
       </div>
       <div class="fg"><label>Payer / Source</label><input type="text" id="income-payer" placeholder="e.g. John Smith"></div>
       <div class="fg"><label>Notes</label><input type="text" id="income-notes" placeholder="Optional notes"></div>
+      <div id="income-receipt-thumb" style="margin-bottom:.5rem"></div>
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer;display:inline-flex;margin-bottom:.25rem"><svg class="ico"><use href="#ico-upload"/></svg> Add / Replace Receipt<input type="file" accept="image/*,application/pdf" style="display:none" onchange="handleIncomeReceipt(this)"></label>
+      <div id="income-receipt-status" style="font-size:12px;min-height:16px"></div>
     </div>
     <div class="md-ft">
       <button class="btn btn-primary" onclick="saveIncome()"><svg class="ico"><use href="#ico-check"/></svg> Save</button>
@@ -1742,9 +1745,25 @@ function renderIncome(q){
   }).join('');
 }
 function searchIncome(q){renderIncome(q);}
-function openAddIncome(){document.getElementById('income-modal-title').textContent='Add Income';document.getElementById('income-id').value='';document.getElementById('income-amount').value='';document.getElementById('income-date').value=new Date().toISOString().split('T')[0];document.getElementById('income-desc').value='';document.getElementById('income-payer').value='';document.getElementById('income-notes').value='';populateIncomeCats('Check');showModal('m-income');setTimeout(()=>{const d=document.getElementById('income-desc');if(d)d.setAttribute('oninput',"onExpDescInput(this.value,'income-cat','income-cat-suggest')");if(!document.getElementById('income-cat-suggest')){const sp=document.createElement('div');sp.id='income-cat-suggest';sp.style.cssText='min-height:16px;margin-bottom:3px';const cat=document.getElementById('income-cat');if(cat)cat.parentNode.insertBefore(sp,cat);}},50);}
-function openEditIncome(id){const inc=(propData._income||[]).find(i=>i.id===id);if(!inc)return;document.getElementById('income-modal-title').textContent='Edit Income';document.getElementById('income-id').value=id;document.getElementById('income-amount').value=inc.amount||'';document.getElementById('income-date').value=inc.date||'';document.getElementById('income-desc').value=inc.desc||'';document.getElementById('income-payer').value=inc.payer||'';document.getElementById('income-notes').value=inc.notes||'';populateIncomeCats(inc.cat||'Check');showModal('m-income');}
-function saveIncome(){const id=document.getElementById('income-id').value||('inc-'+Date.now().toString(36));const amount=parseFloat(document.getElementById('income-amount').value)||0;if(!amount){alert('Please enter an amount');return;}const inc={id,amount,date:document.getElementById('income-date').value,cat:getSelectedIncomeCat(),desc:document.getElementById('income-desc').value.trim(),payer:document.getElementById('income-payer').value.trim(),notes:document.getElementById('income-notes').value.trim()};if(!propData._income)propData._income=[];const idx=(propData._income).findIndex(i=>i.id===id);if(idx>-1)propData._income[idx]=inc;else propData._income.push(inc);save();renderIncome();refreshSite();closeModal('m-income');}
+var _incomeReceiptUrl=null;
+function _setIncomeReceiptThumb(url){const t=document.getElementById('income-receipt-thumb');if(!t)return;t.innerHTML=url?`<img src="${url}" onclick="openLightbox('${url}')" style="width:54px;height:54px;object-fit:cover;border-radius:6px;cursor:zoom-in;border:1px solid var(--border2)">`:'';}
+async function handleIncomeReceipt(inp){
+  const file=inp.files&&inp.files[0];if(!file)return;inp.value='';
+  const status=document.getElementById('income-receipt-status');
+  if(status)status.innerHTML='<div style="display:inline-flex;align-items:center;gap:6px;color:var(--text2)"><div class="spin" style="width:12px;height:12px"></div> Uploading...</div>';
+  let url='';
+  try{
+    const path='receipts/income-'+Date.now()+'-'+file.name.replace(/[^a-z0-9.]/gi,'-');
+    url=await uploadToStorage(file,path);
+  }catch(ex){
+    url=await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=ev=>res(ev.target.result);fr.onerror=rej;fr.readAsDataURL(file);});
+  }
+  _incomeReceiptUrl=url;_setIncomeReceiptThumb(url);
+  if(status){status.innerHTML='<span style="color:var(--green)">✓ Receipt attached</span>';setTimeout(()=>{if(status)status.innerHTML='';},3000);}
+}
+function openAddIncome(){document.getElementById('income-modal-title').textContent='Add Income';document.getElementById('income-id').value='';document.getElementById('income-amount').value='';document.getElementById('income-date').value=new Date().toISOString().split('T')[0];document.getElementById('income-desc').value='';document.getElementById('income-payer').value='';document.getElementById('income-notes').value='';_incomeReceiptUrl=null;_setIncomeReceiptThumb(null);const _irs=document.getElementById('income-receipt-status');if(_irs)_irs.innerHTML='';populateIncomeCats('Check');showModal('m-income');setTimeout(()=>{const d=document.getElementById('income-desc');if(d)d.setAttribute('oninput',"onExpDescInput(this.value,'income-cat','income-cat-suggest')");if(!document.getElementById('income-cat-suggest')){const sp=document.createElement('div');sp.id='income-cat-suggest';sp.style.cssText='min-height:16px;margin-bottom:3px';const cat=document.getElementById('income-cat');if(cat)cat.parentNode.insertBefore(sp,cat);}},50);}
+function openEditIncome(id){const inc=(propData._income||[]).find(i=>i.id===id);if(!inc)return;document.getElementById('income-modal-title').textContent='Edit Income';document.getElementById('income-id').value=id;document.getElementById('income-amount').value=inc.amount||'';document.getElementById('income-date').value=inc.date||'';document.getElementById('income-desc').value=inc.desc||'';document.getElementById('income-payer').value=inc.payer||'';document.getElementById('income-notes').value=inc.notes||'';_incomeReceiptUrl=inc.receipt||null;_setIncomeReceiptThumb(_incomeReceiptUrl);const _irs=document.getElementById('income-receipt-status');if(_irs)_irs.innerHTML='';populateIncomeCats(inc.cat||'Check');showModal('m-income');}
+function saveIncome(){const id=document.getElementById('income-id').value||('inc-'+Date.now().toString(36));const amount=parseFloat(document.getElementById('income-amount').value)||0;if(!amount){alert('Please enter an amount');return;}const inc={id,amount,date:document.getElementById('income-date').value,cat:getSelectedIncomeCat(),desc:document.getElementById('income-desc').value.trim(),payer:document.getElementById('income-payer').value.trim(),notes:document.getElementById('income-notes').value.trim()};if(_incomeReceiptUrl)inc.receipt=_incomeReceiptUrl;if(!propData._income)propData._income=[];const idx=(propData._income).findIndex(i=>i.id===id);if(idx>-1)propData._income[idx]=inc;else propData._income.push(inc);save();renderIncome();refreshSite();closeModal('m-income');}
 function deleteIncome(id){if(!confirm('Delete this income entry?'))return;propData._income=(propData._income||[]).filter(i=>i.id!==id);save();renderIncome();refreshSite();}
 let _incomeScanFiles=[];
 function handleIncomeFileDrop(ev){ev.preventDefault();handleIncomeScanFiles(ev.dataTransfer.files);}
@@ -4025,8 +4044,11 @@ function toggleUC(id){
   if(chev)chev.style.transform=open?'':'rotate(180deg)';
 }
 
+var _dcUploading=false;
 function renderDocCards(){
   const el=document.getElementById('doc-cards');if(!el)return;
+  if(_dcUploading)return; // don't wipe DOM while a file upload is in flight
+  const openIds=Array.from(el.querySelectorAll('.uc')).filter(u=>{const b=document.getElementById('body-'+u.id);return b&&b.style.display!=='none';}).map(u=>u.id);
   const cards=getDocCards();
   if(!cards.length){el.innerHTML='<div class="empty" style="padding:1.5rem">No document categories yet. Click + Add Category.</div>';return;}
   el.innerHTML=cards.map((c,i)=>`
@@ -4047,9 +4069,14 @@ function renderDocCards(){
         <div style="margin-bottom:.75rem">
           ${(c.files||[]).length?`<div style="display:flex;flex-direction:column;gap:8px">${(c.files||[]).map((f,fi)=>{const src=f.url||f.data||'';const isImg=src&&((f.type||'').startsWith('image')||/\.(jpg|jpeg|png|gif|webp)$/i.test(f.name||''));return`<div style="background:var(--bg3);border-radius:6px;overflow:hidden">${isImg&&src?`<img src="${src}" onclick="openLightbox('${src}')" style="width:100%;max-height:180px;object-fit:contain;cursor:zoom-in;display:block;border-radius:6px 6px 0 0">`:''}<div style="display:flex;align-items:center;gap:8px;padding:6px 8px"><svg class="ico" style="width:14px;height:14px;color:var(--gold);flex-shrink:0"><use href="#ico-file"/></svg><span style="flex:1;font-size:12px;color:var(--text);word-break:break-all">${f.name}</span>${src?`<button class="btn btn-ghost btn-sm btn-icon" onclick="openLightbox('${src}')" title="View"><svg class="ico" style="width:12px;height:12px"><use href="#ico-eye"/></svg></button>`:''}<button class="btn btn-danger btn-sm btn-icon" onclick="deleteDocCardFile(${i},${fi})"><svg class="ico" style="width:12px;height:12px"><use href="#ico-trash"/></svg></button></div></div>`}).join('')}</div>`:'<div style="font-size:12px;color:var(--text3);margin-bottom:.5rem">No files yet</div>'}
         </div>
-        <label class="btn btn-ghost btn-sm" style="cursor:pointer"><svg class="ico"><use href="#ico-camera"/></svg> Camera<input type="file" accept="image/*" capture="environment" style="display:none" onchange="uploadDocCardFile(${i},this)"></label> <label class="btn btn-ghost btn-sm" style="cursor:pointer"><svg class="ico"><use href="#ico-upload"/></svg> File<input type="file" accept="image/*,.pdf,.doc,.docx" style="display:none" onchange="uploadDocCardFile(${i},this)"></label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <label class="btn btn-primary btn-sm" style="cursor:pointer"><svg class="ico"><use href="#ico-camera"/></svg> Camera<input type="file" accept="image/*" capture="environment" style="display:none" onchange="uploadDocCardFile(${i},this)"></label>
+          <label class="btn btn-primary btn-sm" style="cursor:pointer"><svg class="ico"><use href="#ico-upload"/></svg> Upload Files<input type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" style="display:none" onchange="uploadDocCardFile(${i},this)"></label>
+          <span id="dc-status-${c.id}" style="font-size:12px;color:var(--text2)"></span>
+        </div>
       </div>
     </div>`).join('');
+  openIds.forEach(id=>{const b=document.getElementById('body-'+id);const ch=document.getElementById('chev-'+id);if(b)b.style.display='block';if(ch)ch.style.transform='rotate(180deg)';});
 }
 
 function addDocCard(){
@@ -4081,17 +4108,33 @@ function deleteDocCard(i){
   saveDocCards(cards);renderDocCards();
 }
 async function uploadDocCardFile(i,inp){
-  if(!inp.files[0])return;const file=inp.files[0];inp.value='';
+  if(!inp.files||!inp.files.length)return;
+  const files=Array.from(inp.files);inp.value='';
   const cards=getDocCards();const c=cards[i];if(!c)return;
   if(!c.files)c.files=[];
-  const path='docs/company-'+Date.now()+'-'+file.name.replace(/[^a-z0-9.]/gi,'-');
+  _dcUploading=true;
+  const status=document.getElementById('dc-status-'+c.id);
+  let done=0;
   try{
-    const url=await uploadToStorage(file,path);
-    c.files.push({name:file.name,url,date:new Date().toISOString().split('T')[0]});
-  }catch(ex){
-    const fr=new FileReader();fr.onload=ev=>{c.files.push({name:file.name,url:ev.target.result,date:new Date().toISOString().split('T')[0]});saveDocCards(cards);renderDocCards();};fr.readAsDataURL(file);return;
+    for(const file of files){
+      if(status)status.innerHTML='<div style="display:inline-flex;align-items:center;gap:6px"><div class="spin" style="width:12px;height:12px"></div> Uploading '+(done+1)+'/'+files.length+'...</div>';
+      const path='docs/company-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+'-'+file.name.replace(/[^a-z0-9.]/gi,'-');
+      let url='';
+      try{url=await uploadToStorage(file,path);}
+      catch(ex){
+        // storage upload failed — keep a local base64 copy so the file isn't lost
+        url=await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=ev=>res(ev.target.result);fr.onerror=rej;fr.readAsDataURL(file);});
+      }
+      c.files.push({name:file.name,type:file.type,url,date:new Date().toISOString().split('T')[0]});
+      done++;
+    }
+    saveDocCards(cards);
+  }finally{
+    _dcUploading=false;
   }
-  saveDocCards(cards);renderDocCards();
+  renderDocCards();
+  const st2=document.getElementById('dc-status-'+c.id);
+  if(st2){st2.innerHTML='<span style="color:var(--green)">✓ '+done+' file'+(done>1?'s':'')+' added</span>';setTimeout(()=>{if(st2)st2.innerHTML='';},4000);}
 }
 function deleteDocCardFile(ci,fi){
   if(!confirm('Remove this file?'))return;
