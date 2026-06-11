@@ -366,7 +366,7 @@ nav.open .mob-menu{display:block}
 /* MODAL */
 .mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;align-items:center;justify-content:center;padding:1rem;touch-action:none;overscroll-behavior:contain}#m-lbox{padding:1rem;align-items:center !important;justify-content:center !important;background:rgba(0,0,0,.92)}
 .mo.open{display:flex}
-.md{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-lg);padding:1.75rem;width:520px;max-width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 32px 100px rgba(0,0,0,.7)}
+.md{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-lg);padding:1.75rem;width:520px;max-width:100%;max-height:90vh;overflow-y:auto;overscroll-behavior:contain;box-shadow:0 32px 100px rgba(0,0,0,.7)}
 .md.wide{width:640px}
 .md-title{font-size:15px;font-weight:700;color:var(--gold2);margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center}
 .md-close{background:none;border:none;cursor:pointer;color:var(--text2);font-size:20px;line-height:1;padding:2px;border-radius:6px}
@@ -2701,6 +2701,35 @@ function showModal(id){
   m.classList.add("open");const sy=window.scrollY;document.body.dataset.sy=sy;document.body.style.overflow="hidden";if(id==='m-exp'||id==='m-edit-exp'){hookW9Listeners();setTimeout(()=>{if(id==='m-exp')checkW9Visibility('exp');else checkW9Visibility('eeexp');},50);}if(id==='tax-contractors'||m.closest('#tax-contractors'))renderContractors();
 }
 function closeModal(id){const m=document.getElementById(id);if(!m)return;m.classList.remove("open");if(!document.querySelector(".mo.open")){document.body.style.overflow="";}}
+
+// iOS background-scroll lock: body{overflow:hidden} alone doesn't stop touch scroll
+// chaining through an open modal to the page behind it.
+function _scrollableIn(el){
+  // walk up from el to its .mo overlay; return the first vertically scrollable container
+  while(el&&el.nodeType===1){
+    if(el.scrollHeight>el.clientHeight+1){
+      const oy=getComputedStyle(el).overflowY;
+      if(oy==='auto'||oy==='scroll')return el;
+    }
+    if(el.classList.contains('mo'))return null;
+    el=el.parentElement;
+  }
+  return null;
+}
+document.addEventListener('touchstart',e=>{
+  if(!document.querySelector('.mo.open'))return;
+  const sc=_scrollableIn(e.target);
+  if(!sc)return;
+  // nudge off the exact edges so the scroll never chains to the body
+  if(sc.scrollTop<=0)sc.scrollTop=1;
+  else if(sc.scrollTop+sc.clientHeight>=sc.scrollHeight)sc.scrollTop=sc.scrollHeight-sc.clientHeight-1;
+},{passive:true});
+document.addEventListener('touchmove',e=>{
+  if(!document.querySelector('.mo.open'))return;
+  const overlay=e.target.nodeType===1?e.target.closest('.mo.open'):null;
+  if(!overlay){e.preventDefault();return;} // touch outside the modal — block background scroll
+  if(!_scrollableIn(e.target)&&!(overlay.scrollHeight>overlay.clientHeight+1))e.preventDefault();
+},{passive:false});
 
 // ====== STATUS ======
 function openStatusDropdown(p,ev){
