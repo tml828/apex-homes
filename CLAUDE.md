@@ -194,7 +194,7 @@ Property keys are always lowercase, no spaces.
 - Credits split into own tab per property; credits excluded from Expenses tab totals; `renderCr()` added
 - Dashboard stats replaced with Net Profit, All-In Cost, Avg ROI (3 cards)
 - Glass morphism UI applied site-wide (backdrop-filter, rgba backgrounds)
-- Background image: `Gemini_Generated_Image_cajjtvcajjtvcajj.png` in repo root, served via raw.githubusercontent.com
+- Background image: `Gemini_Generated_Image_id8t2kid8t2kid8t.png` in repo root, served via raw.githubusercontent.com
 - Hourly cloud snapshots: `saveHourlyBackup()` / `restoreCloudBackup()` on Company tab, max 2 kept
 - Supabase Auth + RLS implemented: login screen, session tokens on all requests, `sbLogin`/`sbRefreshAuth`/`sbLogout`; Cloud Account card on Company tab
 - `esc(s)` HTML escape helper added, used throughout `renderE`, `renderCr`, `renderEFiltered`, `showVendorSuggest`
