@@ -3751,7 +3751,18 @@ function buildPropPage(key, force){
               <svg class="ico" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3);pointer-events:none"><use href="#ico-search"/></svg>
               <input id="search-${key}" type="text" placeholder="Search expenses..." oninput="searchE('${key}',this.value)" style="width:100%;padding:5px 8px 5px 28px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px">
             </div>
+            <button class="btn btn-sm" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-weight:600" onclick="triggerCSVImport('${key}')" title="Import expenses from CSV file"><svg class="ico"><use href="#ico-upload"/></svg> Import CSV</button>
+            <input type="file" id="csv-inp-${key}" accept=".csv,text/csv" style="display:none" onchange="importExpCSV(event,'${key}')">
             <button class="btn btn-sm" style="background:#c0392b;border-color:#c0392b;color:#fff;font-weight:700" onclick="openAddExp('${key}')"><svg class="ico"><use href="#ico-plus"/></svg> Add Expense</button>
+          </div>
+          <div class="receipt-panel" style="margin-bottom:1rem">
+            <label style="cursor:pointer;display:block">
+              <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2)"><svg class="ico" style="color:var(--gold2)"><use href="#ico-sparkles"/></svg><strong style="color:var(--gold2)">AI Receipt Scanner</strong> — tap to take or upload photos (select multiple)</div>
+              <input type="file" accept="image/*,application/pdf" multiple style="display:none" onchange="handleScanFiles(this.files,'${key}')">
+            </label>
+            <div id="sq-${key}" class="scan-queue"></div>
+            <button class="btn btn-primary btn-sm" id="scan-btn-${key}" style="display:none;margin-top:.5rem" onclick="runScan('${key}')"><svg class="ico"><use href="#ico-sparkles"/></svg> Scan All &amp; Add</button>
+            <div id="sr-${key}"></div>
           </div>
           <div id="${key}-exp-list"></div>
         </div>
