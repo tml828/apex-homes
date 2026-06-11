@@ -1288,7 +1288,16 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <input type="hidden" id="edit-dc-idx">
     <div class="fr"><div class="fg"><label>Category Name</label><input type="text" id="edit-dc-title" placeholder="e.g. Menards Tax Exempt"></div></div>
     <div class="fr"><div class="fg"><label>Type</label><input type="text" id="edit-dc-type" placeholder="e.g. Tax Exempt Certificate"></div></div>
-    <div style="display:flex;gap:8px;margin-top:8px">
+    <div style="margin-top:.75rem">
+      <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:.4rem">Files (optional — you can add more later)</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer"><svg class="ico"><use href="#ico-camera"/></svg> Camera<input type="file" id="edit-dc-cam" accept="image/*" capture="environment" style="display:none" onchange="dcModalFileAdded(this)"></label>
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer"><svg class="ico"><use href="#ico-upload"/></svg> Upload Files<input type="file" id="edit-dc-files" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" style="display:none" onchange="dcModalFileAdded(this)"></label>
+      </div>
+      <div id="edit-dc-preview" style="margin-top:.5rem;display:flex;flex-wrap:wrap;gap:6px"></div>
+      <div id="edit-dc-status" style="font-size:12px;min-height:16px;margin-top:.25rem"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:1rem">
       <button class="btn btn-primary" onclick="saveDocCard()"><svg class="ico"><use href="#ico-check"/></svg> Save</button>
       <button class="btn btn-ghost" onclick="closeModal('m-edit-dc')">Cancel</button>
     </div>
@@ -4079,27 +4088,59 @@ function renderDocCards(){
   openIds.forEach(id=>{const b=document.getElementById('body-'+id);const ch=document.getElementById('chev-'+id);if(b)b.style.display='block';if(ch)ch.style.transform='rotate(180deg)';});
 }
 
+var _dcModalFiles=[];
+function _dcModalClearFiles(){_dcModalFiles=[];const p=document.getElementById('edit-dc-preview');if(p)p.innerHTML='';const s=document.getElementById('edit-dc-status');if(s)s.innerHTML='';const ci=document.getElementById('edit-dc-cam');if(ci)ci.value='';const fi=document.getElementById('edit-dc-files');if(fi)fi.value='';}
+function dcModalFileAdded(inp){
+  if(!inp.files||!inp.files.length)return;
+  _dcModalFiles=[..._dcModalFiles,...Array.from(inp.files)];
+  inp.value='';
+  const p=document.getElementById('edit-dc-preview');
+  if(p)p.innerHTML=_dcModalFiles.map((f,i)=>`<div style="display:flex;align-items:center;gap:5px;background:var(--bg3);border-radius:6px;padding:4px 8px;font-size:12px;max-width:200px"><svg class="ico" style="width:12px;height:12px;flex-shrink:0"><use href="#ico-file"/></svg><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span><button type="button" onclick="dcModalRemoveFile(${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:0;font-size:14px;line-height:1">×</button></div>`).join('');
+}
+function dcModalRemoveFile(i){_dcModalFiles.splice(i,1);dcModalFileAdded({files:[]});}
 function addDocCard(){
+  _dcModalClearFiles();
   document.getElementById('edit-dc-idx').value='';
   document.getElementById('edit-dc-title').value='';
   document.getElementById('edit-dc-type').value='';
   showModal('m-edit-dc');
 }
 function editDocCard(i){
+  _dcModalClearFiles();
   const cards=getDocCards();const c=cards[i];if(!c)return;
   document.getElementById('edit-dc-idx').value=i;
   document.getElementById('edit-dc-title').value=c.title;
   document.getElementById('edit-dc-type').value=c.type;
   showModal('m-edit-dc');
 }
-function saveDocCard(){
+async function saveDocCard(){
   const idx=document.getElementById('edit-dc-idx').value;
   const title=document.getElementById('edit-dc-title').value.trim();
   const type=document.getElementById('edit-dc-type').value.trim();
   if(!title)return;
   const cards=getDocCards();
-  if(idx===''){cards.push({id:'dc-'+Date.now().toString(36),title,type,files:[]});}
-  else{const c=cards[parseInt(idx)];if(c){c.title=title;c.type=type;}}
+  let card;
+  if(idx===''){card={id:'dc-'+Date.now().toString(36),title,type,files:[]};cards.push(card);}
+  else{card=cards[parseInt(idx)];if(card){card.title=title;card.type=type;}}
+  // upload any files added in the modal
+  if(card&&_dcModalFiles.length){
+    if(!card.files)card.files=[];
+    const status=document.getElementById('edit-dc-status');
+    let done=0;
+    _dcUploading=true;
+    try{
+      for(const file of _dcModalFiles){
+        if(status)status.innerHTML='<div style="display:inline-flex;align-items:center;gap:6px"><div class="spin" style="width:12px;height:12px"></div> Uploading '+(done+1)+'/'+_dcModalFiles.length+'...</div>';
+        const path='docs/company-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+'-'+file.name.replace(/[^a-z0-9.]/gi,'-');
+        let url='';
+        try{url=await uploadToStorage(file,path);}
+        catch(ex){url=await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=ev=>res(ev.target.result);fr.onerror=rej;fr.readAsDataURL(file);});}
+        card.files.push({name:file.name,type:file.type,url,date:new Date().toISOString().split('T')[0]});
+        done++;
+      }
+    }finally{_dcUploading=false;}
+    _dcModalClearFiles();
+  }
   saveDocCards(cards);renderDocCards();closeModal('m-edit-dc');
 }
 function deleteDocCard(i){
