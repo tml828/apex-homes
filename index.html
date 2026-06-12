@@ -727,30 +727,30 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:1rem" id="dash-mini-cards">
     <!-- Tasks card -->
-    <div class="card" style="padding:.85rem 1rem;cursor:pointer" onclick="toggleDashSection('dash-task-list','dash-task-chev')">
+    <div class="card" style="padding:.85rem 1rem;cursor:pointer" data-toggle="dash-task-list" data-chev="dash-task-chev">
       <div style="display:flex;align-items:center;gap:10px">
-        <svg class="ico" style="color:var(--gold2);width:16px;height:16px;flex-shrink:0"><use href="#ico-check"/></svg>
-        <div style="flex:1;min-width:0">
+        <svg class="ico" style="color:var(--gold2);width:16px;height:16px;flex-shrink:0;pointer-events:none"><use href="#ico-check"/></svg>
+        <div style="flex:1;min-width:0;pointer-events:none">
           <div style="font-size:13px;font-weight:700;color:var(--text)">Tasks</div>
           <div style="font-size:11px;color:var(--text2)" id="dash-task-count">—</div>
         </div>
-        <button class="btn btn-primary btn-sm btn-icon" style="flex-shrink:0" onclick="event.stopPropagation();populateTaskPropDropdown('edit-task-prop');showModal('m-task')"><svg class="ico"><use href="#ico-plus"/></svg></button>
-        <svg class="ico" id="dash-task-chev" style="color:var(--text3);width:13px;height:13px;transition:transform .2s;flex-shrink:0"><use href="#ico-chevron-down"/></svg>
+        <button class="btn btn-primary btn-sm btn-icon" style="flex-shrink:0" id="btn-add-task"><svg class="ico"><use href="#ico-plus"/></svg></button>
+        <svg class="ico" id="dash-task-chev" style="color:var(--text3);width:13px;height:13px;transition:transform .2s;flex-shrink:0;pointer-events:none"><use href="#ico-chevron-down"/></svg>
       </div>
-      <div id="dash-task-list" style="display:none;margin-top:.75rem" onclick="event.stopPropagation()"></div>
+      <div id="dash-task-list" style="display:none;margin-top:.75rem"></div>
     </div>
     <!-- Potential Properties card -->
-    <div class="card" style="padding:.85rem 1rem;cursor:pointer" onclick="toggleDashSection('dash-pot-list','dash-pot-chev')">
+    <div class="card" style="padding:.85rem 1rem;cursor:pointer" data-toggle="dash-pot-list" data-chev="dash-pot-chev">
       <div style="display:flex;align-items:center;gap:10px">
-        <svg class="ico" style="color:var(--gold2);width:16px;height:16px;flex-shrink:0"><use href="#ico-home"/></svg>
-        <div style="flex:1;min-width:0">
+        <svg class="ico" style="color:var(--gold2);width:16px;height:16px;flex-shrink:0;pointer-events:none"><use href="#ico-home"/></svg>
+        <div style="flex:1;min-width:0;pointer-events:none">
           <div style="font-size:13px;font-weight:700;color:var(--text)">Potential Properties</div>
           <div style="font-size:11px;color:var(--text2)" id="dash-pot-count">—</div>
         </div>
-        <button class="btn btn-primary btn-sm btn-icon" style="flex-shrink:0" onclick="event.stopPropagation();openAddPot()"><svg class="ico"><use href="#ico-plus"/></svg></button>
-        <svg class="ico" id="dash-pot-chev" style="color:var(--text3);width:13px;height:13px;transition:transform .2s;flex-shrink:0"><use href="#ico-chevron-down"/></svg>
+        <button class="btn btn-primary btn-sm btn-icon" style="flex-shrink:0" id="btn-add-pot"><svg class="ico"><use href="#ico-plus"/></svg></button>
+        <svg class="ico" id="dash-pot-chev" style="color:var(--text3);width:13px;height:13px;transition:transform .2s;flex-shrink:0;pointer-events:none"><use href="#ico-chevron-down"/></svg>
       </div>
-      <div id="dash-pot-list" style="display:none;margin-top:.75rem" onclick="event.stopPropagation()"></div>
+      <div id="dash-pot-list" style="display:none;margin-top:.75rem"></div>
     </div>
   </div>
 
@@ -4752,6 +4752,28 @@ function startAutoSync(){
   setInterval(autoSyncPull,5000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)autoSyncPull();});
 }
+
+// ====== DASH MINI CARDS (Tasks / Potential Properties) ======
+(function(){
+  const grid=document.getElementById('dash-mini-cards');
+  if(!grid)return;
+  grid.addEventListener('click',function(e){
+    // Handle + buttons first
+    if(e.target.closest('#btn-add-task')){populateTaskPropDropdown('edit-task-prop');showModal('m-task');return;}
+    if(e.target.closest('#btn-add-pot')){openAddPot();return;}
+    // Don't toggle if clicking inside an already-open list
+    if(e.target.closest('#dash-task-list,#dash-pot-list'))return;
+    // Toggle the card that was clicked
+    const card=e.target.closest('[data-toggle]');
+    if(!card)return;
+    const listId=card.dataset.toggle;const chevId=card.dataset.chev;
+    const el=document.getElementById(listId);const ch=document.getElementById(chevId);
+    if(!el)return;
+    const open=el.style.display!=='none';
+    el.style.display=open?'none':'block';
+    if(ch)ch.style.transform=open?'':'rotate(180deg)';
+  });
+})();
 
 
 
