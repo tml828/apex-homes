@@ -142,6 +142,12 @@ DATA BACKUP REMINDER:
   <symbol id="ico-dots" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="19" cy="12" r="1" fill="currentColor"/></symbol>
   <symbol id="ico-home-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M10 12h4v4h-4z"/></symbol>
   <symbol id="ico-pig-money" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a4 4 0 0 0 -8 0"/><path d="M10 21h4"/><path d="M12 21v-4"/><path d="M6 15v2a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2v-2"/><path d="M5 12a7 7 0 1 0 14 0"/><path d="M20 10h2"/></symbol>
+  <symbol id="ico-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M10 12h4v4h-4z"/></symbol>
+  <symbol id="ico-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2"/><circle cx="12" cy="14" r="2"/><polyline points="14 4 14 8 8 8 8 4"/></symbol>
+  <symbol id="ico-car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-7l2 -5h14l2 5v7h-2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M5 12h14"/></symbol>
+  <symbol id="ico-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4"/><line x1="13.5" y1="6.5" x2="17.5" y2="10.5"/></symbol>
+  <symbol id="ico-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/></symbol>
+  <symbol id="ico-file-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><line x1="10" y1="12" x2="14" y2="16"/><line x1="14" y1="12" x2="10" y2="16"/></symbol>
   <symbol id="ico-map-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z"/></symbol>
 </svg>
 <style>
@@ -223,7 +229,6 @@ nav.open .mob-menu{display:block}
 .pc-img-empty span{font-size:12px;color:var(--text3)}
 .pc-img-overlay{position:absolute;bottom:0;left:0;right:0;padding:.6rem .85rem;background:linear-gradient(0deg,rgba(0,0,0,.75) 0%,transparent 100%);display:flex;align-items:flex-end;justify-content:space-between}
 .pc-addr{font-size:13.5px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5)}
-.pc-/* body padding removed — was causing horizontal overflow */
 .pc-city{font-size:12px;color:var(--text2);margin-bottom:.65rem}
 .pc-foot{display:flex;align-items:center;justify-content:space-between}
 .pc-price{font-size:14.5px;font-weight:700;color:var(--gold2)}
@@ -355,8 +360,7 @@ nav.open .mob-menu{display:block}
 .uc-hd:hover{background:var(--bg5)}
 .uc-title{font-size:13px;font-weight:600;color:var(--gold2);flex:1}
 .uc-type{font-size:11.5px;color:var(--text2)}
-.uc-
-.uc-body.open{display:block}
+.uc-body{display:none}.uc-body.open{display:block}
 .uc-img-wrap{width:100%;border-radius:var(--r);overflow:hidden;margin-bottom:.9rem;background:var(--bg3);cursor:pointer}
 .uc-img-wrap img{width:100%;max-height:240px;object-fit:contain;display:block}
 .uc-img-empty{width:100%;height:130px;border:2px dashed var(--border2);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .2s;margin-bottom:.9rem;background:var(--bg3)}
@@ -1408,8 +1412,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <div id="bank-cc-fields" style="display:none"></div>
     <div class="fr"><div class="fg"><label>Notes</label><input type="text" placeholder="Any notes..." id="bank-notes-inp"></div></div>
     <div style="display:flex;gap:8px;margin-top:8px">
-      <button class="btn btn-primary" onclick="saveAccount()"><svg class="ico"><use href="#ico-che
-ck"/></svg> Save Account</button>
+      <button class="btn btn-primary" onclick="saveAccount()"><svg class="ico"><use href="#ico-check"/></svg> Save Account</button>
       <button class="btn btn-ghost" onclick="closeModal('m-bank')">Cancel</button>
     </div>
   </div>
@@ -2486,7 +2489,7 @@ function renderAccounts(){
       ${(a.type==='Checking'||a.type==='Savings')&&a.routing?`<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">Routing #</div><div style="font-weight:700;color:var(--gold2);font-family:monospace;font-size:13px">${a.routing}</div></div>`:''}
       ${isCC(a)&&a.ccnum?`<div style="grid-column:span 2"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">Card Number</div><div style="font-weight:700;color:var(--gold2);font-family:monospace;font-size:14px;letter-spacing:.08em">${a.ccnum}</div></div>`:''}
       ${isCC(a)&&a.exp?`<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">Expiration</div><div style="font-weight:700;color:var(--text);font-family:monospace">${a.exp}</div></div>`:''}
-      ${isCC(a)&&a.ccv?`<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">CVV</div><div style="display:flex;align-items:center;gap:6px"><span id="cvv-${i}" style="font-weight:700;color:var(--text);font-family:monospace">•••</span><button onclick="toggleCVV(${i},'${a.ccv}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:10px;padding:0;text-decoration:underline">show</button></div></div>`:''}
+      ${isCC(a)&&a.ccv?`<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">CVV</div><div style="display:flex;align-items:center;gap:6px"><span id="cvv-${i}" style="font-weight:700;color:var(--text);font-family:monospace">•••</span><button onclick="toggleCVV(${i},this.dataset.v)" data-v="${esc(String(a.ccv))}" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:10px;padding:0;text-decoration:underline">show</button></div></div>`:''}
       ${a.type==='Line of Credit'&&a.limit?`<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">Credit Limit</div><div style="font-weight:700;color:var(--gold2)">${fmt(parseFloat(a.limit))}</div></div>`:''}
       ${a.type==='Line of Credit'&&a.available?`<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">Available</div><div style="font-weight:700;color:#10b981">${fmt(parseFloat(a.available))}</div></div>`:''}
       ${a.notes?`<div style="grid-column:span 2"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">Notes</div><div style="color:var(--text2)">${a.notes}</div></div>`:''}
