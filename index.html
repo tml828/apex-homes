@@ -4104,7 +4104,9 @@ function toggleUC(id){
 }
 
 var _dcUploading=false;
+var _dashToggleLast=0;
 function toggleDashSection(listId,chevId){
+  const now=Date.now();if(now-_dashToggleLast<350)return;_dashToggleLast=now;
   const el=document.getElementById(listId);const ch=document.getElementById(chevId);if(!el)return;
   const open=el.style.display!=='none';
   el.style.display=open?'none':'block';
