@@ -709,6 +709,16 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <div class="stat"><div class="stat-ico" style="background:rgba(201,168,76,.15)"><svg class="ico" style="color:var(--gold2)"><use href="#ico-trending-up"/></svg></div><div><div class="stat-lbl" style="font-size:12px">Net Profit</div><div class="stat-val g" style="font-size:26px" id="stat-net-profit">—</div></div></div>
     <div class="stat"><div class="stat-ico" style="background:rgba(59,130,246,.15)"><svg class="ico" style="color:var(--blue)"><use href="#ico-building"/></svg></div><div><div class="stat-lbl" style="font-size:12px">All-In (Active)</div><div class="stat-val" style="font-size:26px" id="stat-allin">—</div></div></div>
     <div class="stat"><div class="stat-ico" style="background:rgba(16,185,129,.15)"><svg class="ico" style="color:var(--green)"><use href="#ico-chart-bar"/></svg></div><div><div class="stat-lbl" style="font-size:12px">Avg ROI</div><div class="stat-val g" style="font-size:26px" id="stat-avg-roi">—</div></div></div>
+    <div class="stat" style="cursor:pointer" onclick="toggleDashDocs()"><div class="stat-ico" style="background:rgba(201,168,76,.1)"><svg class="ico" style="color:var(--gold2)"><use href="#ico-file-text"/></svg></div><div style="flex:1;min-width:0"><div class="stat-lbl" style="font-size:12px">Documents</div><div class="stat-val" style="font-size:14px;font-weight:600;color:var(--text2)" id="stat-docs-count">—</div></div><svg class="ico" id="stat-docs-chev" style="color:var(--text3);width:14px;height:14px;transition:transform .2s;flex-shrink:0"><use href="#ico-chevron-down"/></svg></div>
+  </div>
+  <div id="dash-docs-panel" style="display:none;margin-bottom:1.5rem">
+    <div class="card" style="padding:1.25rem">
+      <div class="sec-hd" style="margin-bottom:1rem">
+        <div class="sec-title">Documents &amp; Uploads</div>
+        <button class="btn btn-primary btn-sm" onclick="addDocCard()"><svg class="ico"><use href="#ico-plus"/></svg> Add Category</button>
+      </div>
+      <div id="doc-cards"></div>
+    </div>
   </div>
   <div class="card" style="margin-top:1rem;padding:1.25rem">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem" id="dash-combined-grid">
@@ -1025,10 +1035,8 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <div id="bank-list"></div>
   </div>
   <div class="card" style="padding:1.5rem;margin-bottom:1rem">
-    <div class="sec-hd"><div class="sec-title">Documents &amp; Uploads</div>
-      <button class="btn btn-primary btn-sm" onclick="addDocCard()"><svg class="ico"><use href="#ico-plus"/></svg> Add Category</button>
-    </div>
-    <div id="doc-cards"></div>
+    <div class="sec-hd" style="margin-bottom:.5rem"><div class="sec-title">Documents &amp; Uploads</div></div>
+    <div style="font-size:12.5px;color:var(--text2)">Accessible from the Dashboard — tap the <strong>Documents</strong> card at the top.</div>
   </div>
   <div class="card" style="padding:1.5rem;margin-bottom:1rem">
     <div class="sec-title" style="margin-bottom:1rem">Security PIN</div>
@@ -4083,11 +4091,23 @@ function toggleUC(id){
 }
 
 var _dcUploading=false;
+function toggleDashDocs(){
+  const panel=document.getElementById('dash-docs-panel');
+  const chev=document.getElementById('stat-docs-chev');
+  if(!panel)return;
+  const open=panel.style.display!=='none';
+  panel.style.display=open?'none':'block';
+  if(chev)chev.style.transform=open?'':'rotate(180deg)';
+}
 function renderDocCards(){
   const el=document.getElementById('doc-cards');if(!el)return;
   if(_dcUploading)return; // don't wipe DOM while a file upload is in flight
   const openIds=Array.from(el.querySelectorAll('.uc')).filter(u=>{const b=document.getElementById('body-'+u.id);return b&&b.style.display!=='none';}).map(u=>u.id);
   const cards=getDocCards();
+  // update dashboard stat counter
+  const totalFiles=cards.reduce((s,c)=>s+(c.files||[]).length,0);
+  const cnt=document.getElementById('stat-docs-count');
+  if(cnt)cnt.textContent=cards.length+' categor'+(cards.length===1?'y':'ies')+' · '+totalFiles+' file'+(totalFiles===1?'':'s');
   if(!cards.length){el.innerHTML='<div class="empty" style="padding:1.5rem">No document categories yet. Click + Add Category.</div>';return;}
   el.innerHTML=cards.map((c,i)=>`
     <div class="uc" id="uc-${c.id}" style="border:1px solid var(--border);border-radius:var(--r);margin-bottom:.75rem;overflow:hidden">
