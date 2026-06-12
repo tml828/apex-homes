@@ -3997,8 +3997,9 @@ function refreshSite(){
   // Dynamic per-property stats
   props.forEach(p=>{
     const exp=eTotal(p),allin=propAllin(p),profit=propNetProfit(p),roi=propROI(p),pr=getProp(p);
+    const expGross=allE(p).filter(e=>!e.credit).reduce((s,e)=>s+(parseFloat(e.a||e.amount||0)),0);
     setEl(p+"-meta-exp",fmt(exp));setEl(p+"-meta-allin",fmt(allin));
-    setEl(p+"-roi-exp",fmt(exp));setEl(p+"-roi-allin",fmt(allin));setEl(p+"-exp-total",fmt(exp));
+    setEl(p+"-roi-exp",fmt(exp));setEl(p+"-roi-allin",fmt(allin));setEl(p+"-exp-total",fmt(expGross));
     setEl(p+"-ir-purchase",fmt(propPurchase(p)));setEl(p+"-roi-purchase",fmt(propPurchase(p)));setEl(p+"-roi-status",propStatus(p));
     setEl(p+"-ir-pdate",fmtD(pr.pdate)||"—");setEl(p+"-offer-date",fmtD(pr.offer)||"Not set");
     setEl(p+"-ir-sold",fmt(propSold(p)));setEl(p+"-roi-sold",fmt(propSold(p)));
