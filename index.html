@@ -2007,7 +2007,6 @@ function savePot(){
 }
 
 function renderDashTasks(){
-  renderDashPots();
   const el=document.getElementById('dash-task-list');if(!el)return;
   const pending=tasks.filter(t=>!t.done).sort((a,b)=>(a.dt||'9999').localeCompare(b.dt||'9999')).slice(0,5);
   const cnt=document.getElementById('dash-task-count');if(cnt)cnt.textContent=pending.length?pending.length+' pending':'All clear';
