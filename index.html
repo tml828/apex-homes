@@ -720,24 +720,32 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
       <div id="doc-cards"></div>
     </div>
   </div>
-  <div class="card" style="margin-top:1rem;padding:1.25rem">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem" id="dash-combined-grid">
-      <!-- Tasks column -->
-      <div>
-        <div class="sec-hd" style="margin-bottom:.75rem">
-          <div class="sec-title" style="font-size:14px;cursor:pointer" onclick="var el=document.getElementById('dash-task-list');el.style.display=el.style.display==='none'?'':'none'">Tasks</div>
-          <button class="btn btn-primary btn-sm" onclick="populateTaskPropDropdown('edit-task-prop');showModal('m-task')"><svg class="ico"><use href="#ico-plus"/></svg></button>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:1rem">
+    <!-- Tasks card -->
+    <div class="card" style="padding:.85rem 1rem;cursor:pointer" onclick="toggleDashSection('dash-task-list','dash-task-chev')">
+      <div style="display:flex;align-items:center;gap:10px">
+        <svg class="ico" style="color:var(--gold2);width:16px;height:16px;flex-shrink:0"><use href="#ico-check"/></svg>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:var(--text)">Tasks</div>
+          <div style="font-size:11px;color:var(--text2)" id="dash-task-count">—</div>
         </div>
-        <div id="dash-task-list" style="display:none"></div>
+        <button class="btn btn-primary btn-sm btn-icon" style="flex-shrink:0" onclick="event.stopPropagation();populateTaskPropDropdown('edit-task-prop');showModal('m-task')"><svg class="ico"><use href="#ico-plus"/></svg></button>
+        <svg class="ico" id="dash-task-chev" style="color:var(--text3);width:13px;height:13px;transition:transform .2s;flex-shrink:0"><use href="#ico-chevron-down"/></svg>
       </div>
-      <!-- Potential Properties column -->
-      <div>
-        <div class="sec-hd" style="margin-bottom:.75rem">
-          <div class="sec-title" style="font-size:14px;cursor:pointer" onclick="var el=document.getElementById('dash-pot-list');el.style.display=el.style.display==='none'?'':'none'">Potential Properties</div>
-          <button class="btn btn-primary btn-sm" onclick="openAddPot()"><svg class="ico"><use href="#ico-plus"/></svg></button>
+      <div id="dash-task-list" style="display:none;margin-top:.75rem" onclick="event.stopPropagation()"></div>
+    </div>
+    <!-- Potential Properties card -->
+    <div class="card" style="padding:.85rem 1rem;cursor:pointer" onclick="toggleDashSection('dash-pot-list','dash-pot-chev')">
+      <div style="display:flex;align-items:center;gap:10px">
+        <svg class="ico" style="color:var(--gold2);width:16px;height:16px;flex-shrink:0"><use href="#ico-home"/></svg>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:var(--text)">Potential Properties</div>
+          <div style="font-size:11px;color:var(--text2)" id="dash-pot-count">—</div>
         </div>
-        <div id="dash-pot-list" style="display:none"></div>
+        <button class="btn btn-primary btn-sm btn-icon" style="flex-shrink:0" onclick="event.stopPropagation();openAddPot()"><svg class="ico"><use href="#ico-plus"/></svg></button>
+        <svg class="ico" id="dash-pot-chev" style="color:var(--text3);width:13px;height:13px;transition:transform .2s;flex-shrink:0"><use href="#ico-chevron-down"/></svg>
       </div>
+      <div id="dash-pot-list" style="display:none;margin-top:.75rem" onclick="event.stopPropagation()"></div>
     </div>
   </div>
 
@@ -1728,6 +1736,7 @@ function getSelectedIncomeCat(){
 function renderDashPots(){
   const el=document.getElementById('dash-pot-list');if(!el)return;
   const pots=getPots().slice().sort((a,b)=>(a.date||'9999').localeCompare(b.date||'9999'));
+  const cnt=document.getElementById('dash-pot-count');if(cnt)cnt.textContent=pots.length?pots.length+' propert'+(pots.length===1?'y':'ies'):'None yet';
   if(!pots.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:.5rem 0">No potential properties</div>';return;}
   el.innerHTML=pots.map(p=>`<div style="padding:.5rem .6rem;background:var(--bg4);border:1px solid var(--border);border-radius:8px;margin-bottom:5px;cursor:pointer" onclick="openEditPot('${p.id}')"><div style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--text)">${p.addr}${p.city?' · '+p.city:''}</div>${p.notes?`<div style="font-size:12px;color:#f0c040;margin-top:3px;font-weight:600">${p.notes}</div>`:''} ${p.date?`<div style="font-size:11px;color:#e2ddd4;margin-top:2px">${fmtD(p.date)}${p.price?' · ~'+fmt(parseFloat(p.price)):''}</div>`:''}</div><div style="display:flex;gap:4px;flex-shrink:0"><button class="btn btn-ghost btn-sm btn-icon" onclick="event.stopPropagation();openEditPot('${p.id}')"><svg class="ico" style="width:11px;height:11px"><use href="#ico-pencil"/></svg></button><button class="btn btn-danger btn-sm btn-icon" onclick="event.stopPropagation();deletePot('${p.id}')"><svg class="ico" style="width:11px;height:11px"><use href="#ico-trash"/></svg></button></div></div></div>`).join('');
 }
@@ -1997,6 +2006,7 @@ function renderDashTasks(){
   renderDashPots();
   const el=document.getElementById('dash-task-list');if(!el)return;
   const pending=tasks.filter(t=>!t.done).sort((a,b)=>(a.dt||'9999').localeCompare(b.dt||'9999')).slice(0,5);
+  const cnt=document.getElementById('dash-task-count');if(cnt)cnt.textContent=pending.length?pending.length+' pending':'All clear';
   el.innerHTML=pending.length?pending.map(t=>`<div class="task-item"><div class="task-cb ${t.done?'checked':''}" onclick="toggleTask(${t.id})"><svg class="ico" style="width:11px;height:11px"><use href="#ico-check"/></svg></div><div style="flex:1;cursor:pointer" onclick="openEditTask(${t.id})"><div class="task-title-text">${t.t}</div><div class="task-meta">${t.p}${t.dt?' · '+fmtD(t.dt):''}</div></div><button class="btn btn-ghost btn-sm btn-icon" onclick="openEditTask(${t.id})"><svg class="ico" style="width:12px;height:12px"><use href="#ico-pencil"/></svg></button><button class="btn btn-danger btn-sm btn-icon" onclick="delTask(${t.id})"><svg class="ico" style="width:12px;height:12px"><use href="#ico-trash"/></svg></button></div>`).join(''):'<div class="empty" style="padding:1rem">No pending tasks</div>';
 }
 
@@ -4091,6 +4101,12 @@ function toggleUC(id){
 }
 
 var _dcUploading=false;
+function toggleDashSection(listId,chevId){
+  const el=document.getElementById(listId);const ch=document.getElementById(chevId);if(!el)return;
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'block';
+  if(ch)ch.style.transform=open?'':'rotate(180deg)';
+}
 function toggleDashDocs(){
   const panel=document.getElementById('dash-docs-panel');
   const chev=document.getElementById('stat-docs-chev');
