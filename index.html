@@ -1180,7 +1180,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <!-- MANUAL FIELDS -->
     <div class="fr"><div class="fg"><label>Amount ($)</label><input type="number" step="0.01" placeholder="0.00" id="exp-amt"></div><div class="fg"><label>Date</label><input type="date" id="exp-date"></div></div>
     <div class="fr"><div class="fg" style="flex:2"><label>Description</label><input type="text" placeholder="What was this for?" id="exp-desc" oninput="onExpDescInput(this.value,'exp-cat','exp-cat-suggest')"><div id="exp-cat-suggest" style="min-height:16px;margin-top:4px;font-size:12px;color:var(--text2)"></div></div></div>
-    <div class="fr"><div class="fg"><label>Category</label><select id="exp-cat" onchange="toggleCustomCat('exp-custom-cat',this)"><option>Labor / Contractor</option><option>Materials &amp; Supplies</option><option>Utilities</option><option>HOA Fees</option><option>Painting</option><option>Plumbing</option><option>Electrical</option><option>Closing Costs</option><option>Property Tax</option><option>Insurance</option><option>Marketing / Advertising</option><option>Permits &amp; Fees</option><option>Landscaping</option><option>Legal / Accounting</option><option>Software / Subscriptions</option><option>Other</option><option value="__custom__">+ Custom category...</option></select><input type="text" id="exp-custom-cat" placeholder="Type custom category" style="display:none;margin-top:6px"></div><div class="fg" style="position:relative"><label>Vendor</label><input type="text" placeholder="Store or person" id="exp-vendor" autocomplete="off" oninput="showVendorSuggest('exp-vendor','exp-vendor-dd')" onblur="setTimeout(()=>hideVendorSuggest('exp-vendor-dd'),200)"><div id="exp-vendor-dd" class="vendor-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;z-index:999;max-height:160px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.3)"></div></div></div>
+    <div class="fr"><div class="fg"><label>Category</label><select id="exp-cat" onchange="toggleCustomCat('exp-custom-cat',this)"><option>Labor / Contractor</option><option>Materials &amp; Supplies</option><option>Utilities</option><option>HOA Fees</option><option>Painting</option><option>Plumbing</option><option>Electrical</option><option>Closing Costs</option><option>Property Tax</option><option>Insurance</option><option>Marketing / Advertising</option><option>Permits &amp; Fees</option><option>Landscaping</option><option>Legal / Accounting</option><option>Software / Subscriptions</option><option>Meals (50% deductible)</option><option>Other</option><option value="__custom__">+ Custom category...</option></select><input type="text" id="exp-custom-cat" placeholder="Type custom category" style="display:none;margin-top:6px"></div><div class="fg" style="position:relative"><label>Vendor</label><input type="text" placeholder="Store or person" id="exp-vendor" autocomplete="off" oninput="showVendorSuggest('exp-vendor','exp-vendor-dd')" onblur="setTimeout(()=>hideVendorSuggest('exp-vendor-dd'),200)"><div id="exp-vendor-dd" class="vendor-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;z-index:999;max-height:160px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.3)"></div></div></div>
     <!-- W-9 toggle — shown when Labor/Contractor + amount >= $600 -->
     <div id="exp-w9-row" style="display:none;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:.65rem .85rem;margin-top:6px">
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--gold2)">
@@ -1200,7 +1200,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <input type="hidden" id="eeexp-pid"><input type="hidden" id="eeexp-origidx">
     <div class="fr"><div class="fg"><label>Amount ($)</label><input type="number" step="0.01" id="eeexp-amt"></div><div class="fg"><label>Date</label><input type="date" id="eeexp-date"></div></div>
     <div class="fr"><div class="fg" style="flex:2"><label>Description</label><input type="text" id="eeexp-desc"></div></div>
-    <div class="fr"><div class="fg"><label>Category</label><select id="eeexp-cat" onchange="toggleCustomCat('eeexp-custom-cat',this)"><option>Labor / Contractor</option><option>Materials &amp; Supplies</option><option>Utilities</option><option>HOA Fees</option><option>Painting</option><option>Plumbing</option><option>Electrical</option><option>Closing Costs</option><option>Property Tax</option><option>Insurance</option><option>Marketing / Advertising</option><option>Permits &amp; Fees</option><option>Landscaping</option><option>Legal / Accounting</option><option>Software / Subscriptions</option><option>Other</option><option value="__custom__">+ Custom category...</option></select><input type="text" id="eeexp-custom-cat" placeholder="Type custom category" style="display:none;margin-top:6px"></div><div class="fg" style="position:relative"><label>Vendor</label><input type="text" id="eeexp-vendor" autocomplete="off" oninput="showVendorSuggest('eeexp-vendor','eeexp-vendor-dd')" onblur="setTimeout(()=>hideVendorSuggest('eeexp-vendor-dd'),200)"><div id="eeexp-vendor-dd" class="vendor-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;z-index:999;max-height:160px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.3)"></div></div></div>
+    <div class="fr"><div class="fg"><label>Category</label><select id="eeexp-cat" onchange="toggleCustomCat('eeexp-custom-cat',this)"><option>Labor / Contractor</option><option>Materials &amp; Supplies</option><option>Utilities</option><option>HOA Fees</option><option>Painting</option><option>Plumbing</option><option>Electrical</option><option>Closing Costs</option><option>Property Tax</option><option>Insurance</option><option>Marketing / Advertising</option><option>Permits &amp; Fees</option><option>Landscaping</option><option>Legal / Accounting</option><option>Software / Subscriptions</option><option>Meals (50% deductible)</option><option>Other</option><option value="__custom__">+ Custom category...</option></select><input type="text" id="eeexp-custom-cat" placeholder="Type custom category" style="display:none;margin-top:6px"></div><div class="fg" style="position:relative"><label>Vendor</label><input type="text" id="eeexp-vendor" autocomplete="off" oninput="showVendorSuggest('eeexp-vendor','eeexp-vendor-dd')" onblur="setTimeout(()=>hideVendorSuggest('eeexp-vendor-dd'),200)"><div id="eeexp-vendor-dd" class="vendor-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;z-index:999;max-height:160px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.3)"></div></div></div>
     <div id="eeexp-w9-row" style="display:none;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:.65rem .85rem;margin:.5rem 0">
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--gold2)">
         <input type="checkbox" id="eeexp-w9" style="width:16px;height:16px;accent-color:var(--gold2)">
@@ -2236,15 +2236,17 @@ function exportTaxPDF(){
   setEl('pl-fy-year',taxYear);setEl('sc-fy-year',taxYear);
   const totalMiles=(window._mileage||[]).filter(t=>String(t.date||t.dt||'').startsWith(String(taxYear))).reduce((s,t)=>s+t.miles,0);
   const mileDeduction=totalMiles*rate;
-  // Mileage deduction reduces net profit
-  const netProfit=revenue-acquisitions-totalExp-mileDeduction;
-  const seTax=Math.max(0,netProfit*0.1413);
-  const seHalf=seTax/2;
   const $ =n=>n.toLocaleString('en-US',{minimumFractionDigits:2});
   // Schedule C deduction categories
   const allExpenses=[...props,'general'].flatMap(p=>allE(p)).filter(e=>(e.dt||e.date||'').startsWith(String(taxYear)));
   const catMap={};
   allExpenses.forEach(e=>{const c=e.c||e.cat||'Other';const sign=e.credit?-1:1;catMap[c]=(catMap[c]||0)+sign*(parseFloat(e.a||e.amount)||0);});
+  const mealsGross=catMap['Meals (50% deductible)']||0;
+  const mealsDeductible=mealsGross*0.5;
+  // totalExp already includes full meals amount; add back non-deductible half
+  const netProfit=revenue-acquisitions-totalExp-mileDeduction+mealsGross*0.5;
+  const seTax=Math.max(0,netProfit*0.1413);
+  const seHalf=seTax/2;
   // Contractor / 1099 data
   const w9Map={};
   [...props,'general'].forEach(p=>{allE(p).forEach(e=>{if(e.v&&e.c==='Labor / Contractor'&&parseFloat(e.a||0)>=600&&e.w9){const k=e.v.trim().toLowerCase();if(!w9Map[k])w9Map[k]={vendor:e.v.trim(),total:0};w9Map[k].total+=parseFloat(e.a)||0;}});});
@@ -2280,6 +2282,7 @@ function exportTaxPDF(){
     <tr><td>17</td><td>Legal &amp; Professional</td><td class="red">($${$((catMap['Legal / Accounting']||0))})</td></tr>
     <tr><td>22</td><td>Software / Subscriptions</td><td class="red">($${$((catMap['Software / Subscriptions']||0))})</td></tr>
     <tr><td>23</td><td>Taxes &amp; Licenses</td><td class="red">($${$(((catMap['Property Tax']||0)+(catMap['Permits & Fees']||0)))})</td></tr>
+    <tr><td>24b</td><td>Meals (50% of $${$(mealsGross)} actual)</td><td class="red">($${$(mealsDeductible)})</td></tr>
     <tr><td>9</td><td>Mileage Deduction (${totalMiles.toFixed(1)} mi × $${rate.toFixed(3)}/mi)</td><td class="red">($${$(mileDeduction)})</td></tr>
     <tr class="tot"><td>31</td><td><strong>Estimated Net Profit / (Loss)</strong></td><td><strong class="${netProfit>=0?'green':'red'}">$${$(netProfit)}</strong></td></tr>
   </table>
@@ -2335,15 +2338,16 @@ function exportTaxCSV(){
   const revenue=props.reduce((s,p)=>s+propSold(p,taxYear),0);
   const acquisitions=props.filter(p=>propSold(p,taxYear)>0).reduce((s,p)=>s+propPurchase(p,taxYear),0);
   const totalExp=[...props,'general'].reduce((s,p)=>s+eTotal(p,taxYear),0);
-  // Mileage deduction reduces net profit (Schedule C Line 9)
-  const netProfit=revenue-acquisitions-totalExp-mileDeduction;
-  const seTax=Math.max(0,netProfit*0.1413);
-  const seHalf=seTax/2;
-
   // Schedule C deduction breakdown by category
   const allExpenses=[...props,'general'].flatMap(p=>allE(p)).filter(e=>(e.dt||e.date||'').startsWith(String(taxYear)));
   const catMap={};
   allExpenses.forEach(e=>{const c=e.c||e.cat||'Other';const sign=e.credit?-1:1;catMap[c]=(catMap[c]||0)+sign*(parseFloat(e.a||e.amount)||0);});
+  const mealsGross=catMap['Meals (50% deductible)']||0;
+  const mealsDeductible=mealsGross*0.5;
+  // totalExp includes full meals; add back non-deductible half
+  const netProfit=revenue-acquisitions-totalExp-mileDeduction+mealsGross*0.5;
+  const seTax=Math.max(0,netProfit*0.1413);
+  const seHalf=seTax/2;
 
   // Per-property breakdown
   const propRows=props.map(p=>{
@@ -2382,6 +2386,7 @@ function exportTaxCSV(){
     ["Software / Subscriptions (Line 22)",(catMap['Software / Subscriptions']||0).toFixed(2)],
     ["Insurance (Line 15)",(catMap['Insurance']||0).toFixed(2)],
     ["Taxes & Licenses (Line 23)",((catMap['Property Tax']||0)+(catMap['Permits & Fees']||0)).toFixed(2)],
+    ["Meals — 50% of $"+mealsGross.toFixed(2)+" actual (Line 24b)",mealsDeductible.toFixed(2)],
     ["Mileage Deduction — "+totalMiles.toFixed(1)+" mi @ $"+rate.toFixed(3)+"/mi (Line 9)",mileDeduction.toFixed(2)],[""],
     ["NET PROFIT (Line 31)",netProfit.toFixed(2)],[""],
     ["SELF-EMPLOYMENT TAX ESTIMATE"],
@@ -3428,7 +3433,7 @@ async function scanExpReceipt(f,preB64=null,preMime=null){
   try{
     const processed=preB64?{b64:preB64,mime:preMime||"image/jpeg"}:(await processReceiptImage(f,true));
     const b64=processed.b64;expReceiptB64=b64;expReceiptMime=processed.mime;
-    const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:getAuthHeaders(),body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:600,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:processed.mime,data:b64}},{type:"text",text:"You are an expert real estate expense categorizer. Extract data from this receipt and respond ONLY with raw JSON (no markdown).\n\nCategories (pick the BEST match):\n- \"Labor / Contractor\" → any worker, contractor, handyman, labor charges\n- \"Materials & Supplies\" → hardware, tools, fixtures, appliances, Home Depot, Menards, Amazon\n- \"Utilities\" → electric, gas, water, sewer, trash, internet for property\n- \"Painting\" → paint, primer, painting labor\n- \"Plumbing\" → pipes, faucets, toilets, water heater\n- \"Electrical\" → wiring, outlets, panels, lighting\n- \"Closing Costs\" → title fees, agent commissions, deed prep, settlement, transfer tax\n- \"Property Tax\" → county/city tax bills\n- \"Insurance\" → property insurance, home warranty\n- \"HOA Fees\" → homeowner association dues\n- \"Marketing / Advertising\" → listing photos, staging, ads\n- \"Permits & Fees\" → building permits, inspection fees\n- \"Landscaping\" → lawn, trees, mulch, snow removal\n- \"Legal / Accounting\" → attorney, CPA, legal fees\n- \"Software / Subscriptions\" → apps, software, online services\n- \"Other\" → anything that does not fit above\n\nRespond ONLY with this JSON:\n{\"amount\":123.45,\"desc\":\"Brief 4-6 word description\",\"vendor\":\"Store name\",\"date\":\"YYYY-MM-DD\",\"cat\":\"exact category from list\"}"}]}]})});
+    const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:getAuthHeaders(),body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:600,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:processed.mime,data:b64}},{type:"text",text:"You are an expert real estate expense categorizer. Extract data from this receipt and respond ONLY with raw JSON (no markdown).\n\nCategories (pick the BEST match):\n- \"Labor / Contractor\" → any worker, contractor, handyman, labor charges\n- \"Materials & Supplies\" → hardware, tools, fixtures, appliances, Home Depot, Menards, Amazon\n- \"Utilities\" → electric, gas, water, sewer, trash, internet for property\n- \"Painting\" → paint, primer, painting labor\n- \"Plumbing\" → pipes, faucets, toilets, water heater\n- \"Electrical\" → wiring, outlets, panels, lighting\n- \"Closing Costs\" → title fees, agent commissions, deed prep, settlement, transfer tax\n- \"Property Tax\" → county/city tax bills\n- \"Insurance\" → property insurance, home warranty\n- \"HOA Fees\" → homeowner association dues\n- \"Marketing / Advertising\" → listing photos, staging, ads\n- \"Permits & Fees\" → building permits, inspection fees\n- \"Landscaping\" → lawn, trees, mulch, snow removal\n- \"Legal / Accounting\" → attorney, CPA, legal fees\n- \"Software / Subscriptions\" → apps, software, online services\n- \"Meals (50% deductible)\" → business meals, restaurants, food with clients/contractors\n- \"Other\" → anything that does not fit above\n\nRespond ONLY with this JSON:\n{\"amount\":123.45,\"desc\":\"Brief 4-6 word description\",\"vendor\":\"Store name\",\"date\":\"YYYY-MM-DD\",\"cat\":\"exact category from list\"}"}]}]})});
     if(!resp.ok)throw new Error(await resp.text());
     const data=await resp.json();
     const parsed=JSON.parse(data.content[0].text.replace(/```json|```/g,"").trim());
@@ -3461,7 +3466,7 @@ function handleDrop(ev,p){
 function renderQ(p){const q=document.getElementById("sq-"+p)||document.getElementById("scan-queue-"+p);if(!q)return;const files=pendingFiles[p]||[];q.innerHTML=files.map((f,i)=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:4px 0"><svg class="ico" style="width:14px;height:14px;color:var(--text2)"><use href="#ico-file"/></svg>${f.name}<button onclick="pendingFiles['${p}'].splice(${i},1);renderQ('${p}')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:16px">×</button></div>`).join("");}
 async function scanOne(f,p,i){
   try{const processed=await processReceiptImage(f,true);const b64=processed.b64;
-    const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:getAuthHeaders(),body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:600,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:processed.mime,data:b64}},{type:"text",text:"You are an expert real estate expense categorizer. Extract data from this receipt and respond ONLY with raw JSON (no markdown).\n\nCategories (pick the BEST match):\n- \"Labor / Contractor\" → any worker, contractor, handyman, labor charges\n- \"Materials & Supplies\" → hardware, tools, fixtures, appliances, Home Depot, Menards, Amazon\n- \"Utilities\" → electric, gas, water, sewer, trash, internet for property\n- \"Painting\" → paint, primer, painting labor\n- \"Plumbing\" → pipes, faucets, toilets, water heater\n- \"Electrical\" → wiring, outlets, panels, lighting\n- \"Closing Costs\" → title fees, agent commissions, deed prep, settlement, transfer tax\n- \"Property Tax\" → county/city tax bills\n- \"Insurance\" → property insurance, home warranty\n- \"HOA Fees\" → homeowner association dues\n- \"Marketing / Advertising\" → listing photos, staging, ads\n- \"Permits & Fees\" → building permits, inspection fees\n- \"Landscaping\" → lawn, trees, mulch, snow removal\n- \"Legal / Accounting\" → attorney, CPA, legal fees\n- \"Software / Subscriptions\" → apps, software, online services\n- \"Other\" → anything that does not fit above\n\nRespond ONLY with this JSON:\n{\"amount\":123.45,\"desc\":\"Brief 4-6 word description\",\"vendor\":\"Store name\",\"date\":\"YYYY-MM-DD\",\"cat\":\"exact category from list\"}"}]}]})});
+    const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:getAuthHeaders(),body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:600,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:processed.mime,data:b64}},{type:"text",text:"You are an expert real estate expense categorizer. Extract data from this receipt and respond ONLY with raw JSON (no markdown).\n\nCategories (pick the BEST match):\n- \"Labor / Contractor\" → any worker, contractor, handyman, labor charges\n- \"Materials & Supplies\" → hardware, tools, fixtures, appliances, Home Depot, Menards, Amazon\n- \"Utilities\" → electric, gas, water, sewer, trash, internet for property\n- \"Painting\" → paint, primer, painting labor\n- \"Plumbing\" → pipes, faucets, toilets, water heater\n- \"Electrical\" → wiring, outlets, panels, lighting\n- \"Closing Costs\" → title fees, agent commissions, deed prep, settlement, transfer tax\n- \"Property Tax\" → county/city tax bills\n- \"Insurance\" → property insurance, home warranty\n- \"HOA Fees\" → homeowner association dues\n- \"Marketing / Advertising\" → listing photos, staging, ads\n- \"Permits & Fees\" → building permits, inspection fees\n- \"Landscaping\" → lawn, trees, mulch, snow removal\n- \"Legal / Accounting\" → attorney, CPA, legal fees\n- \"Software / Subscriptions\" → apps, software, online services\n- \"Meals (50% deductible)\" → business meals, restaurants, food with clients/contractors\n- \"Other\" → anything that does not fit above\n\nRespond ONLY with this JSON:\n{\"amount\":123.45,\"desc\":\"Brief 4-6 word description\",\"vendor\":\"Store name\",\"date\":\"YYYY-MM-DD\",\"cat\":\"exact category from list\"}"}]}]})});
     if(!resp.ok){const errText=await resp.text().catch(()=>"");console.error("Anthropic API error:",resp.status,errText.slice(0,200));return{ok:false,err:resp.status+" "+errText.slice(0,100)};}const data=await resp.json();const parsed=JSON.parse(data.content[0].text.replace(/```json|```/g,"").trim());
     return{ok:true,data:parsed,b64,mime:processed.mime};
   }catch(ex){console.error("scan error:",ex?.message||String(ex));return{ok:false,err:ex?.message};}
@@ -3568,7 +3573,7 @@ function renderCr(p){
 }
 
 // ====== EXPENSE ANALYSIS ======
-const CAT_COLORS={"Labor / Contractor":"#f59e0b","Materials & Supplies":"#3b82f6","Painting":"#8b5cf6","Plumbing":"#06b6d4","Electrical":"#f43f5e","Utilities":"#10b981","HOA Fees":"#ec4899","Closing Costs":"#6366f1","Property Tax":"#84cc16","Insurance":"#14b8a6","Marketing / Advertising":"#f97316","Permits & Fees":"#a855f7","Landscaping":"#22c55e","Legal / Accounting":"#e879f9","Flooring":"#f43f5e","Software / Subscriptions":"#94a3b8","Other":"#78716c"};
+const CAT_COLORS={"Labor / Contractor":"#f59e0b","Materials & Supplies":"#3b82f6","Painting":"#8b5cf6","Plumbing":"#06b6d4","Electrical":"#f43f5e","Utilities":"#10b981","HOA Fees":"#ec4899","Closing Costs":"#6366f1","Property Tax":"#84cc16","Insurance":"#14b8a6","Marketing / Advertising":"#f97316","Permits & Fees":"#a855f7","Landscaping":"#22c55e","Legal / Accounting":"#e879f9","Flooring":"#f43f5e","Software / Subscriptions":"#94a3b8","Meals (50% deductible)":"#fb923c","Other":"#78716c"};
 function renderAnalysis(p){
   const el=document.getElementById("analysis-"+p);if(!el)return;
   const expenses=allE(p);
@@ -3983,11 +3988,12 @@ function refreshSite(){
   const revenue=props.reduce((s,p)=>s+propSold(p),0);
   const totalExp=[...props,"general"].reduce((s,p)=>s+eTotal(p),0);
   const acquisitions=props.filter(p=>propSold(p)>0).reduce((s,p)=>s+propPurchase(p),0);
-  const netProfit=revenue-acquisitions-totalExp;
+  const mealsAll=[...props,"general"].flatMap(p=>allE(p)).filter(e=>(e.c||e.cat||'')==='Meals (50% deductible)'&&!e.credit).reduce((s,e)=>s+(parseFloat(e.a||e.amount)||0),0);
+  const netProfit=revenue-acquisitions-totalExp+mealsAll*0.5;
   const activeAllin=props.filter(p=>{const st=propStatus(p);return st!=='Sold'&&st!=='Inactive'&&st!=='Closed';}).reduce((s,p)=>s+propAllin(p),0);
   const activeCount=props.filter(p=>{const st=propStatus(p);return st!=='Sold'&&st!=='Inactive'&&st!=='Closed';}).length;
   const otherInc=incomeTotal(taxYear);
-  const netP=(revenue+otherInc)-acquisitions-totalExp;
+  const netP=(revenue+otherInc)-acquisitions-totalExp+mealsAll*0.5;
   const soldWithROI=props.filter(p=>propSold(p)>0&&propROI(p)!=null);
   const avgROI=soldWithROI.length?soldWithROI.reduce((s,p)=>s+propROI(p),0)/soldWithROI.length:null;
   setEl("stat-net-profit",(netP>=0?'+':'')+fmt(netP));
