@@ -2941,7 +2941,7 @@ var expReceiptB64="",expReceiptMime="";
 let pendingFiles={};
 function openAddExp(p){
   document.getElementById("exp-pid").value=p;document.getElementById("exp-amt").value="";document.getElementById("exp-desc").value="";
-  document.getElementById("exp-date").value=new Date().toISOString().split("T")[0];document.getElementById("exp-vendor").value="";
+  document.getElementById("exp-date").value=new Date().toLocaleDateString('en-CA');document.getElementById("exp-vendor").value="";
   document.getElementById("exp-cat").selectedIndex=0;const cc=document.getElementById("exp-custom-cat");if(cc){cc.value="";cc.style.display="none";}
   expReceiptB64="";expReceiptMime="";const ss=document.getElementById("exp-scan-status");if(ss)ss.innerHTML="";pendingFiles[p]=[];renderQ(p);showModal("m-exp");const _w9r=document.getElementById("exp-w9-row");if(_w9r)_w9r.style.display="none";const _w9c=document.getElementById("exp-w9");if(_w9c)_w9c.checked=false;
 }
@@ -3122,7 +3122,7 @@ function openAddCr(p){
   document.getElementById("cr-pid").value=p;
   document.getElementById("cr-amt").value="";
   document.getElementById("cr-desc").value="";
-  document.getElementById("cr-date").value=new Date().toISOString().split("T")[0];
+  document.getElementById("cr-date").value=new Date().toLocaleDateString('en-CA');
   document.getElementById("cr-vendor").value="";
   document.getElementById("cr-cat").selectedIndex=0;
   const cc=document.getElementById("cr-custom-cat");if(cc){cc.value="";cc.style.display="none";}
