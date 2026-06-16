@@ -152,7 +152,7 @@ DATA BACKUP REMINDER:
 </svg>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;width:100vw !important;max-width:100vw !important;overscroll-behavior:none;background:#0a0b0f url('https://raw.githubusercontent.com/tml828/apex-homes/main/Gemini_Generated_Image_d4zq21d4zq21d4zq.png?v=6') center center / cover no-repeat fixed}html{width:100vw !important;max-width:100vw !important;overscroll-behavior:none}body{overflow-x:hidden;width:100vw;max-width:100vw;box-sizing:border-box;overscroll-behavior:none}*{box-sizing:border-box}
+html{width:100vw !important;max-width:100vw !important;overscroll-behavior:none;background:#0a0b0f url('https://raw.githubusercontent.com/tml828/apex-homes/main/Gemini_Generated_Image_d4zq21d4zq21d4zq.png?v=6') center center / cover no-repeat fixed}html{width:100vw !important;max-width:100vw !important;overscroll-behavior:none}body{overflow-x:hidden;width:100vw;max-width:100vw;box-sizing:border-box;overscroll-behavior:none}*{box-sizing:border-box}
 body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#0a0b0f url('https://raw.githubusercontent.com/tml828/apex-homes/main/Gemini_Generated_Image_d4zq21d4zq21d4zq.png?v=6') center center / cover no-repeat fixed;color:#e2ddd4;min-height:100vh;-webkit-font-smoothing:antialiased;font-weight:400;;font-size:16px}
 :root{
   --gold:#c9a84c;--gold2:#e8c96a;--gold3:#f5d878;--gold-dim:#7a5e28;
@@ -2751,14 +2751,14 @@ function showModal(id){
       if(cur)sel.value=cur;
     }
   }
-  m.classList.add("open");const sy=window.scrollY;document.body.dataset.sy=sy;document.body.style.overflow="hidden";if(id==='m-exp'||id==='m-edit-exp'){hookW9Listeners();setTimeout(()=>{if(id==='m-exp')checkW9Visibility('exp');else checkW9Visibility('eeexp');},50);}if(id==='tax-contractors'||m.closest('#tax-contractors'))renderContractors();
+  m.classList.add("open");const sy=window.scrollY;document.body.dataset.sy=sy;document.body.style.overflow="hidden";if(_moOpen===0)document.addEventListener('touchmove',_tmHandler,{passive:false});_moOpen++;if(id==='m-exp'||id==='m-edit-exp'){hookW9Listeners();setTimeout(()=>{if(id==='m-exp')checkW9Visibility('exp');else checkW9Visibility('eeexp');},50);}if(id==='tax-contractors'||m.closest('#tax-contractors'))renderContractors();
 }
-function closeModal(id){const m=document.getElementById(id);if(!m)return;m.classList.remove("open");if(!document.querySelector(".mo.open")){document.body.style.overflow="";}}
+function closeModal(id){const m=document.getElementById(id);if(!m)return;m.classList.remove("open");_moOpen=Math.max(0,_moOpen-1);if(_moOpen===0){document.body.style.overflow="";document.removeEventListener('touchmove',_tmHandler);}}
 
-// iOS background-scroll lock: body{overflow:hidden} alone doesn't stop touch scroll
-// chaining through an open modal to the page behind it.
+// iOS background-scroll lock: only active while a modal is open (dynamic listener avoids
+// passive:false overhead on every touchmove when no modal is showing).
+let _moOpen=0;
 function _scrollableIn(el){
-  // walk up from el to its .mo overlay; return the first vertically scrollable container
   while(el&&el.nodeType===1){
     if(el.scrollHeight>el.clientHeight+1){
       const oy=getComputedStyle(el).overflowY;
@@ -2769,20 +2769,18 @@ function _scrollableIn(el){
   }
   return null;
 }
+function _tmHandler(e){
+  const overlay=e.target.nodeType===1?e.target.closest('.mo.open'):null;
+  if(!overlay){e.preventDefault();return;}
+  if(!_scrollableIn(e.target)&&!(overlay.scrollHeight>overlay.clientHeight+1))e.preventDefault();
+}
 document.addEventListener('touchstart',e=>{
-  if(!document.querySelector('.mo.open'))return;
+  if(!_moOpen)return;
   const sc=_scrollableIn(e.target);
   if(!sc)return;
-  // nudge off the exact edges so the scroll never chains to the body
   if(sc.scrollTop<=0)sc.scrollTop=1;
   else if(sc.scrollTop+sc.clientHeight>=sc.scrollHeight)sc.scrollTop=sc.scrollHeight-sc.clientHeight-1;
 },{passive:true});
-document.addEventListener('touchmove',e=>{
-  if(!document.querySelector('.mo.open'))return;
-  const overlay=e.target.nodeType===1?e.target.closest('.mo.open'):null;
-  if(!overlay){e.preventDefault();return;} // touch outside the modal — block background scroll
-  if(!_scrollableIn(e.target)&&!(overlay.scrollHeight>overlay.clientHeight+1))e.preventDefault();
-},{passive:false});
 
 // ====== STATUS ======
 function openStatusDropdown(p,ev){
