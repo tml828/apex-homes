@@ -1622,12 +1622,15 @@ async function sbRefreshAuth(force){
     const r=await fetch(SB_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY},body:JSON.stringify({refresh_token:s.refresh_token})});
     const j=await r.json().catch(()=>({}));
     if(r.ok&&j.access_token){_saveAuthSession(j);return true;}
-    if(r.status===400||r.status===401){_saveAuthSession(null);return false;}
-    return true; // server hiccup — keep existing token
+    // Only clear session on confirmed invalid_grant — not network errors or server hiccups
+    if((r.status===400||r.status===401)&&(j.error==='invalid_grant'||j.error_code==='refresh_token_not_found')){_saveAuthSession(null);return false;}
+    return true; // any other error — keep existing token and try again later
   }catch(e){return true;} // network blip — keep existing token
 }
 function sbLogout(){_saveAuthSession(null);sessionStorage.removeItem('apex_unlocked');location.reload();}
 setInterval(()=>{sbRefreshAuth().catch(()=>{});},60000);
+// Refresh token immediately when app returns from background (iOS suspends timers)
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')sbRefreshAuth().catch(()=>{});});
 let syncTimer=null,syncStatus='idle',syncEnabled=true;
 
 
