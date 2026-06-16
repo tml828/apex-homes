@@ -206,6 +206,13 @@ Property keys are always lowercase, no spaces.
 - Docs tab Add Document button always rendered by `renderDocs()`; accepts multi-file and multi-page docs
 - Doc upload rewritten: `handleDocFiles()` + `saveDocFile()` — saves to `propData._docs[p]`, then uploads to Supabase storage; no longer routes to receipt scanner queue
 - `buildPropPage()` Expenses tab includes AI Receipt Scanner panel and CSV Import button for all properties
+- Dashboard mini-cards grid uses `align-items:start` — prevents CSS stretch making adjacent card appear to open when one is toggled
+- Expenses tab total shows **gross expenses only** (not net of credits); `expGross` computed separately from `eTotal()` in `refreshSite()`
+- "Meals (50% deductible)" expense category added; IRS 50% limit applied in `exportTaxPDF()` (Line 24b), `exportTaxCSV()`, and `refreshSite()` net profit calculation
+- Date inputs in `openAddExp()` and `openAddCr()` use `toLocaleDateString('en-CA')` (not `toISOString()`) to avoid next-day UTC timezone bug
+- Dashboard "Tax Exempt" tab renamed to "Tx Ex/Cps"
+- Estimates tab added to every property page — `propData._estimates[key]` array; functions: `getEstimates`, `openAddEst`, `openEditEst`, `saveEst`, `delEst`, `renderEstimates`
+- Viewport meta includes `maximum-scale=1.0` to prevent iOS auto-zoom; all modal inputs set to `font-size:16px`
 
 ---
 
