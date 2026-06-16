@@ -1255,6 +1255,33 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
   </div>
 </div>
 
+<!-- ADD / EDIT ESTIMATE MODAL -->
+<div class="mo" id="m-est" onclick="if(event.target===this)closeModal('m-est')">
+  <div class="md">
+    <div class="md-hdr"><span class="md-title" id="est-modal-title">Add Estimate</span><button class="btn btn-ghost btn-sm btn-icon" onclick="closeModal('m-est')"><svg class="ico"><use href="#ico-x"/></svg></button></div>
+    <input type="hidden" id="est-pid">
+    <input type="hidden" id="est-idx" value="-1">
+    <div class="fg"><label>Contractor Name</label><input type="text" id="est-contractor" placeholder="Company or person"></div>
+    <div class="fr">
+      <div class="fg"><label>Job Type</label><input type="text" id="est-job" placeholder="e.g. Roofing, Plumbing, HVAC"></div>
+      <div class="fg"><label>Estimate Amount ($)</label><input type="number" step="0.01" placeholder="0.00" id="est-amount"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Phone</label><input type="tel" id="est-phone" placeholder="(555) 555-5555"></div>
+      <div class="fg"><label>Email</label><input type="email" id="est-email" placeholder="contractor@email.com"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Availability / Start Date</label><input type="date" id="est-avail"></div>
+      <div class="fg"><label>Status</label><select id="est-status"><option>Pending</option><option>Accepted</option><option>Rejected</option></select></div>
+    </div>
+    <div class="fg"><label>Notes</label><textarea id="est-notes" rows="2" placeholder="Details, scope, conditions..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:.5rem .75rem;color:var(--text);font-family:inherit;font-size:13px;resize:vertical"></textarea></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('m-est')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveEst()">Save Estimate</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADD TASK MODAL -->
 <div class="mo" id="m-task" onclick="if(event.target===this)closeModal('m-task')">
   <div class="md">
@@ -3572,6 +3599,86 @@ function renderCr(p){
   }).join("");
 }
 
+// ====== ESTIMATES ======
+function getEstimates(p){return(propData._estimates&&propData._estimates[p])||[];}
+function openAddEst(p){
+  document.getElementById('est-pid').value=p;
+  document.getElementById('est-idx').value=-1;
+  document.getElementById('est-modal-title').textContent='Add Estimate';
+  ['est-contractor','est-job','est-phone','est-email','est-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('est-amount').value='';
+  document.getElementById('est-avail').value='';
+  document.getElementById('est-status').value='Pending';
+  showModal('m-est');
+}
+function openEditEst(p,idx){
+  const est=getEstimates(p)[idx];if(!est)return;
+  document.getElementById('est-pid').value=p;
+  document.getElementById('est-idx').value=idx;
+  document.getElementById('est-modal-title').textContent='Edit Estimate';
+  document.getElementById('est-contractor').value=est.contractor||'';
+  document.getElementById('est-job').value=est.job||'';
+  document.getElementById('est-amount').value=est.amount||'';
+  document.getElementById('est-phone').value=est.phone||'';
+  document.getElementById('est-email').value=est.email||'';
+  document.getElementById('est-avail').value=est.avail||'';
+  document.getElementById('est-status').value=est.status||'Pending';
+  document.getElementById('est-notes').value=est.notes||'';
+  showModal('m-est');
+}
+function saveEst(){
+  const p=document.getElementById('est-pid').value;
+  const idx=parseInt(document.getElementById('est-idx').value);
+  const obj={
+    contractor:document.getElementById('est-contractor').value.trim(),
+    job:document.getElementById('est-job').value.trim(),
+    amount:parseFloat(document.getElementById('est-amount').value)||0,
+    phone:document.getElementById('est-phone').value.trim(),
+    email:document.getElementById('est-email').value.trim(),
+    avail:document.getElementById('est-avail').value,
+    status:document.getElementById('est-status').value,
+    notes:document.getElementById('est-notes').value.trim()
+  };
+  if(!obj.contractor&&!obj.job){alert('Enter at least a contractor name or job type.');return;}
+  if(!propData._estimates)propData._estimates={};
+  if(!propData._estimates[p])propData._estimates[p]=[];
+  if(idx>=0)propData._estimates[p][idx]=obj;
+  else propData._estimates[p].unshift(obj);
+  save();renderEstimates(p);closeModal('m-est');
+}
+function delEst(p,idx){
+  if(!confirm('Delete this estimate?'))return;
+  propData._estimates[p].splice(idx,1);
+  save();renderEstimates(p);
+}
+function renderEstimates(p){
+  const el=document.getElementById(p+'-est-list');if(!el)return;
+  const ests=getEstimates(p);
+  const cnt=document.getElementById(p+'-est-count');if(cnt)cnt.textContent=ests.length?'('+ests.length+')':'';
+  if(!ests.length){el.innerHTML='<div class="empty"><svg class="ico"><use href="#ico-file-text"/></svg>No estimates yet</div>';return;}
+  const statusColor={Pending:'#f59e0b',Accepted:'#10b981',Rejected:'#f43f5e'};
+  el.innerHTML=ests.map((e,i)=>{
+    const sc=statusColor[e.status]||'#6b7280';
+    const contact=[e.phone,e.email].filter(Boolean).join(' · ');
+    return `<div style="padding:.85rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+          <span style="font-size:13px;font-weight:700;color:var(--text)">${esc(e.contractor||'Unknown')}</span>
+          <span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;background:${sc}22;color:${sc};border:1px solid ${sc}55">${e.status||'Pending'}</span>
+        </div>
+        ${e.job?`<div style="font-size:12px;color:var(--gold2);font-weight:600;margin-bottom:2px">${esc(e.job)}</div>`:''}
+        ${e.amount?`<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">${fmt(e.amount)}</div>`:''}
+        ${e.avail?`<div style="font-size:11px;color:var(--text3)">Available: ${fmtD(e.avail)}</div>`:''}
+        ${contact?`<div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(contact)}</div>`:''}
+        ${e.notes?`<div style="font-size:12px;color:var(--text2);margin-top:4px;font-style:italic">${esc(e.notes)}</div>`:''}
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="openEditEst('${p}',${i})" title="Edit"><svg class="ico" style="width:13px;height:13px"><use href="#ico-pencil"/></svg></button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="delEst('${p}',${i})" title="Delete"><svg class="ico" style="width:13px;height:13px"><use href="#ico-trash"/></svg></button>
+      </div>
+    </div>`;
+  }).join('');
+}
 // ====== EXPENSE ANALYSIS ======
 const CAT_COLORS={"Labor / Contractor":"#f59e0b","Materials & Supplies":"#3b82f6","Painting":"#8b5cf6","Plumbing":"#06b6d4","Electrical":"#f43f5e","Utilities":"#10b981","HOA Fees":"#ec4899","Closing Costs":"#6366f1","Property Tax":"#84cc16","Insurance":"#14b8a6","Marketing / Advertising":"#f97316","Permits & Fees":"#a855f7","Landscaping":"#22c55e","Legal / Accounting":"#e879f9","Flooring":"#f43f5e","Software / Subscriptions":"#94a3b8","Meals (50% deductible)":"#fb923c","Other":"#78716c"};
 function renderAnalysis(p){
@@ -3843,6 +3950,7 @@ function buildPropPage(key, force){
           <button class="tb" onclick="stab(this,'tb-${key}closing')">Closing</button>
           <button class="tb" onclick="stab(this,'tb-${key}docs')">Docs</button>
           <button class="tb" onclick="stab(this,'tb-${key}roi')">ROI</button>
+          <button class="tb" onclick="stab(this,'tb-${key}est');renderEstimates('${key}')">Estimates</button>
           <button class="tb" onclick="stab(this,'tb-${key}analysis');renderAnalysis('${key}')">Analysis</button>
         </div>
         <div class="tab-pane active" id="tb-${key}ex">
@@ -3904,6 +4012,13 @@ function buildPropPage(key, force){
             <div class="roi-item"><div class="roi-lbl">Net Profit</div><div class="roi-val" id="${key}-roi-profit">—</div></div>
             <div class="roi-item"><div class="roi-lbl">ROI</div><div class="roi-val" id="${key}-roi-pct">—</div></div>
           </div>
+        </div>
+        <div class="tab-pane" id="tb-${key}est">
+          <div class="exp-toolbar" style="margin-bottom:1rem">
+            <div style="font-size:13px;font-weight:700;color:var(--text2)">Estimates <span id="${key}-est-count" style="color:var(--text3);font-weight:400"></span></div>
+            <button class="btn btn-sm" style="background:#c0392b;border-color:#c0392b;color:#fff;font-weight:700" onclick="openAddEst('${key}')"><svg class="ico"><use href="#ico-plus"/></svg> Add Estimate</button>
+          </div>
+          <div id="${key}-est-list"></div>
         </div>
         <div class="tab-pane" id="tb-${key}analysis">
           <div id="analysis-${key}"></div>
