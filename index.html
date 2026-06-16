@@ -468,6 +468,7 @@ nav.open .mob-menu{display:block}
   .main{padding:.75rem .85rem;width:100%;max-width:100%;box-sizing:border-box;overflow-x:hidden;overflow-y:visible}
   body{overflow-x:hidden;overflow-y:auto;width:100%;max-width:100vw;position:relative;-webkit-overflow-scrolling:touch}
   *{box-sizing:border-box}
+  input,select,textarea{font-size:16px !important}
 
   /* ── Nav — 2×2 grid on mobile ── */
   nav.nav{height:auto !important;padding:6px 10px;flex-wrap:wrap;align-items:center;width:100%;max-width:100vw;box-sizing:border-box}
@@ -1448,7 +1449,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
 <!-- INCOME MODAL -->
 <div class="mo" id="m-income" onclick="if(event.target===this)closeModal('m-income')">
   <div class="md" style="width:100%;max-width:480px">
-    <div class="md-hd"><span id="income-modal-title">Add Income</span><button class="md-cls" onclick="closeModal('m-income')">&#x2715;</button></div>
+    <div class="md-title" id="income-modal-title">Add Income<button class="md-close" onclick="closeModal('m-income')"><svg class="ico"><use href="#ico-x"/></svg></button></div>
     <div class="md-bd">
       <input type="hidden" id="income-id">
       <div class="fg"><label>Amount ($)</label><input type="number" id="income-amount" placeholder="0.00" step="0.01"></div>
@@ -3649,6 +3650,7 @@ function saveEst(){
 }
 function delEst(p,idx){
   if(!confirm('Delete this estimate?'))return;
+  if(!propData._estimates?.[p])return;
   propData._estimates[p].splice(idx,1);
   save();renderEstimates(p);
 }
