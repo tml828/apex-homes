@@ -1182,6 +1182,24 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <div class="fr"><div class="fg"><label>Amount ($)</label><input type="number" step="0.01" placeholder="0.00" id="exp-amt"></div><div class="fg"><label>Date</label><input type="date" id="exp-date"></div></div>
     <div class="fr"><div class="fg" style="flex:2"><label>Description</label><input type="text" placeholder="What was this for?" id="exp-desc" oninput="onExpDescInput(this.value,'exp-cat','exp-cat-suggest')"><div id="exp-cat-suggest" style="min-height:16px;margin-top:4px;font-size:12px;color:var(--text2)"></div></div></div>
     <div class="fr"><div class="fg"><label>Category</label><select id="exp-cat" onchange="toggleCustomCat('exp-custom-cat',this)"><option>Labor / Contractor</option><option>Materials &amp; Supplies</option><option>Utilities</option><option>HOA Fees</option><option>Painting</option><option>Plumbing</option><option>Electrical</option><option>Closing Costs</option><option>Property Tax</option><option>Insurance</option><option>Marketing / Advertising</option><option>Permits &amp; Fees</option><option>Landscaping</option><option>Legal / Accounting</option><option>Software / Subscriptions</option><option>Meals (50% deductible)</option><option>Other</option><option value="__custom__">+ Custom category...</option></select><input type="text" id="exp-custom-cat" placeholder="Type custom category" style="display:none;margin-top:6px"></div><div class="fg" style="position:relative"><label>Vendor</label><input type="text" placeholder="Store or person" id="exp-vendor" autocomplete="off" oninput="showVendorSuggest('exp-vendor','exp-vendor-dd')" onblur="setTimeout(()=>hideVendorSuggest('exp-vendor-dd'),200)"><div id="exp-vendor-dd" class="vendor-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;z-index:999;max-height:160px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.3)"></div></div></div>
+    <!-- Recurring toggle -->
+    <div style="background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:.65rem .85rem;margin-top:6px">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text)">
+        <input type="checkbox" id="exp-recurring" onchange="toggleRecurring()" style="width:16px;height:16px;accent-color:var(--gold2);font-size:16px">
+        Recurring expense
+      </label>
+      <div id="exp-recur-row" style="display:none;margin-top:.65rem">
+        <div class="fr" style="margin:0"><div class="fg" style="margin:0"><label style="font-size:11px;color:var(--text2)">Frequency</label>
+          <select id="exp-recur-freq" style="font-size:16px">
+            <option value="weekly">Weekly</option>
+            <option value="monthly" selected>Monthly</option>
+            <option value="quarterly">Quarterly (every 3 months)</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div></div>
+        <div style="font-size:11px;color:var(--text3);margin-top:5px">Generates one entry per period from the start date above through today.</div>
+      </div>
+    </div>
     <!-- W-9 toggle — shown when Labor/Contractor + amount >= $600 -->
     <div id="exp-w9-row" style="display:none;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:.65rem .85rem;margin-top:6px">
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--gold2)">
@@ -2972,7 +2990,32 @@ function openAddExp(p){
   document.getElementById("exp-pid").value=p;document.getElementById("exp-amt").value="";document.getElementById("exp-desc").value="";
   document.getElementById("exp-date").value=new Date().toLocaleDateString('en-CA');document.getElementById("exp-vendor").value="";
   document.getElementById("exp-cat").selectedIndex=0;const cc=document.getElementById("exp-custom-cat");if(cc){cc.value="";cc.style.display="none";}
-  expReceiptB64="";expReceiptMime="";const ss=document.getElementById("exp-scan-status");if(ss)ss.innerHTML="";pendingFiles[p]=[];renderQ(p);showModal("m-exp");const _w9r=document.getElementById("exp-w9-row");if(_w9r)_w9r.style.display="none";const _w9c=document.getElementById("exp-w9");if(_w9c)_w9c.checked=false;
+  expReceiptB64="";expReceiptMime="";const ss=document.getElementById("exp-scan-status");if(ss)ss.innerHTML="";pendingFiles[p]=[];renderQ(p);
+  const _rc=document.getElementById("exp-recurring");if(_rc){_rc.checked=false;}
+  const _rr=document.getElementById("exp-recur-row");if(_rr)_rr.style.display="none";
+  const _rf=document.getElementById("exp-recur-freq");if(_rf)_rf.value="monthly";
+  showModal("m-exp");const _w9r=document.getElementById("exp-w9-row");if(_w9r)_w9r.style.display="none";const _w9c=document.getElementById("exp-w9");if(_w9c)_w9c.checked=false;
+}
+function toggleRecurring(){
+  const on=document.getElementById("exp-recurring")?.checked;
+  const row=document.getElementById("exp-recur-row");if(row)row.style.display=on?"block":"none";
+}
+function _recurDates(startDt,freq){
+  // Returns array of YYYY-MM-DD strings from startDt through today, one per period
+  const dates=[];const today=new Date();today.setHours(0,0,0,0);
+  let cur=new Date(startDt+'T00:00:00');
+  if(isNaN(cur.getTime()))return dates;
+  while(cur<=today){
+    dates.push(cur.toLocaleDateString('en-CA'));
+    const y=cur.getFullYear(),m=cur.getMonth(),day=cur.getDate();
+    if(freq==='weekly')cur=new Date(y,m,day+7);
+    else if(freq==='monthly')cur=new Date(y,m+1,day);
+    else if(freq==='quarterly')cur=new Date(y,m+3,day);
+    else if(freq==='yearly')cur=new Date(y+1,m,day);
+    else break;
+    if(dates.length>500)break; // safety cap
+  }
+  return dates;
 }
 function saveExp(){
   try{
@@ -2983,13 +3026,27 @@ function saveExp(){
   const c=getExpCat("exp-cat","exp-custom-cat");
   const v=document.getElementById("exp-vendor").value.trim();
   if(!amount){document.getElementById("exp-scan-status").innerHTML='<div style="font-size:12px;color:var(--red)">Please enter an amount.</div>';return;}
-  // Duplicate check — warn if same amount already exists for this property
-  const dupCheck=allE(p).find(x=>parseFloat(x.a||x.amount)===amount);
-  if(dupCheck&&!confirm(`An expense for ${fmt(amount)} already exists ("${dupCheck.d||dupCheck.desc||'Expense'}"). Add again?`))return;
+  const isRecurring=document.getElementById("exp-recurring")?.checked;
+  const recurFreq=document.getElementById("exp-recur-freq")?.value||"monthly";
   if(!extra[p])extra[p]=[];
-  const receipt=expReceiptUrl||(expReceiptB64?`data:${expReceiptMime||'image/jpeg'};base64,${expReceiptB64}`:'');const w9=document.getElementById('exp-w9')?.checked&&c==='Labor / Contractor'&&amount>=600;
+  const receipt=expReceiptUrl||(expReceiptB64?`data:${expReceiptMime||'image/jpeg'};base64,${expReceiptB64}`:'');
+  const w9=document.getElementById('exp-w9')?.checked&&c==='Labor / Contractor'&&amount>=600;
   saveVendor(v);
-  const expObj={a:amount,d,c,v,dt,receipt};if(w9)expObj.w9=true;extra[p].unshift(expObj);
+  if(isRecurring){
+    const dates=_recurDates(dt,recurFreq);
+    if(!dates.length){document.getElementById("exp-scan-status").innerHTML='<div style="font-size:12px;color:var(--red)">Start date must be today or earlier.</div>';return;}
+    if(!confirm(`This will add ${dates.length} ${recurFreq} expense${dates.length>1?'s':''} (${dates[0]} → ${dates[dates.length-1]}). Continue?`))return;
+    dates.forEach(date=>{
+      const expObj={a:amount,d,c,v,dt:date,receipt,recur:recurFreq};
+      if(w9)expObj.w9=true;
+      extra[p].unshift(expObj);
+    });
+  }else{
+    // Duplicate check for single expenses only
+    const dupCheck=allE(p).find(x=>parseFloat(x.a||x.amount)===amount);
+    if(dupCheck&&!confirm(`An expense for ${fmt(amount)} already exists ("${dupCheck.d||dupCheck.desc||'Expense'}"). Add again?`))return;
+    const expObj={a:amount,d,c,v,dt,receipt};if(w9)expObj.w9=true;extra[p].unshift(expObj);
+  }
   expReceiptUrl=null;expReceiptB64="";expReceiptMime="";
   const prev=document.getElementById("exp-receipt-preview");if(prev)prev.innerHTML="";
   const ss=document.getElementById("exp-scan-status");if(ss)ss.innerHTML="";
@@ -3550,6 +3607,7 @@ function renderE(p){
     const rSafe=e.receipt?esc(e.receipt):"";
     const receipt=e.receipt?`<img src="${rSafe}" data-src="${rSafe}" onclick="openLightbox(this.dataset.src)" class="exp-receipt-thumb" alt="receipt" style="width:36px;height:36px;object-fit:cover;border-radius:5px;cursor:zoom-in;flex-shrink:0;border:1px solid var(--border2)">` :"";
     const creditBadge=e.credit?`<span style="font-size:10px;font-weight:700;background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3);border-radius:4px;padding:1px 5px;margin-left:4px">CREDIT</span>`:"";
+    const recurBadge=e.recur?`<span style="font-size:10px;font-weight:700;background:rgba(139,92,246,0.15);color:#a78bfa;border:1px solid rgba(139,92,246,0.3);border-radius:4px;padding:1px 5px;margin-left:4px">↻ ${e.recur}</span>`:"";
     const editFn=e.credit?`openEditCrByIndex('${p}',${e._origIdx})`:`openEditExpByIndex('${p}',${e._origIdx})`;
     const delFn=e.credit?`delCrByIndex('${p}',${e._origIdx})`:`delExpByIndex('${p}',${e._origIdx})`;
     const amtColor=e.credit?"var(--green)":"var(--gold2)";
@@ -3557,7 +3615,7 @@ function renderE(p){
     return `<div class="exp-item" style="display:flex;align-items:center;gap:10px;padding:.7rem 1rem;border-bottom:1px solid var(--border)${e.credit?";background:rgba(34,197,94,0.04)":""}">
       ${receipt}
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${desc}${creditBadge}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${desc}${creditBadge}${recurBadge}</div>
         <div style="font-size:11px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${meta}</div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">

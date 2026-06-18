@@ -213,6 +213,7 @@ Property keys are always lowercase, no spaces.
 - Dashboard "Tax Exempt" tab renamed to "Tx Ex/Cps"
 - Estimates tab added to every property page — `propData._estimates[key]` array; functions: `getEstimates`, `openAddEst`, `openEditEst`, `saveEst`, `delEst`, `renderEstimates`
 - Viewport meta includes `maximum-scale=1.0` to prevent iOS auto-zoom; all modal inputs set to `font-size:16px`
+- Recurring expenses: checkbox + frequency (Weekly/Monthly/Quarterly/Yearly) in Add Expense modal; `_recurDates(startDt,freq)` generates all instances from start date through today; each entry tagged with `recur: freq` field; shown with purple `↻ freq` badge in expense list; available on all properties and general expenses
 
 ---
 
