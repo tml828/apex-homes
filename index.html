@@ -1171,7 +1171,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
       <div style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Select one receipt to fill the form, or select multiple to bulk-add them all at once.</div>
       <div class="drop-zone" id="exp-dz" onclick="document.getElementById('exp-receipt-inp').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleExpDrop(event)" style="padding:1.1rem">
         <svg class="ico dz-icon" style="width:26px;height:26px;margin-bottom:.4rem"><use href="#ico-photo-scan"/></svg>
-        <p style="font-size:12.5px">Tap to take photo or choose from library</p>
+        <p style="font-size:12.5px">Tap to take photo, choose from library, or paste (Ctrl+V)</p>
         <span style="font-size:11px">Select multiple for bulk add</span>
       </div>
       <input type="file" id="exp-receipt-inp" accept="image/*,application/pdf" multiple style="display:none" onchange="handleExpReceiptMulti(this.files)">
@@ -2775,7 +2775,7 @@ function showModal(id){
   }
   m.classList.add("open");const sy=window.scrollY;document.body.dataset.sy=sy;document.body.style.overflow="hidden";if(_moOpen===0)document.addEventListener('touchmove',_tmHandler,{passive:false});_moOpen++;if(id==='m-exp'||id==='m-edit-exp'){hookW9Listeners();setTimeout(()=>{if(id==='m-exp')checkW9Visibility('exp');else checkW9Visibility('eeexp');},50);}if(id==='tax-contractors'||m.closest('#tax-contractors'))renderContractors();
 }
-function closeModal(id){const m=document.getElementById(id);if(!m)return;m.classList.remove("open");_moOpen=Math.max(0,_moOpen-1);if(_moOpen===0){document.body.style.overflow="";document.removeEventListener('touchmove',_tmHandler);}}
+function closeModal(id){const m=document.getElementById(id);if(!m)return;m.classList.remove("open");_moOpen=Math.max(0,_moOpen-1);if(_moOpen===0){document.body.style.overflow="";document.removeEventListener('touchmove',_tmHandler);}if(id==='m-exp'||id==='m-eexp')document.removeEventListener('paste',handleExpPaste);}
 
 // iOS background-scroll lock: only active while a modal is open (dynamic listener avoids
 // passive:false overhead on every touchmove when no modal is showing).
@@ -2995,6 +2995,7 @@ function openAddExp(p){
   const _rr=document.getElementById("exp-recur-row");if(_rr)_rr.style.display="none";
   const _rf=document.getElementById("exp-recur-freq");if(_rf)_rf.value="monthly";
   showModal("m-exp");const _w9r=document.getElementById("exp-w9-row");if(_w9r)_w9r.style.display="none";const _w9c=document.getElementById("exp-w9");if(_w9c)_w9c.checked=false;
+  document.addEventListener('paste',handleExpPaste);
 }
 function toggleRecurring(){
   const on=document.getElementById("exp-recurring")?.checked;
@@ -3125,6 +3126,7 @@ function openEditExpByIndex(p,origIdx){
   const thumb=document.getElementById("eeexp-receipt-thumb");
   thumb.innerHTML=e.receipt?`<div style="margin-bottom:.6rem"><div style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Receipt</div><img src="${e.receipt}" onclick="openLightbox('${e.receipt}')" style="max-height:90px;border-radius:6px;cursor:zoom-in;border:1px solid var(--border2)"></div>`:"";
   showModal("m-edit-exp");
+  document.addEventListener('paste',handleExpPaste);
 }
 let editExpReceiptUrl=null;
 async function handleEditExpReceipt(inp){
@@ -3512,6 +3514,19 @@ function handleExpDrop(ev){
   const dz=ev.currentTarget;if(dz)dz.classList.remove("over");
   const files=ev.dataTransfer&&ev.dataTransfer.files;
   if(files&&files.length)handleExpReceiptMulti(files);
+}
+function handleExpPaste(ev){
+  const items=ev.clipboardData&&ev.clipboardData.items;if(!items)return;
+  const files=[];
+  for(let i=0;i<items.length;i++){if(items[i].type.startsWith('image/')){const f=items[i].getAsFile();if(f)files.push(f);}}
+  if(!files.length)return;
+  ev.preventDefault();
+  const editModal=document.getElementById('m-edit-exp');
+  if(editModal&&editModal.classList.contains('open')){
+    const dt=new DataTransfer();files.forEach(f=>dt.items.add(f));
+    const inp=document.createElement('input');inp.type='file';inp.files=dt.files;
+    handleEditExpReceipt(inp);
+  }else{handleExpReceiptMulti(files);}
 }
 async function scanExpReceipt(f,preB64=null,preMime=null){
   if(!f)return;const status=document.getElementById("exp-scan-status");
