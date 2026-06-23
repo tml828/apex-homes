@@ -3540,14 +3540,17 @@ async function handleExpReceipt(f){
   try{
     if(isPdf){
       const pages=await pdfToImages(f);
+      if(status)status.innerHTML=`<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)"><div class="spin"></div> Uploading ${pages.length} pages...</div>`;
       for(let i=0;i<pages.length;i++){
         const pg=pages[i];
-        const idx=expReceiptUrls.length;
-        expReceiptUrls.push(pg.dataUrl);
-        fetch(pg.dataUrl).then(r=>r.blob()).then(blob=>{
+        let url=pg.dataUrl;
+        try{
+          const blob=await fetch(pg.dataUrl).then(r=>r.blob());
           const path='receipts/exp-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+'.jpg';
-          uploadToStorage(blob,path).then(url=>{expReceiptUrls[idx]=url;}).catch(()=>{});
-        });
+          const uploaded=await uploadToStorage(blob,path);
+          if(uploaded)url=uploaded;
+        }catch(e){}
+        expReceiptUrls.push(url);
       }
       expReceiptB64=pages[0].b64;expReceiptMime=pages[0].mime;
       _renderExpReceiptPreview();
@@ -3558,20 +3561,29 @@ async function handleExpReceipt(f){
       var processed=await processReceiptImage(f,true);
       var dataUrl='data:'+processed.mime+';base64,'+processed.b64;
       expReceiptB64=processed.b64;expReceiptMime=processed.mime;
-      const idx=expReceiptUrls.length;
-      expReceiptUrls.push(dataUrl);
-      fetch(dataUrl).then(function(r){return r.blob();}).then(function(blob){
-        var path='receipts/exp-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+'.jpg';
-        uploadToStorage(blob,path).then(function(url){expReceiptUrls[idx]=url;}).catch(function(){});
-      });
+      let url=dataUrl;
+      try{
+        const blob=await fetch(dataUrl).then(r=>r.blob());
+        const path='receipts/exp-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+'.jpg';
+        const uploaded=await uploadToStorage(blob,path);
+        if(uploaded)url=uploaded;
+      }catch(e){}
+      expReceiptUrls.push(url);
       _renderExpReceiptPreview();
       if(prev)prev.scrollIntoView({behavior:"smooth",block:"nearest"});
       if(status)status.innerHTML='';
       if(getApiKey()||IS_CLAUDE_AI)scanExpReceipt(f,processed.b64,processed.mime);
     }
   }catch(err){
-    var fr=new FileReader();fr.onload=function(ev){expReceiptUrls.push(ev.target.result);_renderExpReceiptPreview();if(prev)prev.scrollIntoView({behavior:"smooth",block:"nearest"});};
-    fr.readAsDataURL(f);
+    try{
+      const path='receipts/exp-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+(f.type==='application/pdf'?'.pdf':'.jpg');
+      const uploaded=await uploadToStorage(f,path);
+      if(uploaded){expReceiptUrls.push(uploaded);_renderExpReceiptPreview();if(prev)prev.scrollIntoView({behavior:"smooth",block:"nearest"});}
+      else throw new Error('upload failed');
+    }catch(e2){
+      var fr=new FileReader();fr.onload=function(ev){expReceiptUrls.push(ev.target.result);_renderExpReceiptPreview();if(prev)prev.scrollIntoView({behavior:"smooth",block:"nearest"});};
+      fr.readAsDataURL(f);
+    }
     if(getApiKey()||IS_CLAUDE_AI)scanExpReceipt(f);
   }
 }
