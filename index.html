@@ -1176,8 +1176,8 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
       <div style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Select or paste receipt image(s). Multiple images attach as pages to this expense.</div>
       <div class="drop-zone" id="exp-dz" onclick="document.getElementById('exp-receipt-inp').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleExpDrop(event)" style="padding:1.1rem">
         <svg class="ico dz-icon" style="width:26px;height:26px;margin-bottom:.4rem"><use href="#ico-photo-scan"/></svg>
-        <p style="font-size:12.5px">Tap to take photo, choose from library, or paste (Ctrl+V). Select multiple for multi-page.</p>
-        <span style="font-size:11px">Select multiple for bulk add</span>
+        <p style="font-size:12.5px">Tap to take photo, choose from library, or paste (Ctrl+V)</p>
+        <span style="font-size:11px">Select multiple for multi-page receipt</span>
       </div>
       <input type="file" id="exp-receipt-inp" accept="image/*,application/pdf" multiple style="display:none" onchange="handleExpReceiptMulti(this.files)">
       <div id="exp-receipt-preview" style="margin-top:.6rem"></div>
@@ -3506,7 +3506,9 @@ async function processReceiptImage(f,crop=false){
 }
 async function handleExpReceiptMulti(files){
   if(!files||!files.length)return;
-  for(const f of Array.from(files))await handleExpReceipt(f);
+  const arr=Array.from(files);
+  const inp=document.getElementById('exp-receipt-inp');if(inp)inp.value='';
+  for(const f of arr)await handleExpReceipt(f);
 }
 async function handleExpReceipt(f){
   if(!f)return;
@@ -3548,7 +3550,6 @@ function clearExpReceipt(){
   const prev=document.getElementById('exp-receipt-preview');if(prev)prev.innerHTML='';
   const status=document.getElementById('exp-scan-status');if(status)status.innerHTML='';
   const inp=document.getElementById('exp-receipt-inp');if(inp)inp.value='';
-  ['exp-amt','exp-desc','exp-date','exp-vendor'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
 }
 function handleExpDrop(ev){
   ev.preventDefault();
