@@ -1173,7 +1173,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <!-- SCAN SECTION -->
     <div style="background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);padding:1rem;margin-bottom:1.1rem">
       <div style="display:flex;align-items:center;gap:7px;margin-bottom:.4rem;font-size:13px;font-weight:600;color:var(--gold2)"><svg class="ico" style="color:#c4b5fd;width:15px;height:15px"><use href="#ico-sparkles"/></svg> Scan Receipt(s) with AI</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Select one receipt to fill the form, or select multiple to bulk-add them all at once.</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Select or paste receipt image(s). Multiple images attach as pages to this expense.</div>
       <div class="drop-zone" id="exp-dz" onclick="document.getElementById('exp-receipt-inp').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleExpDrop(event)" style="padding:1.1rem">
         <svg class="ico dz-icon" style="width:26px;height:26px;margin-bottom:.4rem"><use href="#ico-photo-scan"/></svg>
         <p style="font-size:12.5px">Tap to take photo, choose from library, or paste (Ctrl+V). Select multiple for multi-page.</p>
@@ -3155,12 +3155,17 @@ function openEditExpByIndex(p,origIdx){
   const _ePages=_receiptArr(e.receipt);
   if(_ePages.length){
     const _eidx=_receiptStore.length;_receiptStore.push(_ePages);
-    thumb.innerHTML=`<div style="margin-bottom:.6rem"><div style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Receipt${_ePages.length>1?' ('+_ePages.length+' pages)':''}</div><div style="display:flex;gap:6px;flex-wrap:wrap">${_ePages.map(u=>`<img src="${esc(u)}" onclick="openLightbox(_receiptStore[${_eidx}])" style="max-height:90px;border-radius:6px;cursor:zoom-in;border:1px solid var(--border2)">`).join('')}</div></div>`;
+    thumb.innerHTML=`<div style="margin-bottom:.6rem"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase">Receipt${_ePages.length>1?' ('+_ePages.length+' pages)':''}</span><button onclick="deleteEditExpReceipt()" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;text-decoration:underline">Delete Receipt</button></div><div style="display:flex;gap:6px;flex-wrap:wrap">${_ePages.map(u=>`<img src="${esc(u)}" onclick="openLightbox(_receiptStore[${_eidx}])" style="max-height:90px;border-radius:6px;cursor:zoom-in;border:1px solid var(--border2)">`).join('')}</div></div>`;
   }else{thumb.innerHTML="";}
   showModal("m-edit-exp");
   document.addEventListener('paste',handleExpPaste);
 }
 let editExpReceiptUrl=null;
+function deleteEditExpReceipt(){
+  if(!confirm('Delete receipt image(s)?'))return;
+  editExpReceiptUrl='__deleted__';
+  const thumb=document.getElementById("eeexp-receipt-thumb");if(thumb)thumb.innerHTML='<div style="font-size:12px;color:var(--text3);font-style:italic">Receipt will be removed on save</div>';
+}
 async function handleEditExpReceipt(inp){
   if(!inp.files[0])return;const file=inp.files[0];inp.value="";
   const status=document.getElementById("eeexp-receipt-status");
@@ -3187,7 +3192,8 @@ function saveEditExp(){
   const _ecat=getExpCat('eeexp-cat','eeexp-custom-cat');
   const newData={a:_eamt,d:document.getElementById('eeexp-desc').value.trim(),dt:document.getElementById('eeexp-date').value,c:_ecat,v:_ev};
   if(_ew9&&_ecat==='Labor / Contractor'&&_eamt>=600)newData.w9=true;else newData.w9=false;
-  if(editExpReceiptUrl)newData.receipt=editExpReceiptUrl;
+  if(editExpReceiptUrl==='__deleted__')newData.receipt='';
+  else if(editExpReceiptUrl)newData.receipt=editExpReceiptUrl;
   if(propData._migrated){
     // All expenses live in extra[p] — origIdx is direct index
     if(extra[p]&&extra[p][origIdx])Object.assign(extra[p][origIdx],newData);
@@ -3237,6 +3243,11 @@ function delExpByIndex(p,origIdx){
 // ====== CREDITS & REFUNDS ======
 let crReceiptUrl=null;let crReceiptB64="";let crReceiptMime="";
 let editCrReceiptUrl=null;
+function deleteEditCrReceipt(){
+  if(!confirm('Delete receipt image(s)?'))return;
+  editCrReceiptUrl='__deleted__';
+  const thumb=document.getElementById("eecr-receipt-thumb");if(thumb)thumb.innerHTML='<div style="font-size:12px;color:var(--text3);font-style:italic">Receipt will be removed on save</div>';
+}
 
 function openAddCr(p){
   document.getElementById("cr-pid").value=p;
@@ -3293,7 +3304,7 @@ function openEditCrByIndex(p,origIdx){
   const _crPages=_receiptArr(e.receipt);
   if(_crPages.length){
     const _cridx=_receiptStore.length;_receiptStore.push(_crPages);
-    thumb.innerHTML=`<div style="margin-bottom:.6rem"><div style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Receipt${_crPages.length>1?' ('+_crPages.length+' pages)':''}</div><div style="display:flex;gap:6px;flex-wrap:wrap">${_crPages.map(u=>`<img src="${esc(u)}" onclick="openLightbox(_receiptStore[${_cridx}])" style="max-height:90px;border-radius:6px;cursor:zoom-in;border:1px solid var(--border2)">`).join('')}</div></div>`;
+    thumb.innerHTML=`<div style="margin-bottom:.6rem"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase">Receipt${_crPages.length>1?' ('+_crPages.length+' pages)':''}</span><button onclick="deleteEditCrReceipt()" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;text-decoration:underline">Delete Receipt</button></div><div style="display:flex;gap:6px;flex-wrap:wrap">${_crPages.map(u=>`<img src="${esc(u)}" onclick="openLightbox(_receiptStore[${_cridx}])" style="max-height:90px;border-radius:6px;cursor:zoom-in;border:1px solid var(--border2)">`).join('')}</div></div>`;
   }else{thumb.innerHTML="";}
   showModal("m-edit-credit");
 }
@@ -3306,7 +3317,8 @@ function saveEditCr(){
   const _camt=parseFloat(document.getElementById("eecr-amt").value);
   const _ccat=getExpCat("eecr-cat","eecr-custom-cat");
   const newData={a:_camt,d:document.getElementById("eecr-desc").value.trim(),dt:document.getElementById("eecr-date").value,c:_ccat,v:_cv,credit:true};
-  if(editCrReceiptUrl)newData.receipt=editCrReceiptUrl;
+  if(editCrReceiptUrl==='__deleted__')newData.receipt='';
+  else if(editCrReceiptUrl)newData.receipt=editCrReceiptUrl;
   if(propData._migrated){
     if(extra[p]&&extra[p][origIdx])Object.assign(extra[p][origIdx],newData);
   }else{
@@ -3524,9 +3536,9 @@ async function handleExpReceipt(f){
 function _renderExpReceiptPreview(){
   const prev=document.getElementById('exp-receipt-preview');if(!prev)return;
   if(!expReceiptUrls.length){prev.innerHTML='';return;}
-  prev.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">'+expReceiptUrls.map((u,i)=>
+  prev.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:6px">'+expReceiptUrls.map((u,i)=>
     `<div style="position:relative;display:inline-block"><img src="${u}" style="height:100px;border-radius:8px;border:1px solid var(--border2);cursor:zoom-in" onclick="openLightbox(expReceiptUrls)"><button onclick="removeExpReceiptPage(${i})" style="position:absolute;top:-6px;right:-6px;background:#c0392b;border:none;color:#fff;border-radius:50%;width:20px;height:20px;font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button><div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px">${i+1}</div></div>`
-  ).join('')+'</div>';
+  ).join('')+'</div><div style="text-align:center"><button onclick="clearExpReceipt()" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;text-decoration:underline">Remove All</button></div>';
 }
 function removeExpReceiptPage(i){
   expReceiptUrls.splice(i,1);_renderExpReceiptPreview();
