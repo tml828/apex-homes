@@ -2465,16 +2465,17 @@ async function uploadToStorage(file,path){
   let blob,contentType;
   const isImage=file.type?.startsWith('image/')||/\.(jpg|jpeg|png|gif|webp)$/i.test(file.name||'');
   if(isImage){
-    // Process and crop images
     const processed=await processReceiptImage(file,true);
     blob=await fetch('data:image/jpeg;base64,'+processed.b64).then(r=>r.blob());
     contentType='image/jpeg';
   } else {
-    // Non-image files (PDFs, docs) — upload as-is
     blob=file instanceof Blob?file:new Blob([file],{type:file.type||'application/octet-stream'});
     contentType=file.type||'application/octet-stream';
   }
-  const resp=await fetch(SB_STORAGE_UPLOAD+path,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':contentType,'x-upsert':'true'},body:blob});
+  return _uploadBlob(blob,path,contentType);
+}
+async function _uploadBlob(blob,path,contentType){
+  const resp=await fetch(SB_STORAGE_UPLOAD+path,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':contentType||'image/jpeg','x-upsert':'true'},body:blob});
   if(!resp.ok)throw new Error('Upload failed: '+resp.status);
   return SB_STORAGE_URL+path;
 }
@@ -3177,7 +3178,10 @@ async function handleEditExpReceipt(inp){
     if(thumb)thumb.innerHTML=`<div style="font-size:10px;font-weight:600;color:var(--text2);margin-bottom:4px">Receipt (auto-cropped)</div><img src="${dataUrl}" style="max-height:90px;border-radius:6px;border:1px solid var(--border2)">`;
     const blob=await fetch(dataUrl).then(r=>r.blob());
     const path='receipts/edit-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+'.jpg';
-    uploadToStorage(blob,path).then(url=>{editExpReceiptUrl=url;if(status)status.innerHTML='<div style="font-size:12px;color:var(--green)">\u2713 Receipt uploaded</div>';}).catch(()=>{editExpReceiptUrl=dataUrl;if(status)status.innerHTML='<div style="font-size:12px;color:var(--amber)">Saved locally</div>';});
+    try{
+      const url=await _uploadBlob(blob,path,'image/jpeg');
+      editExpReceiptUrl=url;if(status)status.innerHTML='<div style="font-size:12px;color:var(--green)">\u2713 Receipt uploaded</div>';
+    }catch(e){editExpReceiptUrl=dataUrl;if(status)status.innerHTML='<div style="font-size:12px;color:var(--amber)">Saved locally</div>';}
   }catch(err){
     const fr=new FileReader();fr.onload=ev=>{editExpReceiptUrl=ev.target.result;if(thumb)thumb.innerHTML=`<img src="${ev.target.result}" style="max-height:90px;border-radius:6px;border:1px solid var(--border2)">`;if(status)status.innerHTML='<div style="font-size:12px;color:var(--amber)">Saved locally</div>';};fr.readAsDataURL(file);
   }
@@ -3547,8 +3551,7 @@ async function handleExpReceipt(f){
         try{
           const blob=await fetch(pg.dataUrl).then(r=>r.blob());
           const path='receipts/exp-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+'.jpg';
-          const uploaded=await uploadToStorage(blob,path);
-          if(uploaded)url=uploaded;
+          url=await _uploadBlob(blob,path,'image/jpeg');
         }catch(e){}
         expReceiptUrls.push(url);
       }
@@ -3561,12 +3564,12 @@ async function handleExpReceipt(f){
       var processed=await processReceiptImage(f,true);
       var dataUrl='data:'+processed.mime+';base64,'+processed.b64;
       expReceiptB64=processed.b64;expReceiptMime=processed.mime;
+      if(status)status.innerHTML='<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)"><div class="spin"></div> Uploading...</div>';
       let url=dataUrl;
       try{
         const blob=await fetch(dataUrl).then(r=>r.blob());
         const path='receipts/exp-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+'.jpg';
-        const uploaded=await uploadToStorage(blob,path);
-        if(uploaded)url=uploaded;
+        url=await _uploadBlob(blob,path,'image/jpeg');
       }catch(e){}
       expReceiptUrls.push(url);
       _renderExpReceiptPreview();
