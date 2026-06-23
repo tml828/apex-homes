@@ -2195,10 +2195,26 @@ function showSyncBanner(){
   document.body.appendChild(banner);
 }
 
+function _stripB64Receipts(ex){
+  const out={};
+  Object.keys(ex).forEach(p=>{
+    out[p]=(ex[p]||[]).map(e=>{
+      if(!e.receipt)return e;
+      const arr=Array.isArray(e.receipt)?e.receipt:[e.receipt];
+      const urls=arr.filter(u=>u&&u.startsWith('http'));
+      if(urls.length===arr.length)return e;
+      const {receipt,...rest}=e;
+      if(urls.length)return{...rest,receipt:urls.length>1?urls:urls[0]};
+      return{...rest,hasReceipt:true};
+    });
+  });
+  return out;
+}
 function save(){
-  const fullPayload={extra,tasks,propImgs,propData};
+  const lsExtra=_stripB64Receipts(extra);
+  const fullPayload={extra:lsExtra,tasks,propImgs,propData};
   try{localStorage.setItem('apex_v8',JSON.stringify(fullPayload));}catch(e){
-    try{localStorage.setItem('apex_v8',JSON.stringify({extra,tasks,propData}));}catch(e2){}
+    try{localStorage.setItem('apex_v8',JSON.stringify({extra:lsExtra,tasks,propData}));}catch(e2){}
   }
   if(!syncEnabled){showSyncStatus('error');return;}
   clearTimeout(syncTimer);
@@ -2210,8 +2226,12 @@ function save(){
       Object.keys(extra).forEach(p=>{
         cloudExtra[p]=(extra[p]||[]).map(e=>{
           const {receipt,...rest}=e;
-          if(receipt&&receipt.startsWith('http'))return{...rest,receipt};
-          return receipt?{...rest,hasReceipt:true}:rest;
+          if(!receipt)return rest;
+          const arr=Array.isArray(receipt)?receipt:[receipt];
+          const urls=arr.filter(u=>typeof u==='string'&&u.startsWith('http'));
+          if(urls.length===arr.length)return{...rest,receipt:urls.length>1?urls:urls[0]};
+          if(urls.length)return{...rest,receipt:urls.length>1?urls:urls[0]};
+          return{...rest,hasReceipt:true};
         });
       });
       const cloudPropImgs={};
@@ -3545,6 +3565,7 @@ async function handleExpReceipt(f){
     if(isPdf){
       const pages=await pdfToImages(f);
       if(status)status.innerHTML=`<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)"><div class="spin"></div> Uploading ${pages.length} pages...</div>`;
+      let uploadFailed=false;
       for(let i=0;i<pages.length;i++){
         const pg=pages[i];
         let url=pg.dataUrl;
@@ -3552,9 +3573,10 @@ async function handleExpReceipt(f){
           const blob=await fetch(pg.dataUrl).then(r=>r.blob());
           const path='receipts/exp-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+'.jpg';
           url=await _uploadBlob(blob,path,'image/jpeg');
-        }catch(e){}
+        }catch(e){uploadFailed=true;console.warn('Receipt upload failed:',e);}
         expReceiptUrls.push(url);
       }
+      if(uploadFailed&&status)status.innerHTML='<div style="font-size:12px;color:var(--amber)">⚠ Upload failed — receipt saved locally only</div>';
       expReceiptB64=pages[0].b64;expReceiptMime=pages[0].mime;
       _renderExpReceiptPreview();
       if(prev)prev.scrollIntoView({behavior:"smooth",block:"nearest"});
@@ -3570,11 +3592,11 @@ async function handleExpReceipt(f){
         const blob=await fetch(dataUrl).then(r=>r.blob());
         const path='receipts/exp-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+'.jpg';
         url=await _uploadBlob(blob,path,'image/jpeg');
-      }catch(e){}
+      }catch(e){console.warn('Receipt upload failed:',e);}
       expReceiptUrls.push(url);
       _renderExpReceiptPreview();
       if(prev)prev.scrollIntoView({behavior:"smooth",block:"nearest"});
-      if(status)status.innerHTML='';
+      if(status)status.innerHTML=url.startsWith('http')?'':'<div style="font-size:12px;color:var(--amber)">⚠ Upload failed — receipt saved locally only</div>';
       if(getApiKey()||IS_CLAUDE_AI)scanExpReceipt(f,processed.b64,processed.mime);
     }
   }catch(err){
