@@ -3520,6 +3520,7 @@ async function handleExpReceipt(f){
     var dataUrl='data:'+processed.mime+';base64,'+processed.b64;
     expReceiptB64=processed.b64;expReceiptMime=processed.mime;
     const idx=expReceiptUrls.length;
+    console.log('[receipt] adding page',idx+1,'total will be',idx+1);
     expReceiptUrls.push(dataUrl);
     fetch(dataUrl).then(function(r){return r.blob();}).then(function(blob){
       var path='receipts/exp-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+'.jpg';
@@ -3537,6 +3538,7 @@ async function handleExpReceipt(f){
 }
 function _renderExpReceiptPreview(){
   const prev=document.getElementById('exp-receipt-preview');if(!prev)return;
+  console.log('[receipt-preview] rendering',expReceiptUrls.length,'pages');
   if(!expReceiptUrls.length){prev.innerHTML='';return;}
   prev.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:6px">'+expReceiptUrls.map((u,i)=>
     `<div style="position:relative;display:inline-block"><img src="${u}" style="height:100px;border-radius:8px;border:1px solid var(--border2);cursor:zoom-in" onclick="openLightbox(expReceiptUrls)"><button onclick="removeExpReceiptPage(${i})" style="position:absolute;top:-6px;right:-6px;background:#c0392b;border:none;color:#fff;border-radius:50%;width:20px;height:20px;font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button><div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px">${i+1}</div></div>`
