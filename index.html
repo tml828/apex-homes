@@ -1112,6 +1112,11 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
 <div class="mo lbox" id="m-lbox">
   <div style="position:relative;max-width:90vw;max-height:90vh">
     <img id="lbox-img" src="" alt="Preview" style="max-width:90vw;max-height:85vh;object-fit:contain;border-radius:10px;display:block">
+    <div id="lbox-nav" style="display:none;position:fixed;bottom:28px;left:50%;transform:translateX(-50%);align-items:center;gap:18px;z-index:9999">
+      <button onclick="lbNav(-1)" style="width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.85);border:2px solid rgba(255,255,255,.5);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center">&#x276E;</button>
+      <span id="lbox-count" style="color:#fff;font-size:14px;font-weight:600;min-width:50px;text-align:center"></span>
+      <button onclick="lbNav(1)" style="width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.85);border:2px solid rgba(255,255,255,.5);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center">&#x276F;</button>
+    </div>
     <button onclick="closeModal('m-lbox')" style="position:fixed;top:16px;right:16px;width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.85);border:2px solid rgba(255,255,255,.5);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:9999">&#x2715;</button>
   </div>
 </div>
@@ -1171,7 +1176,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
       <div style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Select one receipt to fill the form, or select multiple to bulk-add them all at once.</div>
       <div class="drop-zone" id="exp-dz" onclick="document.getElementById('exp-receipt-inp').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleExpDrop(event)" style="padding:1.1rem">
         <svg class="ico dz-icon" style="width:26px;height:26px;margin-bottom:.4rem"><use href="#ico-photo-scan"/></svg>
-        <p style="font-size:12.5px">Tap to take photo, choose from library, or paste (Ctrl+V)</p>
+        <p style="font-size:12.5px">Tap to take photo, choose from library, or paste (Ctrl+V). Select multiple for multi-page.</p>
         <span style="font-size:11px">Select multiple for bulk add</span>
       </div>
       <input type="file" id="exp-receipt-inp" accept="image/*,application/pdf" multiple style="display:none" onchange="handleExpReceiptMulti(this.files)">
@@ -1498,7 +1503,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
   </div>
 </div>
 <script>
-var expReceiptUrl=null,expReceiptMime='';
+var expReceiptUrls=[],expReceiptMime='';
 let pinEntry='';
 const IS_CLAUDE_AI = window.location.hostname.includes('claude.ai') || 
                      window.location.hostname.includes('artifact') ||
@@ -1806,7 +1811,7 @@ function renderIncome(q){
   if(!items.length){el.innerHTML='<div class="empty"><svg class="ico"><use href="#ico-receipt"/></svg>No income entries yet</div>';return;}
   items=items.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   el.innerHTML=items.map(inc=>{
-    const receipt=inc.receipt?`<img src="${inc.receipt}" onclick="openLightbox('${inc.receipt}')" class="exp-receipt-thumb" alt="receipt" style="width:36px;height:36px;object-fit:cover;border-radius:5px;cursor:zoom-in;flex-shrink:0;border:1px solid var(--border2)">`:'' ;
+    const receipt=_receiptThumb(inc.receipt);
     const meta=[inc.cat,inc.payer,inc.date?fmtD(inc.date):''].filter(Boolean).join(' · ');
     return `<div class="inc-item">
       ${receipt}
@@ -2009,10 +2014,7 @@ function renderEFiltered(p, expenses, q) {
     const vendor = e.v || e.vendor || '';
     const date = e.dt || e.date || '';
     const desc = e.d || e.desc || 'Expense';
-    const rSafe = e.receipt ? esc(e.receipt) : '';
-    const receipt = e.receipt
-      ? `<img src="${rSafe}" data-src="${rSafe}" onclick="openLightbox(this.dataset.src)" class="exp-receipt-thumb" alt="receipt" style="width:36px;height:36px;object-fit:cover;border-radius:5px;cursor:zoom-in;flex-shrink:0;border:1px solid var(--border2)">`
-      : '';
+    const receipt = _receiptThumb(e.receipt);
     const hDesc = _highlight(desc, q);
     const hVendor = _highlight(vendor, q);
     const hCat = _highlight(cat, q);
@@ -2943,7 +2945,32 @@ function deletePropImg(p){
   if(hw)hw.innerHTML=`<div class="prop-hero-empty" onclick="triggerPropImg('${p}')"><svg class="ico"><use href="#ico-camera"/></svg><span>Upload Property Photo</span></div>`;
 }
 function restorePropImg(p){if(propImgs[p])applyPropImg(p);}
-function openLightbox(src){document.getElementById("lbox-img").src=src;showModal("m-lbox");}
+function _receiptArr(r){if(!r)return[];if(Array.isArray(r))return r;return[r];}
+var _receiptStore=[];
+function _receiptThumb(r){
+  const pages=_receiptArr(r);if(!pages.length)return'';
+  const idx=_receiptStore.length;_receiptStore.push(pages);
+  const src=esc(pages[0]);
+  const badge=pages.length>1?`<span style="position:absolute;bottom:-2px;right:-2px;background:var(--gold2);color:#000;font-size:8px;font-weight:700;padding:0 3px;border-radius:6px">${pages.length}</span>`:'';
+  return`<div style="position:relative;flex-shrink:0"><img src="${src}" onclick="openLightbox(_receiptStore[${idx}])" class="exp-receipt-thumb" alt="receipt" style="width:36px;height:36px;object-fit:cover;border-radius:5px;cursor:zoom-in;border:1px solid var(--border2)">${badge}</div>`;
+}
+function openLightbox(src){
+  const arr=Array.isArray(src)?src:[src];
+  window._lbPages=arr;window._lbIdx=0;
+  document.getElementById("lbox-img").src=arr[0];
+  const nav=document.getElementById("lbox-nav");
+  if(nav)nav.style.display=arr.length>1?'flex':'none';
+  const ct=document.getElementById("lbox-count");
+  if(ct)ct.textContent=arr.length>1?`1 / ${arr.length}`:'';
+  showModal("m-lbox");
+}
+function lbNav(dir){
+  if(!window._lbPages||window._lbPages.length<2)return;
+  window._lbIdx=(window._lbIdx+dir+window._lbPages.length)%window._lbPages.length;
+  document.getElementById("lbox-img").src=window._lbPages[window._lbIdx];
+  const ct=document.getElementById("lbox-count");
+  if(ct)ct.textContent=`${window._lbIdx+1} / ${window._lbPages.length}`;
+}
 Object.keys(propImgs).forEach(applyPropImg);
 
 // Auto-recover property photos from Supabase Storage if propImgs mapping is missing
@@ -2990,7 +3017,7 @@ function openAddExp(p){
   document.getElementById("exp-pid").value=p;document.getElementById("exp-amt").value="";document.getElementById("exp-desc").value="";
   document.getElementById("exp-date").value=new Date().toLocaleDateString('en-CA');document.getElementById("exp-vendor").value="";
   document.getElementById("exp-cat").selectedIndex=0;const cc=document.getElementById("exp-custom-cat");if(cc){cc.value="";cc.style.display="none";}
-  expReceiptB64="";expReceiptMime="";const ss=document.getElementById("exp-scan-status");if(ss)ss.innerHTML="";pendingFiles[p]=[];renderQ(p);
+  expReceiptUrls=[];expReceiptB64="";expReceiptMime="";const ss=document.getElementById("exp-scan-status");if(ss)ss.innerHTML="";const _erp=document.getElementById("exp-receipt-preview");if(_erp)_erp.innerHTML="";pendingFiles[p]=[];renderQ(p);
   const _rc=document.getElementById("exp-recurring");if(_rc){_rc.checked=false;}
   const _rr=document.getElementById("exp-recur-row");if(_rr)_rr.style.display="none";
   const _rf=document.getElementById("exp-recur-freq");if(_rf)_rf.value="monthly";
@@ -3030,7 +3057,8 @@ function saveExp(){
   const isRecurring=document.getElementById("exp-recurring")?.checked;
   const recurFreq=document.getElementById("exp-recur-freq")?.value||"monthly";
   if(!extra[p])extra[p]=[];
-  const receipt=expReceiptUrl||(expReceiptB64?`data:${expReceiptMime||'image/jpeg'};base64,${expReceiptB64}`:'');
+  const _rArr=expReceiptUrls.length?expReceiptUrls:(expReceiptB64?[`data:${expReceiptMime||'image/jpeg'};base64,${expReceiptB64}`]:[]);
+  const receipt=_rArr.length>1?_rArr:(_rArr.length===1?_rArr[0]:'');
   const w9=document.getElementById('exp-w9')?.checked&&c==='Labor / Contractor'&&amount>=600;
   saveVendor(v);
   if(isRecurring){
@@ -3048,7 +3076,7 @@ function saveExp(){
     if(dupCheck&&!confirm(`An expense for ${fmt(amount)} already exists ("${dupCheck.d||dupCheck.desc||'Expense'}"). Add again?`))return;
     const expObj={a:amount,d,c,v,dt,receipt};if(w9)expObj.w9=true;extra[p].unshift(expObj);
   }
-  expReceiptUrl=null;expReceiptB64="";expReceiptMime="";
+  expReceiptUrls=[];expReceiptB64="";expReceiptMime="";
   const prev=document.getElementById("exp-receipt-preview");if(prev)prev.innerHTML="";
   const ss=document.getElementById("exp-scan-status");if(ss)ss.innerHTML="";
   save();renderE(p);refreshSite();closeModal("m-exp");renderContractors();
@@ -3124,7 +3152,11 @@ function openEditExpByIndex(p,origIdx){
   if(!matched&&cat){for(let j=0;j<sel.options.length;j++){if(sel.options[j].value==="__custom__"){sel.selectedIndex=j;break;}}if(customInp){customInp.style.display="block";customInp.value=cat;}}
   else{if(customInp){customInp.style.display="none";customInp.value="";}}
   const thumb=document.getElementById("eeexp-receipt-thumb");
-  thumb.innerHTML=e.receipt?`<div style="margin-bottom:.6rem"><div style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Receipt</div><img src="${e.receipt}" onclick="openLightbox('${e.receipt}')" style="max-height:90px;border-radius:6px;cursor:zoom-in;border:1px solid var(--border2)"></div>`:"";
+  const _ePages=_receiptArr(e.receipt);
+  if(_ePages.length){
+    const _eidx=_receiptStore.length;_receiptStore.push(_ePages);
+    thumb.innerHTML=`<div style="margin-bottom:.6rem"><div style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Receipt${_ePages.length>1?' ('+_ePages.length+' pages)':''}</div><div style="display:flex;gap:6px;flex-wrap:wrap">${_ePages.map(u=>`<img src="${esc(u)}" onclick="openLightbox(_receiptStore[${_eidx}])" style="max-height:90px;border-radius:6px;cursor:zoom-in;border:1px solid var(--border2)">`).join('')}</div></div>`;
+  }else{thumb.innerHTML="";}
   showModal("m-edit-exp");
   document.addEventListener('paste',handleExpPaste);
 }
@@ -3258,7 +3290,11 @@ function openEditCrByIndex(p,origIdx){
   if(!matched&&cat){for(let j=0;j<sel.options.length;j++){if(sel.options[j].value==="__custom__"){sel.selectedIndex=j;break;}}if(customInp){customInp.style.display="block";customInp.value=cat;}}
   else{if(customInp){customInp.style.display="none";customInp.value="";}}
   const thumb=document.getElementById("eecr-receipt-thumb");
-  thumb.innerHTML=e.receipt?`<div style="margin-bottom:.6rem"><div style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Receipt</div><img src="${e.receipt}" onclick="openLightbox('${e.receipt}')" style="max-height:90px;border-radius:6px;cursor:zoom-in;border:1px solid var(--border2)"></div>`:"";
+  const _crPages=_receiptArr(e.receipt);
+  if(_crPages.length){
+    const _cridx=_receiptStore.length;_receiptStore.push(_crPages);
+    thumb.innerHTML=`<div style="margin-bottom:.6rem"><div style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Receipt${_crPages.length>1?' ('+_crPages.length+' pages)':''}</div><div style="display:flex;gap:6px;flex-wrap:wrap">${_crPages.map(u=>`<img src="${esc(u)}" onclick="openLightbox(_receiptStore[${_cridx}])" style="max-height:90px;border-radius:6px;cursor:zoom-in;border:1px solid var(--border2)">`).join('')}</div></div>`;
+  }else{thumb.innerHTML="";}
   showModal("m-edit-credit");
 }
 
@@ -3458,25 +3494,7 @@ async function processReceiptImage(f,crop=false){
 }
 async function handleExpReceiptMulti(files){
   if(!files||!files.length)return;
-  if(files.length===1){handleExpReceipt(files[0]);return;}
-  // Multiple files — bulk scan and add directly
-  if(!checkApiReady())return;
-  const p=document.getElementById('exp-pid')?.value;if(!p)return;
-  const status=document.getElementById('exp-scan-status');
-  const prev=document.getElementById('exp-receipt-preview');
-  if(status)status.innerHTML=`<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)"><div class="spin"></div> Scanning ${files.length} receipts...</div>`;
-  if(prev)prev.innerHTML='';
-  const arr=Array.from(files);const results=[];
-  for(let i=0;i<arr.length;i++){
-    if(status)status.innerHTML=`<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)"><div class="spin"></div> Scanning ${i+1} of ${arr.length}...</div>`;
-    results.push(await scanOne(arr[i],p,i));
-  }
-  const ok=results.filter(r=>r.ok&&r.data?.amount);const fail=results.length-ok.length;
-  if(!extra[p])extra[p]=[];
-  ok.forEach(r=>{extra[p].unshift({a:r.data.amount,d:r.data.desc||'Receipt',c:r.data.cat||'Other',v:r.data.vendor||'',dt:r.data.date||new Date().toISOString().split('T')[0],receipt:`data:${r.mime};base64,${r.b64}`});});
-  save();renderE(p);refreshSite();renderContractors();
-  closeModal('m-exp');
-  setTimeout(()=>alert(`${ok.length} receipt${ok.length!==1?'s':''} added${fail?' ('+fail+' could not be read)':''}.`),200);
+  for(const f of Array.from(files))await handleExpReceipt(f);
 }
 async function handleExpReceipt(f){
   if(!f)return;
@@ -3487,23 +3505,34 @@ async function handleExpReceipt(f){
     var processed=await processReceiptImage(f,true);
     var dataUrl='data:'+processed.mime+';base64,'+processed.b64;
     expReceiptB64=processed.b64;expReceiptMime=processed.mime;
-    expReceiptUrl=dataUrl;
-    if(prev)prev.innerHTML='<div style="position:relative;display:inline-block;margin:0 auto;display:flex;justify-content:center"><img src="'+dataUrl+'" style="max-height:160px;border-radius:8px;border:1px solid var(--border2)"><button onclick="clearExpReceipt()" style="position:absolute;top:-8px;right:-8px;background:#c0392b;border:none;color:#fff;border-radius:50%;width:22px;height:22px;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button></div>';if(prev)prev.scrollIntoView({behavior:"smooth",block:"nearest"});
-    if(status)status.innerHTML='';
+    const idx=expReceiptUrls.length;
+    expReceiptUrls.push(dataUrl);
     fetch(dataUrl).then(function(r){return r.blob();}).then(function(blob){
       var path='receipts/exp-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+'.jpg';
-      uploadToStorage(blob,path).then(function(url){expReceiptUrl=url;}).catch(function(){});
+      uploadToStorage(blob,path).then(function(url){expReceiptUrls[idx]=url;}).catch(function(){});
     });
+    _renderExpReceiptPreview();
+    if(prev)prev.scrollIntoView({behavior:"smooth",block:"nearest"});
+    if(status)status.innerHTML='';
     if(getApiKey()||IS_CLAUDE_AI)scanExpReceipt(f,processed.b64,processed.mime);
   }catch(err){
-    var fr=new FileReader();
-    fr.onload=function(ev){expReceiptUrl=ev.target.result;if(prev)prev.innerHTML='<div style="position:relative;display:inline-block;display:flex;justify-content:center"><img src="'+ev.target.result+'" style="max-height:160px;border-radius:8px;border:1px solid var(--border2)"><button onclick="clearExpReceipt()" style="position:absolute;top:-8px;right:-8px;background:#c0392b;border:none;color:#fff;border-radius:50%;width:22px;height:22px;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button></div>';if(prev)prev.scrollIntoView({behavior:"smooth",block:"nearest"});};
+    var fr=new FileReader();fr.onload=function(ev){expReceiptUrls.push(ev.target.result);_renderExpReceiptPreview();if(prev)prev.scrollIntoView({behavior:"smooth",block:"nearest"});};
     fr.readAsDataURL(f);
     if(getApiKey()||IS_CLAUDE_AI)scanExpReceipt(f);
   }
 }
+function _renderExpReceiptPreview(){
+  const prev=document.getElementById('exp-receipt-preview');if(!prev)return;
+  if(!expReceiptUrls.length){prev.innerHTML='';return;}
+  prev.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">'+expReceiptUrls.map((u,i)=>
+    `<div style="position:relative;display:inline-block"><img src="${u}" style="height:100px;border-radius:8px;border:1px solid var(--border2);cursor:zoom-in" onclick="openLightbox(expReceiptUrls)"><button onclick="removeExpReceiptPage(${i})" style="position:absolute;top:-6px;right:-6px;background:#c0392b;border:none;color:#fff;border-radius:50%;width:20px;height:20px;font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button><div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px">${i+1}</div></div>`
+  ).join('')+'</div>';
+}
+function removeExpReceiptPage(i){
+  expReceiptUrls.splice(i,1);_renderExpReceiptPreview();
+}
 function clearExpReceipt(){
-  expReceiptUrl=null;expReceiptB64='';expReceiptMime='';
+  expReceiptUrls=[];expReceiptB64='';expReceiptMime='';
   const prev=document.getElementById('exp-receipt-preview');if(prev)prev.innerHTML='';
   const status=document.getElementById('exp-scan-status');if(status)status.innerHTML='';
   const inp=document.getElementById('exp-receipt-inp');if(inp)inp.value='';
@@ -3619,8 +3648,7 @@ function renderE(p){
     const date=e.dt||e.date||"";
     const desc=esc(e.d||e.desc||(e.credit?"Credit":"Expense"));
     const meta=[cat,vendor,date?fmtD(date):""].filter(Boolean).join(" · ");
-    const rSafe=e.receipt?esc(e.receipt):"";
-    const receipt=e.receipt?`<img src="${rSafe}" data-src="${rSafe}" onclick="openLightbox(this.dataset.src)" class="exp-receipt-thumb" alt="receipt" style="width:36px;height:36px;object-fit:cover;border-radius:5px;cursor:zoom-in;flex-shrink:0;border:1px solid var(--border2)">` :"";
+    const receipt=_receiptThumb(e.receipt);
     const creditBadge=e.credit?`<span style="font-size:10px;font-weight:700;background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3);border-radius:4px;padding:1px 5px;margin-left:4px">CREDIT</span>`:"";
     const recurBadge=e.recur?`<span style="font-size:10px;font-weight:700;background:rgba(139,92,246,0.15);color:#a78bfa;border:1px solid rgba(139,92,246,0.3);border-radius:4px;padding:1px 5px;margin-left:4px">↻ ${e.recur}</span>`:"";
     const editFn=e.credit?`openEditCrByIndex('${p}',${e._origIdx})`:`openEditExpByIndex('${p}',${e._origIdx})`;
@@ -3657,8 +3685,7 @@ function renderCr(p){
     const date=e.dt||e.date||"";
     const desc=esc(e.d||e.desc||"Credit");
     const meta=[cat,vendor,date?fmtD(date):""].filter(Boolean).join(" · ");
-    const rSafe=e.receipt?esc(e.receipt):"";
-    const receipt=e.receipt?`<img src="${rSafe}" data-src="${rSafe}" onclick="openLightbox(this.dataset.src)" class="exp-receipt-thumb" alt="receipt" style="width:36px;height:36px;object-fit:cover;border-radius:5px;cursor:zoom-in;flex-shrink:0;border:1px solid var(--border2)">` :"";
+    const receipt=_receiptThumb(e.receipt);
     return `<div class="exp-item" style="display:flex;align-items:center;gap:10px;padding:.7rem 1rem;border-bottom:1px solid var(--border);background:rgba(34,197,94,0.04)">
       ${receipt}
       <div style="flex:1;min-width:0">
@@ -4858,7 +4885,8 @@ function _mergeReceipts(cloudExtra){
     const local=extra[p];if(!local)return;
     (cloudExtra[p]||[]).forEach(ce=>{
       if(ce.receipt||!ce.hasReceipt)return;
-      const match=local.find(le=>le.receipt&&le.receipt.startsWith('data:')&&
+      const _hasLocal=r=>{if(!r)return false;if(Array.isArray(r))return r.some(u=>u.startsWith('data:'));return r.startsWith('data:');};
+      const match=local.find(le=>_hasLocal(le.receipt)&&
         parseFloat(le.a||le.amount)===parseFloat(ce.a||ce.amount)&&
         (le.dt||le.date||'')===(ce.dt||ce.date||'')&&
         (le.d||le.desc||'')===(ce.d||ce.desc||''));
