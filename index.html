@@ -3405,7 +3405,7 @@ async function scanCrReceipt(f,preB64=null,preMime=null){
     if(!resp.ok)throw new Error(await resp.text());
     const data=await resp.json();
     const parsed=JSON.parse(data.content[0].text.replace(/```json|```/g,"").trim());
-    if(parsed.amount)document.getElementById("cr-amt").value=parsed.amount;
+    if(parsed.amount){const amt=String(parsed.amount).replace(/[^0-9.\-]/g,'');document.getElementById("cr-amt").value=amt;}
     if(parsed.desc)document.getElementById("cr-desc").value=parsed.desc;
     if(parsed.vendor)document.getElementById("cr-vendor").value=parsed.vendor;
     if(parsed.date)document.getElementById("cr-date").value=parsed.date;
@@ -3657,12 +3657,14 @@ async function scanExpReceipt(f,preB64=null,preMime=null){
     if(!resp.ok)throw new Error(await resp.text());
     const data=await resp.json();
     const parsed=JSON.parse(data.content[0].text.replace(/```json|```/g,"").trim());
-    if(parsed.amount)document.getElementById("exp-amt").value=parsed.amount;
+    console.log('AI scan result:',JSON.stringify(parsed));
+    if(parsed.amount){const amt=String(parsed.amount).replace(/[^0-9.\-]/g,'');document.getElementById("exp-amt").value=amt;}
     if(parsed.desc)document.getElementById("exp-desc").value=parsed.desc;
     if(parsed.vendor)document.getElementById("exp-vendor").value=parsed.vendor;
     if(parsed.date)document.getElementById("exp-date").value=parsed.date;
     if(parsed.cat){const sel=document.getElementById("exp-cat");if(sel){const cat=parsed.cat.trim();let matched=false;for(let i=0;i<sel.options.length;i++){const ov=sel.options[i].value.replace(/&amp;/g,'&');if(ov.toLowerCase()===cat.toLowerCase()||sel.options[i].text.toLowerCase()===cat.toLowerCase()){sel.selectedIndex=i;matched=true;break;}}if(!matched){for(let i=0;i<sel.options.length;i++){if(sel.options[i].value.toLowerCase().includes(cat.toLowerCase().split('/')[0].trim())||cat.toLowerCase().includes(sel.options[i].value.toLowerCase().split('/')[0].trim())){sel.selectedIndex=i;break;}}}}}
-    if(status)status.innerHTML='<div style="font-size:12px;color:var(--green)">\u2713 Receipt scanned</div>';
+    const filled=!!(parsed.amount&&parsed.desc);
+    if(status)status.innerHTML=filled?'<div style="font-size:12px;color:var(--green)">\u2713 Receipt scanned</div>':'<div style="font-size:12px;color:var(--amber)">\u2713 Scanned \u2014 could not extract all fields. Try a clearer image.</div>';
   }catch(err){if(status)status.innerHTML=`<div style="font-size:12px;color:var(--red)">Scan failed: ${err.message.slice(0,80)}</div>`;}
 }
 // ====== RECEIPT SCANNER QUEUE HANDLERS ======
