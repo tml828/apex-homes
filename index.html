@@ -1668,7 +1668,7 @@ async function saveHourlyBackup(manual){
   try{
     const ts=Date.now();
     const id='backup-'+ts;
-    const payload={extra,tasks,propData,propImgs,mileage:window._mileage||[]};
+    const payload={extra:_stripB64Receipts(extra),tasks,propData,propImgs,mileage:window._mileage||[]};
     const ins=await sbFetch('/rest/v1/apex_data',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({id,data:payload})});
     if(!ins.ok)throw new Error('snapshot insert failed');
     const r=await sbFetch('/rest/v1/apex_data?id=like.backup-*&select=id&order=id.asc',{method:'GET'});
@@ -2061,7 +2061,7 @@ function renderDashTasks(){
   const el=document.getElementById('dash-task-list');if(!el)return;
   const pending=tasks.filter(t=>!t.done).sort((a,b)=>(a.dt||'9999').localeCompare(b.dt||'9999')).slice(0,5);
   const cnt=document.getElementById('dash-task-count');if(cnt)cnt.textContent=pending.length?pending.length+' pending':'All clear';
-  el.innerHTML=pending.length?pending.map(t=>`<div class="task-item"><div class="task-cb ${t.done?'checked':''}" onclick="toggleTask(${t.id})"><svg class="ico" style="width:11px;height:11px"><use href="#ico-check"/></svg></div><div style="flex:1;cursor:pointer" onclick="openEditTask(${t.id})"><div class="task-title-text">${t.t}</div><div class="task-meta">${t.p}${t.dt?' · '+fmtD(t.dt):''}</div></div><button class="btn btn-ghost btn-sm btn-icon" onclick="openEditTask(${t.id})"><svg class="ico" style="width:12px;height:12px"><use href="#ico-pencil"/></svg></button><button class="btn btn-danger btn-sm btn-icon" onclick="delTask(${t.id})"><svg class="ico" style="width:12px;height:12px"><use href="#ico-trash"/></svg></button></div>`).join(''):'<div class="empty" style="padding:1rem">No pending tasks</div>';
+  el.innerHTML=pending.length?pending.map(t=>`<div class="task-item"><div class="task-cb ${t.done?'checked':''}" onclick="toggleTask(${t.id})"><svg class="ico" style="width:11px;height:11px"><use href="#ico-check"/></svg></div><div style="flex:1;cursor:pointer" onclick="openEditTask(${t.id})"><div class="task-title-text">${esc(t.t)}</div><div class="task-meta">${esc(t.p)}${t.dt?' · '+fmtD(t.dt):''}</div></div><button class="btn btn-ghost btn-sm btn-icon" onclick="openEditTask(${t.id})"><svg class="ico" style="width:12px;height:12px"><use href="#ico-pencil"/></svg></button><button class="btn btn-danger btn-sm btn-icon" onclick="delTask(${t.id})"><svg class="ico" style="width:12px;height:12px"><use href="#ico-trash"/></svg></button></div>`).join(''):'<div class="empty" style="padding:1rem">No pending tasks</div>';
 }
 
 // ====== PIN LOCK ======
@@ -2686,7 +2686,7 @@ function renderTasks(){
   const pending=tasks.filter(t=>!t.done).sort((a,b)=>(a.dt||"9999").localeCompare(b.dt||"9999"));
   el.innerHTML=pending.length?pending.map(t=>`<div class="task-item ${t.done?"done":""}">
     <div class="task-cb ${t.done?"checked":""}" onclick="toggleTask(${t.id})"><svg class="ico" style="width:11px;height:11px"><use href="#ico-check"/></svg></div>
-    <div style="flex:1"><div class="task-title-text ${t.done?"done":""}">${t.t}</div><div class="task-meta">${t.p}${t.dt?" · "+fmtD(t.dt):""}</div></div>
+    <div style="flex:1"><div class="task-title-text ${t.done?"done":""}">${esc(t.t)}</div><div class="task-meta">${esc(t.p)}${t.dt?" · "+fmtD(t.dt):""}</div></div>
     <button class="btn btn-ghost btn-sm btn-icon" onclick="openEditTask(${t.id})"><svg class="ico" style="width:12px;height:12px"><use href="#ico-pencil"/></svg></button>
     <button class="btn btn-danger btn-sm btn-icon" onclick="delTask(${t.id})"><svg class="ico" style="width:12px;height:12px"><use href="#ico-trash"/></svg></button>
   </div>`).join(""):'<div class="empty"><svg class="ico"><use href="#ico-circle-check"/></svg>All caught up</div>';
@@ -2695,10 +2695,10 @@ function renderPropTasks(){
   getPropKeys().forEach(p=>{
     const el=document.getElementById("prop-tasks-"+p);
     if(!el)return;
-    const pt=tasks.filter(t=>t.p===p&&!t.done);
+    const pt=tasks.filter(t=>!t.done&&(t.p===p||t.p===(getProp(p).addr||p)));
     el.innerHTML=pt.length?pt.map(t=>`<div class="task-item">
       <div class="task-cb" onclick="toggleTask(${t.id})"><svg class="ico" style="width:11px;height:11px"><use href="#ico-check"/></svg></div>
-      <div style="flex:1"><div class="task-title-text">${t.t}</div><div class="task-meta">${t.dt?fmtD(t.dt):""}</div></div>
+      <div style="flex:1"><div class="task-title-text">${esc(t.t)}</div><div class="task-meta">${t.dt?fmtD(t.dt):""}</div></div>
       <button class="btn btn-ghost btn-sm btn-icon" onclick="openEditTask(${t.id})"><svg class="ico" style="width:12px;height:12px"><use href="#ico-pencil"/></svg></button>
       <button class="btn btn-danger btn-sm btn-icon" onclick="delTask(${t.id})"><svg class="ico" style="width:12px;height:12px"><use href="#ico-trash"/></svg></button>
     </div>`).join(""):'<div class="empty"><svg class="ico"><use href="#ico-circle-check"/></svg>No tasks</div>';
@@ -4361,7 +4361,7 @@ function refreshSite(){
   const totalMiles=(window._mileage||[]).filter(t=>String(t.date||t.dt||'').startsWith(String(taxYear))).reduce((s,p)=>s+p.miles,0);
   const mileDeduction=totalMiles*mileRate;
   // Mileage is a deduction (Schedule C Line 9) — subtract from net profit
-  const netProfitAfterMileage=(netProfitFull||netProfit)-mileDeduction;
+  const netProfitAfterMileage=netProfitFull-mileDeduction;
   const seTaxAmt=Math.max(0,netProfitAfterMileage*0.1413);
   setEl("tax-revenue",fmt(revenue));setEl("tax-acquisitions",fmt(acquisitions));setEl("tax-total-exp",fmt(totalExp));
   setEl("tax-mileage-deduction",fmt(mileDeduction));
@@ -5034,7 +5034,7 @@ async function autoSyncPull(){
       Object.keys(extra).forEach(k=>{
         if(!incomingExtra[k])incomingExtra[k]=extra[k];
       });
-      extra=incomingExtra;
+      extra=_mergeReceipts(incomingExtra)||extra;
       if(incoming._logo&&incoming._logo!==propData._logo){applyCustomLogo(incoming._logo,true);}
       propData=incoming;changed=true;
     }
