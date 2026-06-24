@@ -214,6 +214,16 @@ Property keys are always lowercase, no spaces.
 - Estimates tab added to every property page — `propData._estimates[key]` array; functions: `getEstimates`, `openAddEst`, `openEditEst`, `saveEst`, `delEst`, `renderEstimates`
 - Viewport meta includes `maximum-scale=1.0` to prevent iOS auto-zoom; all modal inputs set to `font-size:16px`
 - Recurring expenses: checkbox + frequency (Weekly/Monthly/Quarterly/Yearly) in Add Expense modal; `_recurDates(startDt,freq)` generates all instances from start date through today; each entry tagged with `recur: freq` field; shown with purple `↻ freq` badge in expense list; available on all properties and general expenses
+- Multi-page receipt support: PDF receipts converted to per-page images via PDF.js; `pdfToImages()` renders all pages; receipt field supports string or array; `_receiptThumb()` shows page count badge; lightbox has prev/next nav (`lbNav`)
+- Receipt delete: `deleteEditExpReceipt()` / `deleteEditCrReceipt()` in edit modals; sets `__deleted__` sentinel, cleared on save
+- `_uploadBlob(blob,path,contentType)` — direct blob upload to Supabase storage
+- `_stripB64Receipts(ex)` — strips base64 from expense receipts before localStorage/cloud save; keeps only http URLs
+- `_receiptArr(r)` — normalizes receipt field (string|array|null) to array
+- `autoSyncPull` extra merge uses `_mergeReceipts()` to preserve local receipt images
+- `saveHourlyBackup` strips base64 receipts from backup payload
+- `netProfitAfterMileage` uses `netProfitFull` directly (no falsy fallback to undefined `netProfit`)
+- Task rendering (`renderDashTasks`, `renderTasks`, `renderPropTasks`) escapes title and property with `esc()`
+- `renderPropTasks` matches tasks by key OR address (task dropdown saves address string, not key)
 
 ---
 
