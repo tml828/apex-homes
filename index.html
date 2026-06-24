@@ -3379,7 +3379,8 @@ async function handleCrReceipt(f){
       const path='receipts/cr-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+'.jpg';
       uploadToStorage(blob,path).then(url=>{crReceiptUrl=url;}).catch(()=>{});
     });
-    if(getApiKey()||IS_CLAUDE_AI)scanCrReceipt(f,processed.b64,processed.mime);
+    var crUncropped=await processReceiptImage(f,false);
+    if(getApiKey()||IS_CLAUDE_AI)scanCrReceipt(f,crUncropped.b64,crUncropped.mime);
   }catch(err){
     const fr=new FileReader();
     fr.onload=ev=>{crReceiptUrl=ev.target.result;if(prev)prev.innerHTML='<img src="'+ev.target.result+'" style="max-height:160px;border-radius:8px;border:1px solid var(--border2);display:block;margin:0 auto">';};
@@ -3401,6 +3402,7 @@ async function scanCrReceipt(f,preB64=null,preMime=null){
   try{
     const processed=preB64?{b64:preB64,mime:preMime||"image/jpeg"}:(await processReceiptImage(f,false));
     const b64=processed.b64;crReceiptB64=b64;crReceiptMime=processed.mime;
+
     const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:getAuthHeaders(),body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:600,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:processed.mime,data:b64}},{type:"text",text:"You are an expert real estate expense categorizer. Extract data from this refund or credit receipt and respond ONLY with raw JSON (no markdown).\n\nCategories (pick the BEST match):\n- \"Insurance Refund\" → insurance refunds or credits\n- \"Material Return\" → returned materials or supplies\n- \"Overpayment Refund\" → overpayment credits\n- \"Labor / Contractor\" → contractor credits\n- \"Materials & Supplies\" → supply credits\n- \"Other\" → anything that does not fit above\n\nRespond ONLY with this JSON:\n{\"amount\":123.45,\"desc\":\"Brief 4-6 word description\",\"vendor\":\"Store or person name\",\"date\":\"YYYY-MM-DD\",\"cat\":\"exact category from list\"}"}]}]})});
     if(!resp.ok)throw new Error(await resp.text());
     const data=await resp.json();
@@ -3583,7 +3585,7 @@ async function handleExpReceipt(f){
       if(status)status.innerHTML='';
       if(getApiKey()||IS_CLAUDE_AI)scanExpReceipt(f,pages[0].b64,pages[0].mime);
     }else{
-      var processed=await processReceiptImage(f,false);
+      var processed=await processReceiptImage(f,true);
       var dataUrl='data:'+processed.mime+';base64,'+processed.b64;
       expReceiptB64=processed.b64;expReceiptMime=processed.mime;
       if(status)status.innerHTML='<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)"><div class="spin"></div> Uploading...</div>';
@@ -3597,7 +3599,8 @@ async function handleExpReceipt(f){
       _renderExpReceiptPreview();
       if(prev)prev.scrollIntoView({behavior:"smooth",block:"nearest"});
       if(status)status.innerHTML=url.startsWith('http')?'':'<div style="font-size:12px;color:var(--amber)">⚠ Upload failed — receipt saved locally only</div>';
-      if(getApiKey()||IS_CLAUDE_AI)scanExpReceipt(f,processed.b64,processed.mime);
+      var uncropped=await processReceiptImage(f,false);
+      if(getApiKey()||IS_CLAUDE_AI)scanExpReceipt(f,uncropped.b64,uncropped.mime);
     }
   }catch(err){
     try{
@@ -3687,10 +3690,10 @@ function handleDrop(ev,p){
 }
 function renderQ(p){const q=document.getElementById("sq-"+p)||document.getElementById("scan-queue-"+p);if(!q)return;const files=pendingFiles[p]||[];q.innerHTML=files.map((f,i)=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:4px 0"><svg class="ico" style="width:14px;height:14px;color:var(--text2)"><use href="#ico-file"/></svg>${f.name}<button onclick="pendingFiles['${p}'].splice(${i},1);renderQ('${p}')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:16px">×</button></div>`).join("");}
 async function scanOne(f,p,i){
-  try{const processed=await processReceiptImage(f,false);const b64=processed.b64;
-    const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:getAuthHeaders(),body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:600,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:processed.mime,data:b64}},{type:"text",text:"Extract data from this receipt/invoice/order. It may be a photo, screenshot, Amazon order, Zelle payment, bank statement, or any purchase record. Respond ONLY with raw JSON (no markdown).\n\nCategories (pick the BEST match):\n- \"Labor / Contractor\" → any worker, contractor, handyman, labor charges\n- \"Materials & Supplies\" → hardware, tools, fixtures, appliances, Home Depot, Menards, Amazon\n- \"Utilities\" → electric, gas, water, sewer, trash, internet for property\n- \"Painting\" → paint, primer, painting labor\n- \"Plumbing\" → pipes, faucets, toilets, water heater\n- \"Electrical\" → wiring, outlets, panels, lighting\n- \"Closing Costs\" → title fees, agent commissions, deed prep, settlement, transfer tax\n- \"Property Tax\" → county/city tax bills\n- \"Insurance\" → property insurance, home warranty\n- \"HOA Fees\" → homeowner association dues\n- \"Marketing / Advertising\" → listing photos, staging, ads\n- \"Permits & Fees\" → building permits, inspection fees\n- \"Landscaping\" → lawn, trees, mulch, snow removal\n- \"Legal / Accounting\" → attorney, CPA, legal fees\n- \"Software / Subscriptions\" → apps, software, online services\n- \"Meals (50% deductible)\" → business meals, restaurants, food with clients/contractors\n- \"Other\" → anything that does not fit above\n\nIMPORTANT: For orders with multiple items, use the ORDER TOTAL as the amount.\n\nRespond ONLY with this JSON:\n{\"amount\":123.45,\"desc\":\"Brief 4-6 word description\",\"vendor\":\"Store name\",\"date\":\"YYYY-MM-DD\",\"cat\":\"exact category from list\"}"}]}]})});
+  try{const processed=await processReceiptImage(f,true);const uncropped=await processReceiptImage(f,false);
+    const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:getAuthHeaders(),body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:600,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:uncropped.mime,data:uncropped.b64}},{type:"text",text:"Extract data from this receipt/invoice/order. It may be a photo, screenshot, Amazon order, Zelle payment, bank statement, or any purchase record. Respond ONLY with raw JSON (no markdown).\n\nCategories (pick the BEST match):\n- \"Labor / Contractor\" → any worker, contractor, handyman, labor charges\n- \"Materials & Supplies\" → hardware, tools, fixtures, appliances, Home Depot, Menards, Amazon\n- \"Utilities\" → electric, gas, water, sewer, trash, internet for property\n- \"Painting\" → paint, primer, painting labor\n- \"Plumbing\" → pipes, faucets, toilets, water heater\n- \"Electrical\" → wiring, outlets, panels, lighting\n- \"Closing Costs\" → title fees, agent commissions, deed prep, settlement, transfer tax\n- \"Property Tax\" → county/city tax bills\n- \"Insurance\" → property insurance, home warranty\n- \"HOA Fees\" → homeowner association dues\n- \"Marketing / Advertising\" → listing photos, staging, ads\n- \"Permits & Fees\" → building permits, inspection fees\n- \"Landscaping\" → lawn, trees, mulch, snow removal\n- \"Legal / Accounting\" → attorney, CPA, legal fees\n- \"Software / Subscriptions\" → apps, software, online services\n- \"Meals (50% deductible)\" → business meals, restaurants, food with clients/contractors\n- \"Other\" → anything that does not fit above\n\nIMPORTANT: For orders with multiple items, use the ORDER TOTAL as the amount.\n\nRespond ONLY with this JSON:\n{\"amount\":123.45,\"desc\":\"Brief 4-6 word description\",\"vendor\":\"Store name\",\"date\":\"YYYY-MM-DD\",\"cat\":\"exact category from list\"}"}]}]})});
     if(!resp.ok){const errText=await resp.text().catch(()=>"");console.error("Anthropic API error:",resp.status,errText.slice(0,200));return{ok:false,err:resp.status+" "+errText.slice(0,100)};}const data=await resp.json();const parsed=JSON.parse(data.content[0].text.replace(/```json|```/g,"").trim());
-    return{ok:true,data:parsed,b64,mime:processed.mime};
+    return{ok:true,data:parsed,b64:processed.b64,mime:processed.mime};
   }catch(ex){console.error("scan error:",ex?.message||String(ex));return{ok:false,err:ex?.message};}
 }
 async function runScan(p){
