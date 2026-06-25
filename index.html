@@ -721,7 +721,10 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <div class="card" style="padding:1.25rem">
       <div class="sec-hd" style="margin-bottom:1rem">
         <div class="sec-title">Documents &amp; Uploads</div>
-        <button class="btn btn-primary btn-sm" onclick="addDocCard()"><svg class="ico"><use href="#ico-plus"/></svg> Add Category</button>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-primary btn-sm" onclick="addDocCard()"><svg class="ico"><use href="#ico-plus"/></svg> Add Category</button>
+          <button class="btn btn-sm" onclick="toggleDashDocs()" title="Close" style="padding:4px 8px">✕</button>
+        </div>
       </div>
       <div id="doc-cards"></div>
     </div>
@@ -1103,6 +1106,15 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     </div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:.5rem;font-weight:600">Cloud Snapshots (last 24)</div>
     <div id="cloud-backups-list" style="font-size:12px;color:var(--text2)">Loading...</div>
+  </div>
+
+  <div class="card" style="padding:1.5rem;margin-bottom:1rem">
+    <div class="sec-hd" style="margin-bottom:.5rem">
+      <div class="sec-title">Recently Deleted</div>
+      <button class="btn btn-sm" onclick="emptyTrash()" style="font-size:11px">Empty All</button>
+    </div>
+    <div style="font-size:12.5px;color:var(--text2);margin-bottom:1rem">Deleted items are kept for 30 days before being permanently removed.</div>
+    <div id="trash-list"></div>
   </div>
 </div>
 
@@ -2705,7 +2717,7 @@ function renderPropTasks(){
   });
 }
 function toggleTask(id){const t=tasks.find(t=>t.id===id);if(t){t.done=!t.done;save();renderTasks();renderPropTasks();if(typeof renderDashTasks==="function")renderDashTasks();}}
-function delTask(id){if(!confirm("Delete this task?"))return;tasks=tasks.filter(t=>t.id!==id);save();renderTasks();renderPropTasks();renderCal();if(typeof renderDashTasks==="function")renderDashTasks();refreshSite();}
+function delTask(id){if(!confirm("Delete this task?"))return;const t=tasks.find(t=>t.id===id);if(t)trashItem('task',t.t||'Task',Object.assign({},t),t.p||'');tasks=tasks.filter(t=>t.id!==id);save();renderTasks();renderPropTasks();renderCal();if(typeof renderDashTasks==="function")renderDashTasks();refreshSite();}
 function openAddPropTask(p){document.getElementById("task-prop").value=p;showModal("m-task");}
 function openEditTask(id){
   populateTaskPropDropdown('edit-task-prop');
@@ -2736,7 +2748,7 @@ function showPage(btn,id){
   // Also highlight the matching mob-item
   document.querySelectorAll(".mob-item").forEach(b=>{if(b.getAttribute("onclick")&&b.getAttribute("onclick").includes("'"+id+"'"))b.classList.add("active");});
   closeMob();
-  if(id==="company"){restoreCompanyInfo();renderAccounts();renderCloudBackups();}
+  if(id==="company"){restoreCompanyInfo();renderAccounts();renderCloudBackups();renderTrash();}
   if(id==="expenses"){renderE("general");renderIncome();loadBalanceSheetInputs();}
   if(id==="taxes"){refreshSite();}
   if(id==="dashboard"){renderPropCards();refreshSite();}
@@ -3242,14 +3254,19 @@ function saveEditExp(){
 }
 function delExpByIndex(p,origIdx){
   if(!confirm('Delete this expense?'))return;
+  const allExp=allE(p);
+  const item=allExp[origIdx];
+  if(item){
+    const isCredit=item.credit;
+    const label=(item.d||item.desc||'Expense')+' '+(item.a||item.amount||'');
+    trashItem(isCredit?'credit':'expense',label,Object.assign({},item),p);
+  }
   if(propData._migrated){
-    // All expenses live in extra[p] — origIdx is direct index
     if(extra[p])extra[p].splice(origIdx,1);
   }else{
     const bexpLen=(BEXP[p]||[]).length;
     if(origIdx>=bexpLen){const uIdx=origIdx-bexpLen;if(extra[p])extra[p].splice(uIdx,1);}
     else{
-      // Deleting a hardcoded item before migration: migrate, then delete the copy
       const be=(BEXP[p]||[])[origIdx];
       migrateHardcodedExpenses();
       if(be&&extra[p]){
@@ -3355,6 +3372,11 @@ function saveEditCr(){
 
 function delCrByIndex(p,origIdx){
   if(!confirm('Delete this credit/refund?'))return;
+  const allExp=allE(p);
+  const item=allExp[origIdx];
+  if(item){
+    trashItem('credit',(item.d||item.desc||'Credit')+' '+(item.a||item.amount||''),Object.assign({},item),p);
+  }
   if(propData._migrated){
     if(extra[p])extra[p].splice(origIdx,1);
   }else{
@@ -3846,6 +3868,8 @@ function saveEst(){
 function delEst(p,idx){
   if(!confirm('Delete this estimate?'))return;
   if(!propData._estimates?.[p])return;
+  const item=propData._estimates[p][idx];
+  if(item)trashItem('estimate',(item.desc||'Estimate')+' '+(item.amount||''),Object.assign({},item),p);
   propData._estimates[p].splice(idx,1);
   save();renderEstimates(p);
 }
@@ -3903,7 +3927,7 @@ function addMileage(){
   if(!miles||!purpose)return;window._mileage.unshift({id:Date.now(),miles,purpose,date,prop});saveMileage();renderMileage();
   document.getElementById("mi-miles").value="";document.getElementById("mi-purpose").value="";
 }
-function deleteMileage(id){window._mileage=window._mileage.filter(t=>String(t.id)!==String(id));saveMileage();renderMileage();}
+function deleteMileage(id){const t=window._mileage.find(t=>String(t.id)===String(id));if(t)trashItem('mileage',t.miles+'mi — '+(t.purpose||'Trip'),Object.assign({},t),t.prop||'');window._mileage=window._mileage.filter(t=>String(t.id)!==String(id));saveMileage();renderMileage();}
 function getMileageRate(){
   const inp=document.getElementById('mi-rate-inp');
   if(inp&&inp.value) return parseFloat(inp.value)||0.725;
@@ -4533,7 +4557,9 @@ async function saveDocCard(){
 }
 function deleteDocCard(i){
   if(!confirm('Delete this document category and all its files?'))return;
-  const cards=getDocCards();cards.splice(i,1);
+  const cards=getDocCards();const card=cards[i];
+  if(card)trashItem('doc-category',card.name||'Category',Object.assign({},card,{files:(card.files||[]).map(f=>Object.assign({},f))}));
+  cards.splice(i,1);
   saveDocCards(cards);renderDocCards();
 }
 async function uploadDocCardFile(i,inp){
@@ -4567,7 +4593,12 @@ async function uploadDocCardFile(i,inp){
 }
 function deleteDocCardFile(ci,fi){
   if(!confirm('Remove this file?'))return;
-  const cards=getDocCards();if(cards[ci]&&cards[ci].files)cards[ci].files.splice(fi,1);
+  const cards=getDocCards();
+  if(cards[ci]&&cards[ci].files){
+    const file=cards[ci].files[fi];
+    if(file)trashItem('doc-file',file.name||'File',Object.assign({},file),cards[ci].id);
+    cards[ci].files.splice(fi,1);
+  }
   saveDocCards(cards);renderDocCards();
 }
 
@@ -4809,6 +4840,8 @@ function renderDocs(p){
 function deleteDoc(p,uid){
   if(!confirm("Delete this document?"))return;
   if(!propData._docs||!propData._docs[p])return;
+  const doc=propData._docs[p].find(d=>d.id===uid);
+  if(doc)trashItem('document',doc.name||'Document',Object.assign({},doc),p);
   propData._docs[p]=propData._docs[p].filter(d=>d.id!==uid);
   const item=document.getElementById("docitem-"+uid);if(item)item.remove();
   save();
@@ -4844,6 +4877,94 @@ function saveDocName(p,uid){
 }
 function getDocByUid(p,uid){return((propData._docs&&propData._docs[p])||[]).find(d=>d.id===uid);}
 function getDocData(p,uid){const d=getDocByUid(p,uid);return d?d.data:null;}
+
+// ====== TRASH / RECENTLY DELETED ======
+function getTrash(){if(!propData._trash)propData._trash=[];return propData._trash;}
+function purgeOldTrash(){
+  const cutoff=Date.now()-30*24*60*60*1000;
+  const t=getTrash();
+  const before=t.length;
+  propData._trash=t.filter(i=>i.deletedAt>cutoff);
+  if(propData._trash.length!==before)save();
+}
+function trashItem(type,label,data,prop){
+  if(data.receipt){
+    const arr=Array.isArray(data.receipt)?data.receipt:[data.receipt];
+    const cleaned=arr.filter(r=>r&&!String(r).startsWith('data:'));
+    data.receipt=cleaned.length?cleaned:''
+  }
+  const t=getTrash();
+  t.unshift({type,label,data,prop:prop||'',deletedAt:Date.now(),id:'tr-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)});
+  propData._trash=t;
+}
+function restoreTrashItem(tid){
+  const t=getTrash();
+  const idx=t.findIndex(i=>i.id===tid);if(idx<0)return;
+  const item=t.splice(idx,1)[0];
+  if(item.type==='expense'||item.type==='credit'){
+    const p=item.prop||'general';
+    if(!extra[p])extra[p]=[];
+    extra[p].push(item.data);
+    save();renderE(p);refreshSite();
+  }else if(item.type==='task'){
+    tasks.push(item.data);
+    save();renderTasks();renderPropTasks();renderDashTasks();refreshSite();
+  }else if(item.type==='mileage'){
+    window._mileage.push(item.data);
+    saveMileage();renderMileage();
+  }else if(item.type==='estimate'){
+    const p=item.prop;
+    if(!propData._estimates)propData._estimates={};
+    if(!propData._estimates[p])propData._estimates[p]=[];
+    propData._estimates[p].unshift(item.data);
+    save();renderEstimates(p);
+  }else if(item.type==='document'){
+    const p=item.prop;
+    if(!propData._docs)propData._docs={};
+    if(!propData._docs[p])propData._docs[p]=[];
+    propData._docs[p].push(item.data);
+    save();renderDocs(p);
+  }else if(item.type==='doc-category'){
+    const cards=getDocCards();
+    cards.push(item.data);
+    saveDocCards(cards);renderDocCards();
+  }else if(item.type==='doc-file'){
+    const cards=getDocCards();
+    const card=cards.find(c=>c.id===item.prop);
+    if(card){if(!card.files)card.files=[];card.files.push(item.data);saveDocCards(cards);renderDocCards();}
+    else{save();}
+  }else{save();}
+  renderTrash();
+}
+function deleteTrashItem(tid){
+  const t=getTrash();
+  propData._trash=t.filter(i=>i.id!==tid);
+  save();renderTrash();
+}
+function emptyTrash(){
+  if(!getTrash().length)return;
+  if(!confirm('Permanently delete all items in trash?'))return;
+  propData._trash=[];save();renderTrash();
+}
+function renderTrash(){
+  purgeOldTrash();
+  const el=document.getElementById('trash-list');if(!el)return;
+  const t=getTrash();
+  if(!t.length){el.innerHTML='<div class="empty" style="padding:1rem;font-size:12.5px">No deleted items.</div>';return;}
+  el.innerHTML=t.map(item=>{
+    const days=Math.ceil((Date.now()-item.deletedAt)/(24*60*60*1000));
+    const daysLeft=30-days;
+    const typeLabel=item.type.charAt(0).toUpperCase()+item.type.slice(1);
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:13px;font-weight:600;color:var(--text)">'+esc(item.label)+'</div>'
+      +'<div style="font-size:11px;color:var(--text3)">'+esc(typeLabel)+(item.prop?' · '+esc(item.prop):'')+' · '+daysLeft+'d left</div>'
+      +'</div>'
+      +'<button class="btn btn-sm" onclick="restoreTrashItem(\''+item.id+'\')" style="font-size:11px;padding:3px 8px">Restore</button>'
+      +'<button class="btn btn-danger btn-sm btn-icon" onclick="deleteTrashItem(\''+item.id+'\')" style="padding:3px 6px" title="Delete permanently"><svg class="ico" style="width:12px;height:12px"><use href="#ico-trash"/></svg></button>'
+      +'</div>';
+  }).join('');
+}
 
 // ====== BATCH RECEIPT CLOUD SYNC ======
 async function syncAllReceiptsToCloud(){
@@ -4960,6 +5081,7 @@ loadData().then(()=>{
     refreshSite();
     renderDashTasks();
     migrateHardcodedExpenses();
+    purgeOldTrash();
     autoUploadPendingDocs();
     recoverPhotosFromStorage();
     saveHourlyBackup(false);
