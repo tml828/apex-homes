@@ -3432,7 +3432,7 @@ async function scanCrReceipt(f,preB64=null,preMime=null){
     if(parsed.amount){const amt=String(parsed.amount).replace(/[^0-9.\-]/g,'');document.getElementById("cr-amt").value=amt;}
     if(parsed.desc)document.getElementById("cr-desc").value=parsed.desc;
     if(parsed.vendor)document.getElementById("cr-vendor").value=parsed.vendor;
-    if(parsed.date)document.getElementById("cr-date").value=parsed.date;
+    document.getElementById("cr-date").value=parsed.date||new Date().toLocaleDateString('en-CA');
     if(parsed.cat){const sel=document.getElementById("cr-cat");if(sel){const cat=parsed.cat.trim();for(let i=0;i<sel.options.length;i++){if(sel.options[i].value.toLowerCase()===cat.toLowerCase()){sel.selectedIndex=i;break;}}}}
     if(status)status.innerHTML='<div style="font-size:12px;color:var(--green)">\u2713 Receipt scanned</div>';
   }catch(err){if(status)status.innerHTML=`<div style="font-size:12px;color:var(--red)">Scan failed: ${err.message.slice(0,80)}</div>`;}
@@ -3686,7 +3686,7 @@ async function scanExpReceipt(f,preB64=null,preMime=null){
     if(parsed.amount){const amt=String(parsed.amount).replace(/[^0-9.\-]/g,'');document.getElementById("exp-amt").value=amt;}
     if(parsed.desc)document.getElementById("exp-desc").value=parsed.desc;
     if(parsed.vendor)document.getElementById("exp-vendor").value=parsed.vendor;
-    if(parsed.date)document.getElementById("exp-date").value=parsed.date;
+    document.getElementById("exp-date").value=parsed.date||new Date().toLocaleDateString('en-CA');
     if(parsed.cat){const sel=document.getElementById("exp-cat");if(sel){const cat=parsed.cat.trim();let matched=false;for(let i=0;i<sel.options.length;i++){const ov=sel.options[i].value.replace(/&amp;/g,'&');if(ov.toLowerCase()===cat.toLowerCase()||sel.options[i].text.toLowerCase()===cat.toLowerCase()){sel.selectedIndex=i;matched=true;break;}}if(!matched){for(let i=0;i<sel.options.length;i++){if(sel.options[i].value.toLowerCase().includes(cat.toLowerCase().split('/')[0].trim())||cat.toLowerCase().includes(sel.options[i].value.toLowerCase().split('/')[0].trim())){sel.selectedIndex=i;break;}}}}}
     const filled=!!(parsed.amount&&parsed.desc);
     if(status)status.innerHTML=filled?'<div style="font-size:12px;color:var(--green)">\u2713 Receipt scanned</div>':'<div style="font-size:12px;color:var(--amber)">\u2713 Scanned \u2014 could not extract all fields. Try a clearer image.</div>';
@@ -3725,7 +3725,7 @@ async function runScan(p){
     if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div> Scanning...';}
     const files=pendingFiles[p]||[];if(!files.length)return;const results=[];for(let i=0;i<files.length;i++)results.push(await scanOne(files[i],p,i));
     const ok=results.filter(r=>r.ok&&r.data?.amount);const fail=results.length-ok.length;
-    ok.forEach(r=>{if(!extra[p])extra[p]=[];extra[p].unshift({a:r.data.amount,d:r.data.desc||"Receipt",c:r.data.cat||"Other",v:r.data.vendor||"",dt:r.data.date||new Date().toISOString().split("T")[0],receipt:`data:${r.mime};base64,${r.b64}`});});
+    ok.forEach(r=>{if(!extra[p])extra[p]=[];extra[p].unshift({a:r.data.amount,d:r.data.desc||"Receipt",c:r.data.cat||"Other",v:r.data.vendor||"",dt:r.data.date||new Date().toLocaleDateString('en-CA'),receipt:`data:${r.mime};base64,${r.b64}`});});
     save();renderE(p);refreshSite();
     const sr=document.getElementById("sr-"+p);if(sr)sr.innerHTML=ok.length?`<div class="scan-result-msg srm-ok"><svg class="ico"><use href="#ico-circle-check"/></svg> ${ok.length} receipt${ok.length>1?"s":""} added${fail?" ("+fail+" failed)":""}</div>`:`<div class="scan-result-msg srm-fail"><svg class="ico"><use href="#ico-alert-circle"/></svg> Could not read receipts — check API key in Company settings</div>`;
     if(btn){btn.innerHTML='<svg class="ico"><use href="#ico-sparkles"/></svg> Scan More';btn.disabled=false;}pendingFiles[p]=[];renderQ(p);
