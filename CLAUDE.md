@@ -130,7 +130,7 @@ Property keys are always lowercase, no spaces.
 - `loadData()` — loads from localStorage first, then Supabase
 - `autoSyncPull()` — every 5s, hash-checked before applying, blocked by `_pushPending` flag while a save is in flight
 - `_mergeReceipts(cloudExtra)` — re-attaches local base64 receipt images stripped by cloud copy; called in `loadData` and `autoSyncPull`
-- `saveHourlyBackup()` — saves a timestamped cloud snapshot (id=`backup-{ts}`), keeps only 2 most recent; guards against empty propData
+- `saveHourlyBackup()` — saves a timestamped cloud snapshot (id=`backup-{ts}`), keeps only 7 most recent; guards against empty propData
 - `restoreCloudBackup(id)` — synchronous POST to Supabase then reload; restores propImgs too
 
 ### Receipt Scanning
@@ -195,7 +195,7 @@ Property keys are always lowercase, no spaces.
 - Dashboard stats replaced with Net Profit, All-In Cost, Avg ROI (3 cards)
 - Glass morphism UI applied site-wide (backdrop-filter, rgba backgrounds)
 - Background image: `Gemini_Generated_Image_d4zq21d4zq21d4zq.png` in repo root, served via raw.githubusercontent.com
-- Hourly cloud snapshots: `saveHourlyBackup()` / `restoreCloudBackup()` on Company tab, max 2 kept
+- Hourly cloud snapshots: `saveHourlyBackup()` / `restoreCloudBackup()` on Company tab, max 7 kept
 - Supabase Auth + RLS implemented: login screen, session tokens on all requests, `sbLogin`/`sbRefreshAuth`/`sbLogout`; Cloud Account card on Company tab
 - `esc(s)` HTML escape helper added, used throughout `renderE`, `renderCr`, `renderEFiltered`, `showVendorSuggest`
 - `_pushPending` flag prevents autoSyncPull from overwriting a pending save
@@ -212,7 +212,7 @@ Property keys are always lowercase, no spaces.
 - Date inputs in `openAddExp()` and `openAddCr()` use `toLocaleDateString('en-CA')` (not `toISOString()`) to avoid next-day UTC timezone bug
 - Dashboard "Tax Exempt" tab renamed to "Tx Ex/Cps"
 - Estimates tab added to every property page — `propData._estimates[key]` array; functions: `getEstimates`, `openAddEst`, `openEditEst`, `saveEst`, `delEst`, `renderEstimates`
-- Viewport meta includes `maximum-scale=1.0` to prevent iOS auto-zoom; all modal inputs set to `font-size:16px`
+- Viewport meta: `maximum-scale=1.0` was removed (no longer needed); iOS auto-zoom prevented by `font-size:16px` on all modal inputs instead
 - Recurring expenses: checkbox + frequency (Weekly/Monthly/Quarterly/Yearly) in Add Expense modal; `_recurDates(startDt,freq)` generates all instances from start date through today; each entry tagged with `recur: freq` field; shown with purple `↻ freq` badge in expense list; available on all properties and general expenses
 - Multi-page receipt support: PDF receipts converted to per-page images via PDF.js; `pdfToImages()` renders all pages; receipt field supports string or array; `_receiptThumb()` shows page count badge; lightbox has prev/next nav (`lbNav`)
 - Receipt delete: `deleteEditExpReceipt()` / `deleteEditCrReceipt()` in edit modals; sets `__deleted__` sentinel, cleared on save
@@ -224,6 +224,20 @@ Property keys are always lowercase, no spaces.
 - `netProfitAfterMileage` uses `netProfitFull` directly (no falsy fallback to undefined `netProfit`)
 - Task rendering (`renderDashTasks`, `renderTasks`, `renderPropTasks`) escapes title and property with `esc()`
 - `renderPropTasks` matches tasks by key OR address (task dropdown saves address string, not key)
+- Documents panel close button added (`toggleDashDocs()`)
+- Trash / recycle bin system: `getTrash()`, `trashItem()`, `restoreTrashItem()`, `deleteTrashItem()`, `emptyTrash()`, `renderTrash()` — deleted items kept 30 days in `propData._trash`; all delete functions (expenses, credits, tasks, mileage, estimates, docs) route through trash; `purgeOldTrash()` runs on startup; Recently Deleted section on Company tab
+- AI receipt scanner date fix: if no transaction date found returns null; app defaults to today (`toLocaleDateString('en-CA')`); prompt explicitly excludes copyright/footer years
+- Lightbox `#m-lbox` z-index raised to 9000 — was appearing behind expense modals on mobile
+- Contractor payments expandable dropdown: "Show all X payments" button on each contractor card using `data-cid` / `data-cnt` attributes
+- XSS: `esc()` applied to all innerHTML render paths — `buildPropPage`, `renderPropCards`, `renderPots`, `renderDashPots`, `renderIncome`, `renderCalDay`, `renderContractors`, bank accounts, `ohioAutocomplete`, closing statement fields, docs tab
+- `anthropicKey` removed from Supabase cloud payload in `save()` — API credentials must never be stored in application data
+- `propImgs` added to `exportBackup()` — was silently missing, causing photo loss on local backup restore
+- Calendar defaults: `calM` and `calS` now initialize to `new Date()` instead of hardcoded May 2026
+- `openAddIncome()` date bug fixed: uses `toLocaleDateString('en-CA')` instead of `toISOString()` (UTC timezone bug)
+- `var extra` in calendar rendering renamed to `var extraCount` — was shadowing global `extra` expense object
+- `startAutoSync()` has `clearInterval` guard (`let _syncTimer`) — prevents interval stacking on re-call
+- `autoSyncPull` catch block now logs: `catch(e){ console.warn('autoSyncPull error:',e); }` — was silently swallowed
+- Global `unhandledrejection` handler added for visibility into mobile crashes
 
 ---
 
