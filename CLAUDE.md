@@ -88,7 +88,7 @@ Property keys are always lowercase, no spaces.
 ### Data Helpers
 - `getPropKeys()` — returns all property keys (excludes `_` prefixed keys)
 - `getProp(p)` — returns merged property object (propDefaults + propData)
-- `allE(p)` — returns all expenses for a property (handles BEXP migration)
+- `allE(p)` — returns all expenses for a property from `extra[p]` (BEXP migration complete — hardcoded data deleted)
 - `eTotal(p, yr)` — sum of expenses for property, optionally filtered by year. Credits are negative.
 - `propPurchase(p, yr)` — purchase price, filtered by sale year (COGS in year of sale)
 - `propSold(p, yr)` — sale price, filtered by year
@@ -244,6 +244,14 @@ Property keys are always lowercase, no spaces.
 - All 24 native `confirm()` dialogs replaced with `appConfirm(msg, okLabel)` — returns a Promise, all callers converted to `async`/`await`; custom modal matches app glass morphism style; native confirm is blocked in some mobile WebViews
 - `tests.html` added — 22 financial calculation assertions covering `fmt()`, `eTotal()`, `propNetProfit()`, `propROI()`, `mileageDeduction()`, `mealsCorrection()`, `netProfitAfterMileage()`; open in browser to run
 - `.github/workflows/pages.yml` added — custom GitHub Pages workflow with 3-attempt retry logic (15s, 30s delays) for flaky GitHub Pages deploy API; `concurrency: group: pages` prevents overlapping deploys
+- BEXP hardcoded expense data fully migrated: all entries confirmed in Supabase, `BEXP` const deleted from `index.html`, `allE()` simplified to `return extra[p]||[]`, migration function and all `_migrated` guards removed; one missing warblers entry ($15,629.56) was added via console before deletion
+
+---
+
+## Developer Rules (Ongoing)
+
+- **Keep CLAUDE.md current** — after every fix, feature, or structural change, update the relevant section (fix history, function reference, audit scores). Do this automatically without being asked.
+- **Update audit scores** after completing items that address a listed gap — recalculate and update the table.
 
 ---
 
@@ -253,9 +261,9 @@ Property keys are always lowercase, no spaces.
 | Security | 52/100 | Anthropic API key in public git history — rotate at console.anthropic.com |
 | Performance | 63/100 | `refreshSite()` rebuilds full DOM on every change |
 | Reliability | 72/100 | — |
-| Data Integrity | 60/100 | BEXP hardcoded historical data (double-count risk if `_migrated` absent) |
+| Data Integrity | 75/100 | — |
 | Maintainability | 36/100 | Single 5700-line file, no module system |
-| **Overall** | **58/100** | |
+| **Overall** | **61/100** | |
 
 ---
 
