@@ -244,6 +244,7 @@ Property keys are always lowercase, no spaces.
 - All 24 native `confirm()` dialogs replaced with `appConfirm(msg, okLabel)` — returns a Promise, all callers converted to `async`/`await`; custom modal matches app glass morphism style; native confirm is blocked in some mobile WebViews
 - `tests.html` added — 22 financial calculation assertions covering `fmt()`, `eTotal()`, `propNetProfit()`, `propROI()`, `mileageDeduction()`, `mealsCorrection()`, `netProfitAfterMileage()`; open in browser to run
 - `.github/workflows/pages.yml` added — custom GitHub Pages workflow with 3-attempt retry logic (15s, 30s delays) for flaky GitHub Pages deploy API; `concurrency: group: pages` prevents overlapping deploys
+- `refreshSite(scope)` scoped: added `scope='stats'` param that skips 8 expensive DOM renders (renderPropCards, renderE general, renderIncome, renderDashPots, renderDashTasks, renderDocCards, loadNotes, loadBalanceSheetInputs); all hot-path callers (expense/credit/task/income/pot add/edit/delete, receipt scan, CSV import, closing import, trash restore) use 'stats'; full refresh kept for startup, tab switches, year changes, autoSyncPull
 - BEXP hardcoded expense data fully migrated: all entries confirmed in Supabase, `BEXP` const deleted from `index.html`, `allE()` simplified to `return extra[p]||[]`, migration function and all `_migrated` guards removed; one missing warblers entry ($15,629.56) was added via console before deletion
 
 ---
@@ -259,11 +260,11 @@ Property keys are always lowercase, no spaces.
 | Area | Score | Main remaining gap |
 |---|---|---|
 | Security | 52/100 | Anthropic API key in public git history — rotate at console.anthropic.com |
-| Performance | 63/100 | `refreshSite()` rebuilds full DOM on every change |
+| Performance | 74/100 | `refreshSite()` still rebuilds full DOM on tab switches and year changes |
 | Reliability | 72/100 | — |
 | Data Integrity | 75/100 | — |
 | Maintainability | 36/100 | Single 5700-line file, no module system |
-| **Overall** | **61/100** | |
+| **Overall** | **64/100** | |
 
 ---
 
