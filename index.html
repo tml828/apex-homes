@@ -5338,8 +5338,10 @@ function renderContractors(){
         ${saved.notes?`<span><strong>Notes:</strong> ${saved.notes}</span>`:''}
       </div>`:'<div style="font-size:11px;color:var(--text3);margin-top:.5rem;font-style:italic">No W-9 info yet — click Edit Info to add EIN, phone, email</div>'}
       <div style="margin-top:.75rem;border-top:1px solid var(--border);padding-top:.65rem">
-        ${c.exps.slice(0,3).map(e=>`<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);padding:2px 0"><span>${e.d||'Expense'} · ${e.dt||''}</span><span>${fmt(e.a)}</span></div>`).join('')}
-        ${c.exps.length>3?`<div style="font-size:11px;color:var(--text3);margin-top:3px">+${c.exps.length-3} more</div>`:''}
+        <div id="con-exps-${i}" style="display:none">
+          ${c.exps.map(e=>`<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);padding:3px 0;border-bottom:1px solid var(--border)"><span style="flex:1;padding-right:8px">${esc(e.d||'Expense')} · ${e.dt||''} <span style="color:var(--text3);font-size:11px">(${e.p})</span></span><span style="font-weight:600;white-space:nowrap">${fmt(e.a)}</span></div>`).join('')}
+        </div>
+        <button onclick="(function(btn,id){var el=document.getElementById(id);var open=el.style.display==='block';el.style.display=open?'none':'block';btn.textContent=open?'Show all ${c.exps.length} payments ▾':'Hide ▴';})(this,'con-exps-${i}')" style="font-size:11px;color:var(--gold2);background:none;border:none;cursor:pointer;padding:2px 0;margin-top:2px">Show all ${c.exps.length} payments ▾</button>
       </div>
     </div>`;
   });
