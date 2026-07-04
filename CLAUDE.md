@@ -238,6 +238,24 @@ Property keys are always lowercase, no spaces.
 - `startAutoSync()` has `clearInterval` guard (`let _syncTimer`) — prevents interval stacking on re-call
 - `autoSyncPull` catch block now logs: `catch(e){ console.warn('autoSyncPull error:',e); }` — was silently swallowed
 - Global `unhandledrejection` handler added for visibility into mobile crashes
+- `suggestExpCategory` XSS fix: AI-returned category text stored in `window._catSuggestions[key]` object, referenced by key in onclick — no user-controlled text interpolated into JS strings
+- `runIncomeScan` fixed: income receipts uploaded to Supabase storage (URL saved), not stored as base64 blobs in cloud payload
+- Duplicate expense/credit check now matches on amount + date + description (was amount only — false positives on different-date same-amount expenses)
+- All 24 native `confirm()` dialogs replaced with `appConfirm(msg, okLabel)` — returns a Promise, all callers converted to `async`/`await`; custom modal matches app glass morphism style; native confirm is blocked in some mobile WebViews
+- `tests.html` added — 22 financial calculation assertions covering `fmt()`, `eTotal()`, `propNetProfit()`, `propROI()`, `mileageDeduction()`, `mealsCorrection()`, `netProfitAfterMileage()`; open in browser to run
+- `.github/workflows/pages.yml` added — custom GitHub Pages workflow with 3-attempt retry logic (15s, 30s delays) for flaky GitHub Pages deploy API; `concurrency: group: pages` prevents overlapping deploys
+
+---
+
+## Audit Scores (last assessed 2026-07-04)
+| Area | Score | Main remaining gap |
+|---|---|---|
+| Security | 52/100 | Anthropic API key in public git history — rotate at console.anthropic.com |
+| Performance | 63/100 | `refreshSite()` rebuilds full DOM on every change |
+| Reliability | 72/100 | — |
+| Data Integrity | 60/100 | BEXP hardcoded historical data (double-count risk if `_migrated` absent) |
+| Maintainability | 36/100 | Single 5700-line file, no module system |
+| **Overall** | **58/100** | |
 
 ---
 
