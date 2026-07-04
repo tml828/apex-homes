@@ -1521,7 +1521,7 @@ const IS_CLAUDE_AI = window.location.hostname.includes('claude.ai') ||
                      window.location.hostname.includes('artifact') ||
                      window.location.protocol === 'file:' ||
                      window.location.hostname === 'localhost';
-var calM=new Date(2026,4,1),calS=new Date(2026,4,18);
+var calM=new Date(),calS=new Date();
 const BEXP={
   bradford:[
     {a:600,     d:"Painter",                              c:"Painting",             v:"Ehab Zelle",                              dt:"2026-05-15"},
@@ -1670,9 +1670,9 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 let syncTimer=null,syncStatus='idle',syncEnabled=true;
 
 
-function exportBackup(){try{const backup={version:1,exportDate:new Date().toISOString(),propData:propData,extra:(typeof extra!=='undefined')?extra:{},tasks:tasks,mileage:window._mileage||[]};const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;const _d=new Date();const _ds=_d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');a.download='apex-homes-backup-'+_ds+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{a.remove();URL.revokeObjectURL(url);},100);const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--green)">✓ Backup downloaded</span>';}catch(err){const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--red)">✗ '+err.message+'</span>';}}
+function exportBackup(){try{const backup={version:1,exportDate:new Date().toISOString(),propData:propData,extra:(typeof extra!=='undefined')?extra:{},tasks:tasks,mileage:window._mileage||[],propImgs:propImgs||{}};const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;const _d=new Date();const _ds=_d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');a.download='apex-homes-backup-'+_ds+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{a.remove();URL.revokeObjectURL(url);},100);const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--green)">✓ Backup downloaded</span>';}catch(err){const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--red)">✗ '+err.message+'</span>';}}
 // ====== HOURLY CLOUD SNAPSHOTS ======
-const MAX_SNAPSHOTS=2;
+const MAX_SNAPSHOTS=7;
 async function saveHourlyBackup(manual){
   if(!syncEnabled)return;
   // Never snapshot empty data — would rotate out good backups with bad ones
@@ -1808,7 +1808,7 @@ function renderDashPots(){
   const pots=getPots().slice().sort((a,b)=>(a.date||'9999').localeCompare(b.date||'9999'));
   const cnt=document.getElementById('dash-pot-count');if(cnt)cnt.textContent=pots.length?pots.length+' propert'+(pots.length===1?'y':'ies'):'None yet';
   if(!pots.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:.5rem 0">No potential properties</div>';return;}
-  el.innerHTML=pots.map(p=>`<div style="padding:.5rem .6rem;background:var(--bg4);border:1px solid var(--border);border-radius:8px;margin-bottom:5px;cursor:pointer" onclick="openEditPot('${p.id}')"><div style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--text)">${p.addr}${p.city?' · '+p.city:''}</div>${p.notes?`<div style="font-size:12px;color:#f0c040;margin-top:3px;font-weight:600">${p.notes}</div>`:''} ${p.date?`<div style="font-size:11px;color:#e2ddd4;margin-top:2px">${fmtD(p.date)}${p.price?' · ~'+fmt(parseFloat(p.price)):''}</div>`:''}</div><div style="display:flex;gap:4px;flex-shrink:0"><button class="btn btn-ghost btn-sm btn-icon" onclick="event.stopPropagation();openEditPot('${p.id}')"><svg class="ico" style="width:11px;height:11px"><use href="#ico-pencil"/></svg></button><button class="btn btn-danger btn-sm btn-icon" onclick="event.stopPropagation();deletePot('${p.id}')"><svg class="ico" style="width:11px;height:11px"><use href="#ico-trash"/></svg></button></div></div></div>`).join('');
+  el.innerHTML=pots.map(p=>`<div style="padding:.5rem .6rem;background:var(--bg4);border:1px solid var(--border);border-radius:8px;margin-bottom:5px;cursor:pointer" onclick="openEditPot('${p.id}')"><div style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--text)">${esc(p.addr)}${p.city?' · '+esc(p.city):''}</div>${p.notes?`<div style="font-size:12px;color:#f0c040;margin-top:3px;font-weight:600">${esc(p.notes)}</div>`:''} ${p.date?`<div style="font-size:11px;color:#e2ddd4;margin-top:2px">${fmtD(p.date)}${p.price?' · ~'+fmt(parseFloat(p.price)):''}</div>`:''}</div><div style="display:flex;gap:4px;flex-shrink:0"><button class="btn btn-ghost btn-sm btn-icon" onclick="event.stopPropagation();openEditPot('${p.id}')"><svg class="ico" style="width:11px;height:11px"><use href="#ico-pencil"/></svg></button><button class="btn btn-danger btn-sm btn-icon" onclick="event.stopPropagation();deletePot('${p.id}')"><svg class="ico" style="width:11px;height:11px"><use href="#ico-trash"/></svg></button></div></div></div>`).join('');
 }
 function loadBalanceSheetInputs(){const bs=propData._bs||{};const ci=document.getElementById('bs-cash-inp'),li=document.getElementById('bs-loans-inp'),pi=document.getElementById('bs-payable-inp');if(ci&&bs.cash!=null)ci.value=bs.cash;if(li&&bs.loans!=null)li.value=bs.loans;if(pi&&bs.payable!=null)pi.value=bs.payable;updateBalanceSheet(false);}
 function clearBalanceSheet(){if(!confirm('Clear balance sheet?'))return;propData._bs={cash:0,loans:0,payable:0};['bs-cash-inp','bs-loans-inp','bs-payable-inp'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});save();updateBalanceSheet(false);}
@@ -1824,13 +1824,13 @@ function renderIncome(q){
   items=items.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   el.innerHTML=items.map(inc=>{
     const receipt=_receiptThumb(inc.receipt);
-    const meta=[inc.cat,inc.payer,inc.date?fmtD(inc.date):''].filter(Boolean).join(' · ');
+    const meta=[inc.cat,inc.payer,inc.date?fmtD(inc.date):''].filter(Boolean).map(esc).join(' · ');
     return `<div class="inc-item">
       ${receipt}
       <div style="flex:1;min-width:0;overflow:hidden">
-        <div class="exp-desc" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${inc.desc||'Income'}</div>
+        <div class="exp-desc" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(inc.desc||'Income')}</div>
         <div style="font-size:11px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${meta}</div>
-        ${inc.notes?`<div style="font-size:11px;color:var(--text2);margin-top:2px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${inc.notes}</div>`:''}
+        ${inc.notes?`<div style="font-size:11px;color:var(--text2);margin-top:2px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(inc.notes)}</div>`:''}
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
         <span class="exp-amt" style="color:#10b981;min-width:80px;text-align:right">${fmt(parseFloat(inc.amount)||0)}</span>
@@ -1857,7 +1857,7 @@ async function handleIncomeReceipt(inp){
   _incomeReceiptUrl=url;_setIncomeReceiptThumb(url);
   if(status){status.innerHTML='<span style="color:var(--green)">✓ Receipt attached</span>';setTimeout(()=>{if(status)status.innerHTML='';},3000);}
 }
-function openAddIncome(){document.getElementById('income-modal-title').textContent='Add Income';document.getElementById('income-id').value='';document.getElementById('income-amount').value='';document.getElementById('income-date').value=new Date().toISOString().split('T')[0];document.getElementById('income-desc').value='';document.getElementById('income-payer').value='';document.getElementById('income-notes').value='';_incomeReceiptUrl=null;_setIncomeReceiptThumb(null);const _irs=document.getElementById('income-receipt-status');if(_irs)_irs.innerHTML='';populateIncomeCats('Check');showModal('m-income');setTimeout(()=>{const d=document.getElementById('income-desc');if(d)d.setAttribute('oninput',"onExpDescInput(this.value,'income-cat','income-cat-suggest')");if(!document.getElementById('income-cat-suggest')){const sp=document.createElement('div');sp.id='income-cat-suggest';sp.style.cssText='min-height:16px;margin-bottom:3px';const cat=document.getElementById('income-cat');if(cat)cat.parentNode.insertBefore(sp,cat);}},50);}
+function openAddIncome(){document.getElementById('income-modal-title').textContent='Add Income';document.getElementById('income-id').value='';document.getElementById('income-amount').value='';document.getElementById('income-date').value=new Date().toLocaleDateString('en-CA');document.getElementById('income-desc').value='';document.getElementById('income-payer').value='';document.getElementById('income-notes').value='';_incomeReceiptUrl=null;_setIncomeReceiptThumb(null);const _irs=document.getElementById('income-receipt-status');if(_irs)_irs.innerHTML='';populateIncomeCats('Check');showModal('m-income');setTimeout(()=>{const d=document.getElementById('income-desc');if(d)d.setAttribute('oninput',"onExpDescInput(this.value,'income-cat','income-cat-suggest')");if(!document.getElementById('income-cat-suggest')){const sp=document.createElement('div');sp.id='income-cat-suggest';sp.style.cssText='min-height:16px;margin-bottom:3px';const cat=document.getElementById('income-cat');if(cat)cat.parentNode.insertBefore(sp,cat);}},50);}
 function openEditIncome(id){const inc=(propData._income||[]).find(i=>i.id===id);if(!inc)return;document.getElementById('income-modal-title').textContent='Edit Income';document.getElementById('income-id').value=id;document.getElementById('income-amount').value=inc.amount||'';document.getElementById('income-date').value=inc.date||'';document.getElementById('income-desc').value=inc.desc||'';document.getElementById('income-payer').value=inc.payer||'';document.getElementById('income-notes').value=inc.notes||'';_incomeReceiptUrl=inc.receipt||null;_setIncomeReceiptThumb(_incomeReceiptUrl);const _irs=document.getElementById('income-receipt-status');if(_irs)_irs.innerHTML='';populateIncomeCats(inc.cat||'Check');showModal('m-income');}
 function saveIncome(){const id=document.getElementById('income-id').value||('inc-'+Date.now().toString(36));const amount=parseFloat(document.getElementById('income-amount').value)||0;if(!amount){alert('Please enter an amount');return;}const inc={id,amount,date:document.getElementById('income-date').value,cat:getSelectedIncomeCat(),desc:document.getElementById('income-desc').value.trim(),payer:document.getElementById('income-payer').value.trim(),notes:document.getElementById('income-notes').value.trim()};if(_incomeReceiptUrl)inc.receipt=_incomeReceiptUrl;if(!propData._income)propData._income=[];const idx=(propData._income).findIndex(i=>i.id===id);if(idx>-1)propData._income[idx]=inc;else propData._income.push(inc);save();renderIncome();refreshSite();closeModal('m-income');}
 function deleteIncome(id){if(!confirm('Delete this income entry?'))return;propData._income=(propData._income||[]).filter(i=>i.id!==id);save();renderIncome();refreshSite();}
@@ -1906,7 +1906,7 @@ function renderCalDay(){
   if(!evs.length){panel.innerHTML='<div class="empty" style="padding:1.5rem 0;text-align:center;color:var(--text3);font-size:12px">No events — tap + to add one</div>';return;}
   const colors={task:'#fbbf24',pot:'#3b82f6',custom:'#a855f7'};
   const typeLbl={task:'Task',pot:'Potential Property',custom:'Event'};
-  panel.innerHTML=evs.map(ev=>`<div class="cal-ev-item"><span class="cal-ev-dot" style="background:${colors[ev.type]}"></span><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text);line-height:1.3">${ev.title}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${typeLbl[ev.type]}${ev.sub?' · '+ev.sub:''}</div></div><div style="display:flex;gap:4px;flex-shrink:0">${ev.source==='custom'?`<button class="btn btn-ghost btn-sm btn-icon" onclick="editCalEvent('${ev.sourceId}')" title="Edit"><svg class="ico" style="width:12px;height:12px"><use href="#ico-pencil"/></svg></button>`:''}<button class="btn btn-danger btn-sm btn-icon" onclick="deleteCalEvent('${ev.id}','${ds}')" title="Delete"><svg class="ico" style="width:12px;height:12px"><use href="#ico-trash"/></svg></button></div></div>`).join('');
+  panel.innerHTML=evs.map(ev=>`<div class="cal-ev-item"><span class="cal-ev-dot" style="background:${colors[ev.type]}"></span><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text);line-height:1.3">${esc(ev.title)}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${typeLbl[ev.type]}${ev.sub?' · '+esc(ev.sub):''}</div></div><div style="display:flex;gap:4px;flex-shrink:0">${ev.source==='custom'?`<button class="btn btn-ghost btn-sm btn-icon" onclick="editCalEvent('${ev.sourceId}')" title="Edit"><svg class="ico" style="width:12px;height:12px"><use href="#ico-pencil"/></svg></button>`:''}<button class="btn btn-danger btn-sm btn-icon" onclick="deleteCalEvent('${ev.id}','${ds}')" title="Delete"><svg class="ico" style="width:12px;height:12px"><use href="#ico-trash"/></svg></button></div></div>`).join('');
 }
 
 function renderCal(){
@@ -1926,9 +1926,9 @@ function renderCal(){
     const isToday=ds===todayStr;
     const isSel=calS&&calS.getFullYear()===y&&calS.getMonth()===m&&calS.getDate()===d;
     const shown=evs.slice(0,2);
-    var extra =evs.length-shown.length;
-    const chips=shown.map(ev=>`<div class="cal-ev cal-ev-${ev.type}" title="${ev.title.replace(/"/g,"'")}">${ev.title}</div>`).join('');
-    const more=extra>0?`<div class="cal-ev-more">+${extra} more</div>`:'';
+    var extraCount=evs.length-shown.length;
+    const chips=shown.map(ev=>`<div class="cal-ev cal-ev-${ev.type}" title="${esc(ev.title)}">${esc(ev.title)}</div>`).join('');
+    const more=extraCount>0?`<div class="cal-ev-more">+${extraCount} more</div>`:'';
     h+=`<div class="cal-d${isToday?' today':''}${isSel?' sel':''}" onclick="selD(${d})"><div class="cal-dn">${d}</div>${chips}${more}</div>`;
   }
   el.innerHTML=h;
@@ -2271,7 +2271,7 @@ function save(){
           }
         }
       }
-      const cloudPayload={extra:cloudExtra,tasks,propData:cloudPropData,propImgs:cloudPropImgs,anthropicKey:getApiKey()||undefined};
+      const cloudPayload={extra:cloudExtra,tasks,propData:cloudPropData,propImgs:cloudPropImgs};
       const r=await sbFetch('/rest/v1/apex_data',{
         method:'POST',
         headers:{'Prefer':'resolution=merge-duplicates'},
@@ -2408,7 +2408,7 @@ function ohioAutocomplete(inp){
   const url=`https://nominatim.openstreetmap.org/search?format=json&countrycodes=us&state=Ohio&q=${encodeURIComponent(val+' Ohio')}&limit=5`;
   fetch(url,{headers:{'Accept-Language':'en'}}).then(r=>r.json()).then(results=>{
     if(!results.length){box.style.display='none';return;}
-    box.innerHTML=results.map(r=>`<div style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)" onmousedown="document.getElementById('pot-addr').value='${r.display_name.replace(/'/g,"\\'")}';document.getElementById('pot-addr-suggestions').style.display='none'">${r.display_name}</div>`).join('');
+    box.innerHTML=results.map(r=>`<div style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)" onmousedown="document.getElementById('pot-addr').value='${r.display_name.replace(/'/g,"\\'")}';document.getElementById('pot-addr-suggestions').style.display='none'">${esc(r.display_name)}</div>`).join('');
     box.style.display='block';
   }).catch(()=>{box.style.display='none';});
 }
@@ -2566,21 +2566,21 @@ function renderAccounts(){
   el.innerHTML=accs.map((a,i)=>`<div class="bank-item" style="flex-direction:column;align-items:stretch;gap:0;padding:1rem;margin-bottom:8px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:.65rem">
       <div class="bank-ico"><svg class="ico"><use href="#ico-${ICONS[a.type]||'building-bank'}"/></svg></div>
-      <div style="flex:1"><div class="bank-name">${a.name}</div><div class="bank-detail">${a.type}${a.bankname?' · '+a.bankname:''}</div></div>
+      <div style="flex:1"><div class="bank-name">${esc(a.name)}</div><div class="bank-detail">${esc(a.type)}${a.bankname?' · '+esc(a.bankname):''}</div></div>
       <div style="display:flex;gap:5px">
         <button class="btn btn-ghost btn-sm btn-icon" onclick="openEditAccount(${i})"><svg class="ico" style="width:13px;height:13px"><use href="#ico-pencil"/></svg></button>
         <button class="btn btn-danger btn-sm btn-icon" onclick="deleteAccount(${i})"><svg class="ico" style="width:13px;height:13px"><use href="#ico-trash"/></svg></button>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:.85rem;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border)">
-      ${(a.type==='Checking'||a.type==='Savings')&&a.acct?`<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">Account #</div><div style="font-weight:700;color:var(--gold2);font-family:monospace;font-size:13px">${a.acct}</div></div>`:''}
-      ${(a.type==='Checking'||a.type==='Savings')&&a.routing?`<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">Routing #</div><div style="font-weight:700;color:var(--gold2);font-family:monospace;font-size:13px">${a.routing}</div></div>`:''}
+      ${(a.type==='Checking'||a.type==='Savings')&&a.acct?`<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">Account #</div><div style="font-weight:700;color:var(--gold2);font-family:monospace;font-size:13px">${esc(a.acct)}</div></div>`:''}
+      ${(a.type==='Checking'||a.type==='Savings')&&a.routing?`<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">Routing #</div><div style="font-weight:700;color:var(--gold2);font-family:monospace;font-size:13px">${esc(a.routing)}</div></div>`:''}
       ${isCC(a)&&a.ccnum?`<div style="grid-column:span 2"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">Card Number</div><div style="font-weight:700;color:var(--gold2);font-family:monospace;font-size:14px;letter-spacing:.08em">${a.ccnum}</div></div>`:''}
       ${isCC(a)&&a.exp?`<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">Expiration</div><div style="font-weight:700;color:var(--text);font-family:monospace">${a.exp}</div></div>`:''}
       ${isCC(a)&&a.ccv?`<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">CVV</div><div style="display:flex;align-items:center;gap:6px"><span id="cvv-${i}" style="font-weight:700;color:var(--text);font-family:monospace">•••</span><button onclick="toggleCVV(${i},this.dataset.v)" data-v="${esc(String(a.ccv))}" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:10px;padding:0;text-decoration:underline">show</button></div></div>`:''}
       ${a.type==='Line of Credit'&&a.limit?`<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">Credit Limit</div><div style="font-weight:700;color:var(--gold2)">${fmt(parseFloat(a.limit))}</div></div>`:''}
       ${a.type==='Line of Credit'&&a.available?`<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">Available</div><div style="font-weight:700;color:#10b981">${fmt(parseFloat(a.available))}</div></div>`:''}
-      ${a.notes?`<div style="grid-column:span 2"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">Notes</div><div style="color:var(--text2)">${a.notes}</div></div>`:''}
+      ${a.notes?`<div style="grid-column:span 2"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px">Notes</div><div style="color:var(--text2)">${esc(a.notes)}</div></div>`:''}
     </div>
   </div>`).join('');
 }
@@ -2641,8 +2641,8 @@ function renderPots(){
   const pots=getPots().slice().sort((a,b)=>(a.date||"9999").localeCompare(b.date||"9999"));
   if(!pots.length){l.innerHTML='<div class="empty" style="padding:2rem">No potential properties yet</div>';return;}
   l.innerHTML=pots.map(p=>{
-    const meta=[p.city,p.type+(p.date?" — "+fmtD(p.date):""),p.price?"~"+fmt(parseFloat(p.price)):"",p.notes].filter(Boolean).join(" · ");
-    return '<div class="pot-item" style="cursor:pointer" onclick="openEditPot(\''+p.id+'\')">'+'<div style="flex:1"><div class="pot-addr">'+p.addr+'</div><div class="pot-meta">'+meta+'</div></div>'+'<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'+'<span class="badge b-watch">'+(p.type||'Watching')+'</span>'+'<button class="btn btn-ghost btn-sm btn-icon" onclick="event.stopPropagation();openEditPot(\''+p.id+'\')" title="Edit"><svg class="ico" style="width:12px;height:12px"><use href="#ico-pencil"/></svg></button>'+'<button class="btn btn-danger btn-sm btn-icon" onclick="event.stopPropagation();deletePot(\''+p.id+'\')" title="Delete"><svg class="ico" style="width:12px;height:12px"><use href="#ico-trash"/></svg></button>'+'</div></div>';
+    const meta=[p.city,p.type+(p.date?" — "+fmtD(p.date):""),p.price?"~"+fmt(parseFloat(p.price)):"",p.notes].filter(Boolean).map(esc).join(" · ");
+    return '<div class="pot-item" style="cursor:pointer" onclick="openEditPot(\''+p.id+'\')">'+'<div style="flex:1"><div class="pot-addr">'+esc(p.addr)+'</div><div class="pot-meta">'+meta+'</div></div>'+'<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'+'<span class="badge b-watch">'+(p.type||'Watching')+'</span>'+'<button class="btn btn-ghost btn-sm btn-icon" onclick="event.stopPropagation();openEditPot(\''+p.id+'\')" title="Edit"><svg class="ico" style="width:12px;height:12px"><use href="#ico-pencil"/></svg></button>'+'<button class="btn btn-danger btn-sm btn-icon" onclick="event.stopPropagation();deletePot(\''+p.id+'\')" title="Delete"><svg class="ico" style="width:12px;height:12px"><use href="#ico-trash"/></svg></button>'+'</div></div>';
   }).join("");
   renderDashPots();
 }
@@ -4148,8 +4148,8 @@ function buildPropPage(key, force){
       <div class="pd-left">
         <div class="info-card">
           <div style="border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:.6rem;margin-bottom:.6rem">
-            <div style="font-size:14px;font-weight:700;color:var(--text)">${addr}</div>
-            <div style="font-size:12px;color:var(--text3);margin-top:2px">${loc}</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text)">${esc(addr)}</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:2px">${esc(loc)}</div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:.5rem">
               <span class="badge b-reno" id="status-badge-${key}" style="font-size:12px;padding:5px 12px;cursor:pointer" onclick="openStatusDropdown('${key}',event)">
                 <svg class="ico"><use href="#ico-circle-filled"/></svg>
@@ -4724,10 +4724,10 @@ function renderClosingPreview(key, data){
   let html = `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1rem">
     <div style="font-size:14px;font-weight:700;margin-bottom:.75rem;color:var(--gold2)">Closing Statement ${typeTag}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem .75rem;margin-bottom:1rem;font-size:13px">
-      <div><span style="color:var(--text2)">Address:</span> <strong>${data.address||'—'}, ${data.city||''} ${data.state||''} ${data.zip||''}</strong></div>
+      <div><span style="color:var(--text2)">Address:</span> <strong>${esc(data.address||'—')}, ${esc(data.city||'')} ${esc(data.state||'')} ${esc(data.zip||'')}</strong></div>
       <div><span style="color:var(--text2)">Settlement Date:</span> <strong>${data.settlementDate||'—'}</strong></div>
       <div><span style="color:var(--text2)">${priceLabel}:</span> <strong style="color:var(--gold2)">${fmt(data.transactionPrice)}</strong></div>
-      <div><span style="color:var(--text2)">${isSeller?'Buyer':'Seller'}:</span> <strong>${data.otherParty||'—'}</strong></div>
+      <div><span style="color:var(--text2)">${isSeller?'Buyer':'Seller'}:</span> <strong>${esc(data.otherParty||'—')}</strong></div>
     </div>`;
 
   if(data.debits&&data.debits.length){
@@ -4735,7 +4735,7 @@ function renderClosingPreview(key, data){
     <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:1rem">
       <thead><tr style="border-bottom:1px solid var(--border2);color:var(--text2)"><th style="text-align:left;padding:4px 0">Description</th><th style="text-align:left;padding:4px 0">Category</th><th style="text-align:right;padding:4px 0">Amount</th></tr></thead><tbody>`;
     data.debits.forEach(d=>{
-      html += `<tr style="border-bottom:1px solid var(--border2)"><td style="padding:5px 0">${d.description}</td><td style="padding:5px 0;color:var(--text2)">${d.category}</td><td style="padding:5px 0;text-align:right;color:var(--red)">${fmt(d.amount)}</td></tr>`;
+      html += `<tr style="border-bottom:1px solid var(--border2)"><td style="padding:5px 0">${esc(d.description)}</td><td style="padding:5px 0;color:var(--text2)">${esc(d.category)}</td><td style="padding:5px 0;text-align:right;color:var(--red)">${fmt(d.amount)}</td></tr>`;
     });
     html += `</tbody></table>`;
   }
@@ -4745,7 +4745,7 @@ function renderClosingPreview(key, data){
     <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:1rem">
       <thead><tr style="border-bottom:1px solid var(--border2);color:var(--text2)"><th style="text-align:left;padding:4px 0">Description</th><th style="text-align:right;padding:4px 0">Amount</th></tr></thead><tbody>`;
     data.credits.forEach(c=>{
-      html += `<tr style="border-bottom:1px solid var(--border2)"><td style="padding:5px 0">${c.description}</td><td style="padding:5px 0;text-align:right;color:var(--green)">${fmt(c.amount)}</td></tr>`;
+      html += `<tr style="border-bottom:1px solid var(--border2)"><td style="padding:5px 0">${esc(c.description)}</td><td style="padding:5px 0;text-align:right;color:var(--green)">${fmt(c.amount)}</td></tr>`;
     });
     html += `</tbody></table>`;
   }
@@ -4826,8 +4826,8 @@ function renderDocs(p){
     return '<div class="doc-item" id="docitem-'+d.id+'" style="display:flex;align-items:center;gap:10px;padding:.75rem 1rem;border-bottom:1px solid var(--border)">'
       +(isImg&&src?'<img src="'+src+'" onclick="openLightbox(\''+safeSrc+'\')" style="width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:zoom-in;flex-shrink:0;border:1px solid var(--border2)">'
         :'<div style="width:48px;height:48px;background:var(--bg4);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--border2)"><svg class="ico" style="width:20px;height:20px;color:var(--gold)"><use href="#ico-file"/></svg></div>')
-      +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+d.name+(pending?'':'')+'</div>'
-      +'<div style="font-size:11px;color:var(--text3);margin-top:1px">'+(d.type||'file')+(sz?' &middot; '+sz:'')+'</div></div>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(d.name)+(pending?'':'')+'</div>'
+      +'<div style="font-size:11px;color:var(--text3);margin-top:1px">'+esc(d.type||'file')+(sz?' &middot; '+sz:'')+'</div></div>'
       +'<div style="display:flex;gap:4px;flex-shrink:0">'
       +(pending?'<label class="btn btn-primary btn-sm" style="cursor:pointer;font-size:11px;padding:4px 10px;gap:4px" title="Re-upload this file"><svg class="ico" style="width:11px;height:11px"><use href="#ico-upload"/></svg> Re-upload<input type="file" accept="*/*" style="display:none" onchange="reUploadDoc(event,\''+p+'\',\''+d.id+'\')"></label>'
         :(src&&isPdf?'<button class="btn btn-ghost btn-sm btn-icon" onclick="openDoc(\''+safeSrc+'\',\''+d.name+'\')" title="Open"><svg class="ico" style="width:13px;height:13px"><use href="#ico-download"/></svg></button>':'')
@@ -5172,7 +5172,7 @@ async function autoSyncPull(){
       getPropKeys().forEach(renderDocs);
       renderTasks();renderPropTasks();renderCal();renderPots();refreshSite();
     }
-  }catch(e){}
+  }catch(e){console.warn('autoSyncPull error:',e);}
 }
 
 function fixDateInputs(){
@@ -5192,8 +5192,10 @@ _dateObserver.observe(document.body||document.documentElement,{childList:true,su
 
 
 
+let _syncTimer=null;
 function startAutoSync(){
-  setInterval(autoSyncPull,5000);
+  if(_syncTimer)clearInterval(_syncTimer);
+  _syncTimer=setInterval(autoSyncPull,5000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)autoSyncPull();});
 }
 
@@ -5323,7 +5325,7 @@ function renderContractors(){
     out+=`<div class="card" style="margin-bottom:1rem;padding:1.25rem">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
         <div>
-          <div style="font-size:15px;font-weight:700;color:var(--text)">${c.vendor}</div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">${esc(c.vendor)}</div>
           <div style="font-size:12px;color:var(--text3);margin-top:2px">Total paid: <span style="color:var(--gold2);font-weight:600">${fmt(c.total)}</span> · ${c.exps.length} expense${c.exps.length!==1?'s':''}</div>
         </div>
         <div style="display:flex;gap:6px">
@@ -5332,10 +5334,10 @@ function renderContractors(){
         </div>
       </div>
       ${hasInfo?`<div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:.75rem;font-size:12px;color:var(--text2)">
-        ${saved.ein?`<span><strong>EIN:</strong> ${saved.ein}</span>`:''}
-        ${saved.phone?`<span><strong>Phone:</strong> ${saved.phone}</span>`:''}
-        ${saved.email?`<span><strong>Email:</strong> ${saved.email}</span>`:''}
-        ${saved.notes?`<span><strong>Notes:</strong> ${saved.notes}</span>`:''}
+        ${saved.ein?`<span><strong>EIN:</strong> ${esc(saved.ein)}</span>`:''}
+        ${saved.phone?`<span><strong>Phone:</strong> ${esc(saved.phone)}</span>`:''}
+        ${saved.email?`<span><strong>Email:</strong> ${esc(saved.email)}</span>`:''}
+        ${saved.notes?`<span><strong>Notes:</strong> ${esc(saved.notes)}</span>`:''}
       </div>`:'<div style="font-size:11px;color:var(--text3);margin-top:.5rem;font-style:italic">No W-9 info yet — click Edit Info to add EIN, phone, email</div>'}
       <div style="margin-top:.75rem;border-top:1px solid var(--border);padding-top:.65rem">
         <div id="con-exps-${i}" style="display:none">
@@ -5452,6 +5454,7 @@ function deleteContractor(name){
   save();renderContractors();
 }
 
+window.addEventListener('unhandledrejection',function(e){console.error('Unhandled promise rejection:',e.reason);});
 </script>
 
 <style id="bg-style">
