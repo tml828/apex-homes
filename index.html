@@ -1522,116 +1522,6 @@ const IS_CLAUDE_AI = window.location.hostname.includes('claude.ai') ||
                      window.location.protocol === 'file:' ||
                      window.location.hostname === 'localhost';
 var calM=new Date(),calS=new Date();
-const BEXP={
-  bradford:[
-    {a:600,     d:"Painter",                              c:"Painting",             v:"Ehab Zelle",                              dt:"2026-05-15"},
-    {a:29.22,   d:"Lighted ceiling fan",                  c:"Materials & Supplies", v:"Online Liquidation Auction",             dt:"2026-05-11"},
-    {a:18.25,   d:"Payment for sewer services",           c:"Utilities",            v:"Northeast Ohio Regional Sewer District", dt:"2026-05-11"},
-    {a:31.97,   d:"Farmhouse Chandelier for Dining Room", c:"Materials & Supplies", v:"OLA",                                    dt:"2026-05-09"},
-    {a:26.44,   d:"Payment for electric utility services", c:"Utilities",           v:"The Illuminating Company",               dt:"2026-05-09"},
-    {a:40.99,   d:"Cobbe Waterfall Bathroom Faucet",      c:"Plumbing",             v:"Amazon",                                 dt:"2026-05-09"},
-    {a:5000,    d:"Kitchen Cabinets",                     c:"Materials & Supplies", v:"",                                       dt:"2026-05-03"},
-    {a:1055,    d:"HOA",                                  c:"HOA Fees",             v:"",                                       dt:"2026-04-28"},
-    {a:3000,    d:"Painter",                              c:"Painting",             v:"",                                       dt:"2026-04-09"},
-    {a:970,     d:"Permit",                               c:"Permits & Fees",       v:"Strongsville",                           dt:"2026-03-01"},
-    {a:100,     d:"Electrician",                          c:"Electrical",           v:"Ayoub",                                  dt:"2026-02-18"},
-    {a:4310.88, d:"Appliances",                           c:"Materials & Supplies", v:"Home Depot",                             dt:"2026-02-17"},
-    {a:200,     d:"Deed transfer",                        c:"Legal / Accounting",   v:"",                                       dt:"2026-02-15"},
-    {a:1649.71, d:"Taxes",                                c:"Property Tax",         v:"",                                       dt:"2026-01-08"}
-  ],
-  boston:[
-    {a:81.92,   d:"Payment for gas services",          c:"Utilities",               v:"ENBRIDGE GAS INC",                        dt:"2026-05-15"},
-    {a:50,      d:"Title Update Fee",                   c:"Closing Costs",           v:"Infinity Title Agency LLC",               dt:"2026-05-14"},
-    {a:475,     d:"Title - Settlement or Closing Fee",  c:"Closing Costs",           v:"Infinity Title Solutions LLC",            dt:"2026-05-14"},
-    {a:100,     d:"Deed Prep",                          c:"Closing Costs",           v:"David A. Freeburg Co LPA",               dt:"2026-05-14"},
-    {a:9000,    d:"Seller Credit",                      c:"Other",                   v:"Settlement - Credit",                    dt:"2026-05-14"},
-    {a:878.75,  d:"Title - Owner's Title Policy",       c:"Closing Costs",           v:"WFG National Title Insurance Company",   dt:"2026-05-14"},
-    {a:1300,    d:"County Transfer Tax (Deed)",         c:"Permits & Fees",          v:"Cuyahoga County Recording Office",       dt:"2026-05-14"},
-    {a:3250,    d:"Buyer's Agent Compensation",         c:"Marketing / Advertising", v:"RE/MAX Above & Beyond",                  dt:"2026-05-14"},
-    {a:1649.54, d:"County Taxes 01/01/2026-05/15/2026", c:"Property Tax",           v:"Settlement - Charge",                    dt:"2026-05-14"},
-    {a:55,      d:"Title - CPL (Seller)",               c:"Closing Costs",           v:"WFG National Title Insurance Company",   dt:"2026-05-14"},
-    {a:4875,    d:"Listing Agent Commission",           c:"Marketing / Advertising", v:"EXP Realty LLC",                        dt:"2026-05-14"},
-    {a:450,     d:"Title Exam",                         c:"Closing Costs",           v:"Infinity Title Agency LLC",              dt:"2026-05-14"},
-    {a:100,     d:"Contract Closer Fee - Seller",       c:"Closing Costs",           v:"Settlement - Charge",                   dt:"2026-05-14"},
-    {a:35,      d:"Wire / Technology Fee",              c:"Closing Costs",           v:"Infinity Title Agency LLC",              dt:"2026-05-14"},
-    {a:45,      d:"Courier Fee",                        c:"Closing Costs",           v:"Infinity Title Agency LLC",              dt:"2026-05-14"},
-    {a:6,       d:"Final for Storm Water Management",   c:"Utilities",               v:"City of Broadview Heights",              dt:"2026-05-14"},
-    {a:300,     d:"Water/Sewer Hold",                   c:"Utilities",               v:"Escrow Holdback",                       dt:"2026-05-14"},
-    {a:700,     d:"Landscaping",                        c:"Landscaping",             v:"Angel Santana",                         dt:"2026-05-11"},
-    {a:14.4,    d:"Water bill",                         c:"Utilities",               v:"Cleveland Water",                       dt:"2026-04-25"},
-    {a:550,     d:"Cleaning",                           c:"Materials & Supplies",    v:"",                                      dt:"2026-04-20"},
-    {a:144.72,  d:"Electric bill",                      c:"Utilities",               v:"Ohio Edison",                           dt:"2026-04-19"},
-    {a:79.08,   d:"Gas bill",                           c:"Utilities",               v:"Embridge",                              dt:"2026-04-17"},
-    {a:8155,    d:"Contractor",                         c:"Labor / Contractor",      v:"Manzil Estates",                        dt:"2026-04-12"},
-    {a:750,     d:"Landscaping",                        c:"Landscaping",             v:"",                                      dt:"2026-04-10"},
-    {a:11400,   d:"Contractor",                         c:"Labor / Contractor",      v:"Manzil Estates",                        dt:"2026-04-02"},
-    {a:14.4,    d:"Water bill",                         c:"Utilities",               v:"Cleveland Water",                       dt:"2026-03-30"},
-    {a:475,     d:"Eviction",                           c:"Legal / Accounting",      v:"",                                      dt:"2026-03-26"},
-    {a:15200,   d:"Contractor",                         c:"Labor / Contractor",      v:"Manzil Estates",                        dt:"2026-03-25"},
-    {a:90.06,   d:"Gas Bill",                           c:"Utilities",               v:"Embridge",                              dt:"2026-03-23"},
-    {a:54.94,   d:"Electric Bill",                      c:"Utilities",               v:"Ohio Edison",                           dt:"2026-03-21"},
-    {a:708.01,  d:"Supplies",                           c:"Materials & Supplies",    v:"",                                      dt:"2026-03-15"},
-    {a:200,     d:"Deed transfer",                      c:"Legal / Accounting",      v:"",                                      dt:"2026-03-04"},
-    {a:23.4,    d:"Water bill",                         c:"Utilities",               v:"Cleveland Water",                       dt:"2026-02-27"}
-  ],
-  warblers:[
-    {a:49.05,    d:"Purchase of materials for home improvement",         c:"Materials & Supplies",   v:"Home Depot",                              dt:"2026-03-12"},
-    {a:80.18,    d:"Payment for gas services",                           c:"Utilities",               v:"Columbus Gas",                            dt:"2026-05-11"},
-    {a:63.82,    d:"Utility payment for service at 7312 Warblers Ln",   c:"Utilities",               v:"North Ridgeville Public Utilities",        dt:"2026-05-06"},
-    {a:425,      d:"Title Exam",                                         c:"Closing Costs",           v:"Infinity Title Agency LLC",               dt:"2026-05-05"},
-    {a:45,       d:"Courier Fee",                                        c:"Closing Costs",           v:"Infinity Title Agency LLC",               dt:"2026-05-05"},
-    {a:50,       d:"Title Update Fee",                                   c:"Closing Costs",           v:"Infinity Title Agency LLC",               dt:"2026-05-05"},
-    {a:10980,    d:"Buyer's Agent Compensation",                         c:"Marketing / Advertising", v:"Keller Williams Greater Metropolitan",     dt:"2026-05-05"},
-    {a:179.95,   d:"HOA Status Letter - Homewise Reimbursement",        c:"HOA Fees",                v:"Infinity Title Agency LLC",               dt:"2026-05-05"},
-    {a:1513.28,  d:"Title - Owner's Title Policy",                      c:"Insurance",               v:"WFG National Title Insurance Company",    dt:"2026-05-05"},
-    {a:400,      d:"Annual Assessment Fee",                              c:"HOA Fees",                v:"Sandy Ridge Association",                 dt:"2026-05-05"},
-    {a:10980,    d:"Listing Agent Commission",                           c:"Marketing / Advertising", v:"EXP Realty LLC",                         dt:"2026-05-05"},
-    {a:2196,     d:"County Transfer Tax (Deed)",                        c:"Property Tax",            v:"Lorain County Auditor",                   dt:"2026-05-05"},
-    {a:450,      d:"Title - Settlement or Closing Fee",                 c:"Closing Costs",           v:"Infinity Title Solutions LLC",            dt:"2026-05-05"},
-    {a:71,       d:"Utility Bill",                                       c:"Utilities",               v:"City of North Ridgeville Dept of Utilities",dt:"2026-05-05"},
-    {a:499,      d:"Home Warranty",                                      c:"Insurance",               v:"America's Preferred Home Warranty Inc",   dt:"2026-05-05"},
-    {a:200,      d:"Contract Closer Fee - Seller",                      c:"Closing Costs",           v:"Negretes Notaries LLC",                   dt:"2026-05-05"},
-    {a:35,       d:"Wire / Technology Fee",                             c:"Closing Costs",           v:"Infinity Title Agency LLC",               dt:"2026-05-05"},
-    {a:7952.56,  d:"County Taxes 07/01/2025 to 05/05/2026",            c:"Property Tax",            v:"Settlement - Charge",                     dt:"2026-05-05"},
-    {a:100,      d:"Deed Prep",                                          c:"Closing Costs",           v:"David A. Freeburg Co LPA",               dt:"2026-05-05"},
-    {a:112.59,   d:"Payment for gas service bill",                      c:"Utilities",               v:"Columbia Gas of Ohio",                    dt:"2026-04-11"},
-    {a:89.25,    d:"Utility bill payment for power services",           c:"Utilities",               v:"Ohio Edison",                             dt:"2026-04-06"},
-    {a:71.17,    d:"Payment for utility services at 7312 Warblers Ln", c:"Utilities",               v:"North Ridgeville Public Utilities",        dt:"2026-03-31"},
-    {a:755,      d:"Landscaping",                                        c:"Landscaping",             v:"Chuck Haliburton",                        dt:"2026-03-24"},
-    {a:15629.56, d:"Supplies",                                           c:"Materials & Supplies",   v:"",                                        dt:"2026-03-19"},
-    {a:24.95,    d:"Doormat",                                            c:"Materials & Supplies",   v:"Home Depot",                              dt:"2026-03-19"},
-    {a:600,      d:"Cleaning",                                           c:"Materials & Supplies",   v:"Florian Bushaj",                          dt:"2026-03-17"},
-    {a:52.83,    d:"Supplies including plug warmer and refills",        c:"Materials & Supplies",   v:"Menards",                                 dt:"2026-03-16"},
-    {a:21.28,    d:"Ceiling fan and light fixture",                     c:"Other",                   v:"The Home Depot",                          dt:"2026-03-14"},
-    {a:17.98,    d:"Cleaning supplies",                                  c:"Materials & Supplies",   v:"Home Depot",                              dt:"2026-03-13"},
-    {a:50.64,    d:"Supplies for home improvement project",             c:"Materials & Supplies",   v:"Home Depot",                              dt:"2026-03-13"},
-    {a:151.38,   d:"Payment for gas services",                          c:"Utilities",               v:"Columbia Gas",                            dt:"2026-03-13"},
-    {a:26.99,    d:"Rubber stair treads non-slip outdoor",             c:"Materials & Supplies",   v:"yuntechnic",                              dt:"2026-03-11"},
-    {a:4.06,     d:"Door closer and related supplies",                  c:"Materials & Supplies",   v:"The Home Depot",                          dt:"2026-03-10"},
-    {a:100.84,   d:"Various home improvement materials",               c:"Materials & Supplies",   v:"The Home Depot",                          dt:"2026-03-10"},
-    {a:103.19,   d:"Electricity bill payment",                          c:"Utilities",               v:"Ohio Edison",                             dt:"2026-03-07"},
-    {a:2640,     d:"Window repair",                                      c:"Materials & Supplies",   v:"Apex Window Werks",                       dt:"2026-03-06"},
-    {a:86.12,    d:"Payment for utilities service at 7312 Warblers Ln",c:"Utilities",               v:"North Ridgeville Public Utilities",        dt:"2026-03-05"},
-    {a:3.38,     d:"Supplies for home improvement",                     c:"Materials & Supplies",   v:"Lowe's",                                  dt:"2026-03-04"},
-    {a:12.77,    d:"White plastic bucket and other supplies",           c:"Materials & Supplies",   v:"The Home Depot",                          dt:"2026-02-25"},
-    {a:200,      d:"Deed transfer",                                      c:"Legal / Accounting",     v:"Infinity Title Agency",                   dt:"2026-02-24"},
-    {a:5650,     d:"Kitchen countertops install",                       c:"Materials & Supplies",   v:"SW Granite Jacob",                        dt:"2026-02-24"},
-    {a:4434,     d:"Appliances",                                         c:"Materials & Supplies",   v:"Home Depot",                              dt:"2026-02-17"},
-    {a:1279,     d:"Hot water tank",                                     c:"Materials & Supplies",   v:"Home Depot",                              dt:"2026-02-13"},
-    {a:159.44,   d:"Utility bill for natural gas service",              c:"Utilities",               v:"Columbia Gas",                            dt:"2026-02-12"},
-    {a:22320,    d:"Contractor - Manzil Estate LLC",                    c:"Labor / Contractor",     v:"Manzil Estate LLC",                       dt:"2026-02-12"},
-    {a:73.51,    d:"Payment for public utilities at 7312 Warblers Ln", c:"Utilities",               v:"North Ridgeville Public Utilities",        dt:"2026-02-04"},
-    {a:11200,    d:"Contractor - Manzil Estate LLC",                    c:"Labor / Contractor",     v:"Manzil Estate LLC",                       dt:"2026-02-02"},
-    {a:18560,    d:"Contractor - Manzil Estate LLC",                    c:"Labor / Contractor",     v:"Manzil Estate LLC",                       dt:"2026-01-27"},
-    {a:7500,     d:"Carpet",                                             c:"Flooring",               v:"F and R Carpet and Flooring",             dt:"2026-02-25"},
-    {a:4712.47,  d:"Property tax",                                       c:"Property Tax",           v:"",                                        dt:"2026-01-27"}
-  ],
-  "general":[
-    {a:9.59,   d:"Web hosting",           c:"Software / Subscriptions",v:"Netlify, Inc.",      dt:"2026-05-16"},
-    {a:21.30,  d:"Claude Pro subscription",c:"Software / Subscriptions",v:"Claude by Anthropic",dt:"2026-05-09"},
-    {a:172.80, d:"base44 AI subscription", c:"Software / Subscriptions",v:"base44",             dt:"2026-05-08"}
-  ]
-};
 let extra={general:[]},tasks=[],propImgs={},propData={};
 const SB_URL='https://zpwajiireaheqpecxvxc.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpwd2FqaWlyZWFoZXFwZWN4dnhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMjAxMzksImV4cCI6MjA5NDc5NjEzOX0.lqEFsyjTz3AwtE7pgmNenMAr_WLr7AfA2eezIKvKLbE';
@@ -2308,7 +2198,7 @@ function propStatus(p){
   const norm={'renovation':'Renovation','active':'Active','sold':'Sold','watching':'Watching','off market':'Off Market','inactive':'Inactive','closed':'Closed'};
   return norm[raw.toLowerCase()]||raw;
 }
-function allE(p){if(propData&&propData._migrated)return extra[p]||[];return[...(BEXP[p]||[]),...(extra[p]||[])];}
+function allE(p){return extra[p]||[];}
 function eTotal(p,yr){const ex=allE(p);if(!yr)return ex.reduce((s,e)=>s+(e.credit?-1:1)*(parseFloat(e.a||e.amount||0)),0);return ex.filter(e=>(e.dt||e.date||"").startsWith(String(yr))).reduce((s,e)=>s+(e.credit?-1:1)*(parseFloat(e.a||e.amount||0)),0);}
 
 
@@ -3233,25 +3123,7 @@ function saveEditExp(){
   if(_ew9&&_ecat==='Labor / Contractor'&&_eamt>=600)newData.w9=true;else newData.w9=false;
   if(editExpReceiptUrl==='__deleted__')newData.receipt='';
   else if(editExpReceiptUrl)newData.receipt=editExpReceiptUrl;
-  if(propData._migrated){
-    // All expenses live in extra[p] — origIdx is direct index
-    if(extra[p]&&extra[p][origIdx])Object.assign(extra[p][origIdx],newData);
-  }else{
-    const bexpLen=(BEXP[p]||[]).length;
-    if(origIdx<bexpLen){
-      // Editing a hardcoded item before migration: migrate now, then edit the
-      // migrated copy (the old push-with-_overrideIdx approach created an
-      // invisible duplicate that nothing ever read)
-      const be=(BEXP[p]||[])[origIdx];
-      migrateHardcodedExpenses();
-      const target=be&&(extra[p]||[]).find(ex=>
-        parseFloat(ex.a||ex.amount)===parseFloat(be.a||be.amount)&&
-        (ex.dt||ex.date||'')===(be.dt||be.date||'')&&
-        (ex.d||ex.desc||'')===(be.d||be.desc||''));
-      if(target)Object.assign(target,newData);
-    }
-    else{const uIdx=origIdx-bexpLen;if(extra[p]&&extra[p][uIdx])Object.assign(extra[p][uIdx],newData);}
-  }
+  if(extra[p]&&extra[p][origIdx])Object.assign(extra[p][origIdx],newData);
   editExpReceiptUrl=null;
   save();renderE(p);refreshSite();closeModal("m-edit-exp");renderContractors();
 }
@@ -3264,23 +3136,7 @@ async function delExpByIndex(p,origIdx){
     const label=(item.d||item.desc||'Expense')+' '+(item.a||item.amount||'');
     trashItem(isCredit?'credit':'expense',label,Object.assign({},item),p);
   }
-  if(propData._migrated){
-    if(extra[p])extra[p].splice(origIdx,1);
-  }else{
-    const bexpLen=(BEXP[p]||[]).length;
-    if(origIdx>=bexpLen){const uIdx=origIdx-bexpLen;if(extra[p])extra[p].splice(uIdx,1);}
-    else{
-      const be=(BEXP[p]||[])[origIdx];
-      migrateHardcodedExpenses();
-      if(be&&extra[p]){
-        const di=extra[p].findIndex(ex=>
-          parseFloat(ex.a||ex.amount)===parseFloat(be.a||be.amount)&&
-          (ex.dt||ex.date||'')===(be.dt||be.date||'')&&
-          (ex.d||ex.desc||'')===(be.d||be.desc||''));
-        if(di>-1)extra[p].splice(di,1);
-      }
-    }
-  }
+  if(extra[p])extra[p].splice(origIdx,1);
   save();renderE(p);refreshSite();
 }
 
@@ -3363,12 +3219,7 @@ function saveEditCr(){
   const newData={a:_camt,d:document.getElementById("eecr-desc").value.trim(),dt:document.getElementById("eecr-date").value,c:_ccat,v:_cv,credit:true};
   if(editCrReceiptUrl==='__deleted__')newData.receipt='';
   else if(editCrReceiptUrl)newData.receipt=editCrReceiptUrl;
-  if(propData._migrated){
-    if(extra[p]&&extra[p][origIdx])Object.assign(extra[p][origIdx],newData);
-  }else{
-    const bexpLen=(BEXP[p]||[]).length;
-    if(origIdx>=bexpLen){const uIdx=origIdx-bexpLen;if(extra[p]&&extra[p][uIdx])Object.assign(extra[p][uIdx],newData);}
-  }
+  if(extra[p]&&extra[p][origIdx])Object.assign(extra[p][origIdx],newData);
   editCrReceiptUrl=null;
   save();renderE(p);refreshSite();closeModal("m-edit-credit");
 }
@@ -3380,12 +3231,7 @@ async function delCrByIndex(p,origIdx){
   if(item){
     trashItem('credit',(item.d||item.desc||'Credit')+' '+(item.a||item.amount||''),Object.assign({},item),p);
   }
-  if(propData._migrated){
-    if(extra[p])extra[p].splice(origIdx,1);
-  }else{
-    const bexpLen=(BEXP[p]||[]).length;
-    if(origIdx>=bexpLen){const uIdx=origIdx-bexpLen;if(extra[p])extra[p].splice(uIdx,1);}
-  }
+  if(extra[p])extra[p].splice(origIdx,1);
   save();renderE(p);refreshSite();
 }
 
@@ -4991,33 +4837,6 @@ async function syncAllReceiptsToCloud(){
   status.innerHTML=`<span style="color:${uploaded>0?'var(--green)':'var(--red)'}">` +(uploaded>0?`✓ ${uploaded} receipt${uploaded>1?'s':''} uploaded${failed?` (${failed} failed)`:''}. Now visible on all devices.`:`⚠ Upload failed — check connection.`)+`</span>`;
 }
 
-
-
-
-
-// ====== ONE-TIME MIGRATION: move all BEXP data into Supabase ======
-async function migrateHardcodedExpenses(){
-  if(propData._migrated)return;
-  // If propData has no real properties, Supabase data is missing/empty — skip migration
-  // so we don't overwrite Supabase with an empty payload
-  if(getPropKeys().length===0)return;
-  [...getPropKeys(),'general'].forEach(p=>{
-    if(!extra[p])extra[p]=[];
-    (BEXP[p]||[]).forEach(be=>{
-      const dup=extra[p].find(ex=>
-        parseFloat(ex.a||ex.amount)===parseFloat(be.a||be.amount)&&
-        (ex.dt||ex.date||'')===(be.dt||be.date||'')&&
-        (ex.d||ex.desc||'')===(be.d||be.desc||'')
-      );
-      if(!dup)extra[p].push({...be});
-    });
-  });
-  propData._migrated=true;
-  await save();
-}
-
-
-
 async function reUploadDoc(ev,p,docId){
   const file=ev.target?.files?.[0];if(!file)return;
   if(!propData._docs||!propData._docs[p])return;
@@ -5083,7 +4902,6 @@ loadData().then(()=>{
     renderE("general");
     refreshSite();
     renderDashTasks();
-    migrateHardcodedExpenses();
     purgeOldTrash();
     autoUploadPendingDocs();
     recoverPhotosFromStorage();
