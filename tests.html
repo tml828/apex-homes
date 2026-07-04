@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Apex Homes — Financial Calculation Tests</title>
+<style>
+  body{font-family:system-ui,sans-serif;max-width:700px;margin:2rem auto;padding:0 1rem;background:#111;color:#eee}
+  h1{font-size:1.2rem;color:#c9a84c;margin-bottom:1.5rem}
+  .suite{margin-bottom:2rem}
+  .suite h2{font-size:.9rem;text-transform:uppercase;letter-spacing:.08em;color:#888;border-bottom:1px solid #333;padding-bottom:.4rem;margin-bottom:.8rem}
+  .test{display:flex;align-items:center;gap:.75rem;padding:.4rem 0;font-size:.85rem}
+  .badge{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+  .pass .badge{background:#1a7a4a}
+  .fail .badge{background:#c0392b}
+  .test-name{flex:1}
+  .test-detail{color:#888;font-size:.78rem}
+  .fail .test-detail{color:#e74c3c}
+  #summary{margin-top:2rem;padding:1rem;border-radius:8px;background:#1a1a1a;font-size:.9rem}
+  #summary .score{font-size:1.4rem;font-weight:700;color:#c9a84c}
+</style>
+</head>
+<body>
+<h1>Apex Homes — Financial Calculation Tests</h1>
+<div id="results"></div>
+<div id="summary"></div>
+<script>
+// ── Inline the pure calculation functions from index.html ──────────────────
+
+function fmt(n){
+  if(isNaN(n)||n===undefined||n===null)return'$0.00';
+  return'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function eTotal(expenses,yr){
+  return expenses.reduce((s,e)=>{
+    if(yr&&e.dt&&!e.dt.startsWith(yr))return s;
+    const a=parseFloat(e.a||e.amount||0);
+    return e.credit?s-a:s+a;
+  },0);
+}
+
+function propAllin(purchase,expenses){
+  return purchase+expenses.reduce((s,e)=>s+parseFloat(e.a||e.amount||0),0);
+}
+
+function propNetProfit(sold,purchase,expenses){
+  return sold-purchase-eTotal(expenses);
+}
+
+function propROI(sold,purchase,expenses){
+  const cost=propAllin(purchase,expenses);
+  if(!cost)return 0;
+  return(sold-cost)/cost*100;
+}
+
+function mileageDeduction(trips,rate){
+  return trips.reduce((s,t)=>s+(parseFloat(t.miles)||0),0)*rate;
+}
+
+function mealsCorrection(expenses){
+  return expenses
+    .filter(e=>!e.credit&&(e.c||'').toLowerCase().includes('meals'))
+    .reduce((s,e)=>s+parseFloat(e.a||e.amount||0)*0.5,0);
+}
+
+function netProfitAfterMileage(sold,purchase,expenses,trips,rate){
+  return propNetProfit(sold,purchase,expenses)-mileageDeduction(trips,rate)-mealsCorrection(expenses);
+}
+
+// ── Test runner ──────────────────────────────────────────────────────────────
+
+const suites=[];
+let current=null;
+
+function suite(name,fn){suites.push({name,tests:[]});current=suites[suites.length-1];fn();current=null;}
+
+function test(name,fn){
+  try{fn();current.tests.push({name,pass:true,detail:''});}
+  catch(e){current.tests.push({name,pass:false,detail:e.message});}
+}
+
+function expect(val){
+  return{
+    toBe(expected){if(val!==expected)throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(val)}`);},
+    toBeCloseTo(expected,digits=2){
+      const d=Math.pow(10,digits);
+      if(Math.round(val*d)/d!==Math.round(expected*d)/d)
+        throw new Error(`Expected ~${expected}, got ${val}`);
+    },
+    toBeGreaterThan(n){if(val<=n)throw new Error(`Expected >  ${n}, got ${val}`);},
+    toBeLessThan(n){if(val>=n)throw new Error(`Expected < ${n}, got ${val}`);}
+  };
+}
+
+// ── Test suites ──────────────────────────────────────────────────────────────
+
+suite('fmt()', ()=>{
+  test('formats positive number',()=>expect(fmt(1234.5)).toBe('$1,234.50'));
+  test('formats zero',()=>expect(fmt(0)).toBe('$0.00'));
+  test('returns $0.00 for NaN',()=>expect(fmt(NaN)).toBe('$0.00'));
+  test('returns $0.00 for undefined',()=>expect(fmt(undefined)).toBe('$0.00'));
+  test('formats negative as positive (absolute value)',()=>expect(fmt(-500)).toBe('$500.00'));
+});
+
+suite('eTotal()', ()=>{
+  const exps=[
+    {a:'100',dt:'2025-03-01'},
+    {a:'200',dt:'2025-07-15'},
+    {a:'50',dt:'2026-01-10'},
+    {a:'30',credit:true,dt:'2025-05-01'}
+  ];
+  test('sums all expenses without year filter',()=>expect(eTotal(exps)).toBeCloseTo(320));
+  test('filters by year 2025',()=>expect(eTotal(exps,'2025')).toBeCloseTo(270));
+  test('filters by year 2026',()=>expect(eTotal(exps,'2026')).toBeCloseTo(50));
+  test('credits are subtracted',()=>{
+    const e=[{a:'100'},{a:'40',credit:true}];
+    expect(eTotal(e)).toBeCloseTo(60);
+  });
+  test('returns 0 for empty array',()=>expect(eTotal([])).toBe(0));
+});
+
+suite('propNetProfit()', ()=>{
+  const exps=[{a:'10000'},{a:'5000'}];
+  test('sold - purchase - expenses',()=>expect(propNetProfit(200000,85000,exps)).toBeCloseTo(100000));
+  test('returns negative when sold below cost',()=>expect(propNetProfit(80000,85000,[{a:'5000'}])).toBeLessThan(0));
+});
+
+suite('propROI()', ()=>{
+  test('basic ROI calculation',()=>{
+    const roi=propROI(200000,85000,[{a:'15000'}]);
+    expect(roi).toBeCloseTo(100000/100000*100); // (200k-100k)/100k*100 = 100%
+  });
+  test('returns 0 when no cost',()=>expect(propROI(200000,0,[])).toBe(0));
+});
+
+suite('mileageDeduction()', ()=>{
+  const trips=[{miles:10},{miles:20},{miles:5.5}];
+  const rate=0.725;
+  test('sums miles × rate',()=>expect(mileageDeduction(trips,rate)).toBeCloseTo(25.875));
+  test('handles empty trips',()=>expect(mileageDeduction([],rate)).toBe(0));
+  test('handles non-numeric miles gracefully',()=>{
+    const t=[{miles:'abc'},{miles:10}];
+    expect(mileageDeduction(t,rate)).toBeCloseTo(7.25);
+  });
+});
+
+suite('mealsCorrection()', ()=>{
+  test('50% of meals expenses only',()=>{
+    const exps=[
+      {a:'200',c:'Meals (50% deductible)'},
+      {a:'100',c:'Materials & Supplies'},
+      {a:'50',c:'meals (50% deductible)',credit:true}
+    ];
+    expect(mealsCorrection(exps)).toBeCloseTo(100); // 200*0.5 only (credit excluded)
+  });
+  test('returns 0 if no meals',()=>{
+    expect(mealsCorrection([{a:'500',c:'Labor / Contractor'}])).toBe(0);
+  });
+});
+
+suite('netProfitAfterMileage()', ()=>{
+  test('subtracts mileage and meals from net profit',()=>{
+    const sold=200000,purchase=100000;
+    const exps=[{a:'50000'},{a:'200',c:'Meals (50% deductible)'}];
+    const trips=[{miles:100}];
+    const rate=0.725;
+    // net = 200k-100k-50200 = 49800, mileage = 72.5, meals = 100
+    const expected=49800-72.5-100;
+    expect(netProfitAfterMileage(sold,purchase,exps,trips,rate)).toBeCloseTo(expected);
+  });
+});
+
+// ── Render results ───────────────────────────────────────────────────────────
+
+let total=0,passed=0;
+const out=suites.map(s=>{
+  const tests=s.tests.map(t=>{
+    total++;if(t.pass)passed++;
+    return`<div class="test ${t.pass?'pass':'fail'}">
+      <div class="badge"></div>
+      <div class="test-name">${t.name}</div>
+      <div class="test-detail">${t.pass?'OK':t.detail}</div>
+    </div>`;
+  }).join('');
+  return`<div class="suite"><h2>${s.name}</h2>${tests}</div>`;
+}).join('');
+
+document.getElementById('results').innerHTML=out;
+const pct=Math.round(passed/total*100);
+document.getElementById('summary').innerHTML=
+  `<div class="score">${passed}/${total} passed (${pct}%)</div>
+   <div style="color:${passed===total?'#1a7a4a':'#c0392b'};margin-top:.5rem">
+     ${passed===total?'✓ All tests pass':'✗ Some tests failed — review above'}
+   </div>`;
+</script>
+</body>
+</html>

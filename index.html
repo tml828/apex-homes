@@ -1711,7 +1711,7 @@ async function renderCloudBackups(){
   }catch(e){el.innerHTML='<span style="color:var(--text2)">'+e.message+'</span>';}
 }
 async function restoreCloudBackup(id){
-  if(!confirm('Restore this snapshot? Current data will be replaced.'))return;
+  if(!await appConfirm('Restore this snapshot? Current data will be replaced.','Restore'))return;
   try{
     const r=await sbFetch('/rest/v1/apex_data?id=eq.'+id+'&select=data',{method:'GET'});
     if(!r.ok)throw new Error('fetch failed');
@@ -1737,7 +1737,7 @@ async function restoreCloudBackup(id){
 }
 setInterval(()=>saveHourlyBackup(false),60*60*1000);
 
-function restoreBackup(file){if(!file)return;const st=document.getElementById('backup-status');if(!confirm('This will REPLACE all current data with the backup. Continue?'))return;const reader=new FileReader();reader.onload=function(ev){try{const backup=JSON.parse(ev.target.result);if(!backup.propData)throw new Error('Invalid backup file');Object.keys(propData).forEach(k=>delete propData[k]);Object.assign(propData,backup.propData);if(backup.extra&&typeof extra!=='undefined'){Object.keys(extra).forEach(k=>delete extra[k]);Object.assign(extra,backup.extra);}if(backup.tasks){tasks.length=0;backup.tasks.forEach(t=>tasks.push(t));}if(backup.mileage){window._mileage=backup.mileage;localStorage.setItem('apex_mileage',JSON.stringify(window._mileage));}save();refreshSite();if(st)st.innerHTML='<span style="color:var(--green)">✓ Restored</span>';setTimeout(()=>{alert('Backup restored! Reloading.');location.reload();},500);}catch(err){if(st)st.innerHTML='<span style="color:var(--red)">✗ '+err.message+'</span>';}};reader.readAsText(file);}
+async function restoreBackup(file){if(!file)return;const st=document.getElementById('backup-status');if(!await appConfirm('This will REPLACE all current data with the backup. Continue?','Replace'))return;const reader=new FileReader();reader.onload=function(ev){try{const backup=JSON.parse(ev.target.result);if(!backup.propData)throw new Error('Invalid backup file');Object.keys(propData).forEach(k=>delete propData[k]);Object.assign(propData,backup.propData);if(backup.extra&&typeof extra!=='undefined'){Object.keys(extra).forEach(k=>delete extra[k]);Object.assign(extra,backup.extra);}if(backup.tasks){tasks.length=0;backup.tasks.forEach(t=>tasks.push(t));}if(backup.mileage){window._mileage=backup.mileage;localStorage.setItem('apex_mileage',JSON.stringify(window._mileage));}save();refreshSite();if(st)st.innerHTML='<span style="color:var(--green)">✓ Restored</span>';setTimeout(()=>{alert('Backup restored! Reloading.');location.reload();},500);}catch(err){if(st)st.innerHTML='<span style="color:var(--red)">✗ '+err.message+'</span>';}};reader.readAsText(file);}
 
 // On mobile, move status dot under logo
 (function(){
@@ -1773,7 +1773,10 @@ async function suggestExpCategory(desc,selId,statusId){
     if(!sel){if(statusEl)statusEl.innerHTML='';return;}
     const match=[...sel.options].find(o=>o.text.toLowerCase().replace(/[^a-z]/g,'').includes(suggested.toLowerCase().replace(/[^a-z]/g,'').slice(0,6)));
     if(match&&statusEl){
-      statusEl.innerHTML=`<span style="font-size:10px;color:var(--gold2);cursor:pointer" onclick="document.getElementById('${selId}').value='${match.value||match.text}';this.parentNode.innerHTML=''">✦ Suggested: <u>${match.text}</u> — tap to apply</span>`;
+      if(!window._catSuggestions)window._catSuggestions={};
+      const csKey='cs-'+Date.now();
+      window._catSuggestions[csKey]={selId,value:match.value||match.text};
+      statusEl.innerHTML=`<span style="font-size:10px;color:var(--gold2);cursor:pointer" onclick="(function(){var s=window._catSuggestions['${csKey}'];if(s){document.getElementById(s.selId).value=s.value;}this.parentNode.innerHTML='';})()">✦ Suggested: <u>${esc(match.text)}</u> — tap to apply</span>`;
     }else if(statusEl){statusEl.innerHTML='';}
   }catch(ex){if(document.getElementById(statusId))document.getElementById(statusId).innerHTML='';}
 }
@@ -1811,7 +1814,7 @@ function renderDashPots(){
   el.innerHTML=pots.map(p=>`<div style="padding:.5rem .6rem;background:var(--bg4);border:1px solid var(--border);border-radius:8px;margin-bottom:5px;cursor:pointer" onclick="openEditPot('${p.id}')"><div style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--text)">${esc(p.addr)}${p.city?' · '+esc(p.city):''}</div>${p.notes?`<div style="font-size:12px;color:#f0c040;margin-top:3px;font-weight:600">${esc(p.notes)}</div>`:''} ${p.date?`<div style="font-size:11px;color:#e2ddd4;margin-top:2px">${fmtD(p.date)}${p.price?' · ~'+fmt(parseFloat(p.price)):''}</div>`:''}</div><div style="display:flex;gap:4px;flex-shrink:0"><button class="btn btn-ghost btn-sm btn-icon" onclick="event.stopPropagation();openEditPot('${p.id}')"><svg class="ico" style="width:11px;height:11px"><use href="#ico-pencil"/></svg></button><button class="btn btn-danger btn-sm btn-icon" onclick="event.stopPropagation();deletePot('${p.id}')"><svg class="ico" style="width:11px;height:11px"><use href="#ico-trash"/></svg></button></div></div></div>`).join('');
 }
 function loadBalanceSheetInputs(){const bs=propData._bs||{};const ci=document.getElementById('bs-cash-inp'),li=document.getElementById('bs-loans-inp'),pi=document.getElementById('bs-payable-inp');if(ci&&bs.cash!=null)ci.value=bs.cash;if(li&&bs.loans!=null)li.value=bs.loans;if(pi&&bs.payable!=null)pi.value=bs.payable;updateBalanceSheet(false);}
-function clearBalanceSheet(){if(!confirm('Clear balance sheet?'))return;propData._bs={cash:0,loans:0,payable:0};['bs-cash-inp','bs-loans-inp','bs-payable-inp'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});save();updateBalanceSheet(false);}
+async function clearBalanceSheet(){if(!await appConfirm('Clear balance sheet?','Clear'))return;propData._bs={cash:0,loans:0,payable:0};['bs-cash-inp','bs-loans-inp','bs-payable-inp'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});save();updateBalanceSheet(false);}
 // ── INCOME ──
 function getIncome(){return propData._income||[];}
 function incomeTotal(yr){return(propData._income||[]).filter(i=>!yr||(i.date||'').startsWith(String(yr))).reduce((s,i)=>s+(parseFloat(i.amount)||0),0);}
@@ -1860,12 +1863,12 @@ async function handleIncomeReceipt(inp){
 function openAddIncome(){document.getElementById('income-modal-title').textContent='Add Income';document.getElementById('income-id').value='';document.getElementById('income-amount').value='';document.getElementById('income-date').value=new Date().toLocaleDateString('en-CA');document.getElementById('income-desc').value='';document.getElementById('income-payer').value='';document.getElementById('income-notes').value='';_incomeReceiptUrl=null;_setIncomeReceiptThumb(null);const _irs=document.getElementById('income-receipt-status');if(_irs)_irs.innerHTML='';populateIncomeCats('Check');showModal('m-income');setTimeout(()=>{const d=document.getElementById('income-desc');if(d)d.setAttribute('oninput',"onExpDescInput(this.value,'income-cat','income-cat-suggest')");if(!document.getElementById('income-cat-suggest')){const sp=document.createElement('div');sp.id='income-cat-suggest';sp.style.cssText='min-height:16px;margin-bottom:3px';const cat=document.getElementById('income-cat');if(cat)cat.parentNode.insertBefore(sp,cat);}},50);}
 function openEditIncome(id){const inc=(propData._income||[]).find(i=>i.id===id);if(!inc)return;document.getElementById('income-modal-title').textContent='Edit Income';document.getElementById('income-id').value=id;document.getElementById('income-amount').value=inc.amount||'';document.getElementById('income-date').value=inc.date||'';document.getElementById('income-desc').value=inc.desc||'';document.getElementById('income-payer').value=inc.payer||'';document.getElementById('income-notes').value=inc.notes||'';_incomeReceiptUrl=inc.receipt||null;_setIncomeReceiptThumb(_incomeReceiptUrl);const _irs=document.getElementById('income-receipt-status');if(_irs)_irs.innerHTML='';populateIncomeCats(inc.cat||'Check');showModal('m-income');}
 function saveIncome(){const id=document.getElementById('income-id').value||('inc-'+Date.now().toString(36));const amount=parseFloat(document.getElementById('income-amount').value)||0;if(!amount){alert('Please enter an amount');return;}const inc={id,amount,date:document.getElementById('income-date').value,cat:getSelectedIncomeCat(),desc:document.getElementById('income-desc').value.trim(),payer:document.getElementById('income-payer').value.trim(),notes:document.getElementById('income-notes').value.trim()};if(_incomeReceiptUrl)inc.receipt=_incomeReceiptUrl;if(!propData._income)propData._income=[];const idx=(propData._income).findIndex(i=>i.id===id);if(idx>-1)propData._income[idx]=inc;else propData._income.push(inc);save();renderIncome();refreshSite();closeModal('m-income');}
-function deleteIncome(id){if(!confirm('Delete this income entry?'))return;propData._income=(propData._income||[]).filter(i=>i.id!==id);save();renderIncome();refreshSite();}
+async function deleteIncome(id){if(!await appConfirm('Delete this income entry?','Delete'))return;propData._income=(propData._income||[]).filter(i=>i.id!==id);save();renderIncome();refreshSite();}
 let _incomeScanFiles=[];
 function handleIncomeFileDrop(ev){ev.preventDefault();handleIncomeScanFiles(ev.dataTransfer.files);}
 function handleIncomeScanFiles(files){_incomeScanFiles=[..._incomeScanFiles,...Array.from(files)];const q=document.getElementById('income-scan-queue');if(q)q.innerHTML=_incomeScanFiles.map(f=>`<div style="font-size:11px;color:var(--text3);padding:3px 0">${f.name}</div>`).join('');const btn=document.getElementById('scan-btn-income');if(btn)btn.style.display=_incomeScanFiles.length?'inline-flex':'none';}
 async function runIncomeScan(){if(!_incomeScanFiles.length)return;const btn=document.getElementById('scan-btn-income');if(btn){btn.disabled=true;btn.innerHTML='Scanning...';}
-for(const file of _incomeScanFiles){try{const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=ev=>res(ev.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:getAuthHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:file.type,data:b64}},{type:'text',text:'Extract from this payment/check: amount, date (YYYY-MM-DD), payer name, description. JSON only: {"amount":0,"date":"","payer":"","desc":""}'}]}]})});const data=await resp.json();const parsed=JSON.parse((data.content?.[0]?.text||'{}').replace(/```json|```/g,'').trim());const dataUrl=await new Promise((res,rej)=>{const r=new FileReader();r.onload=ev=>res(ev.target.result);r.onerror=rej;r.readAsDataURL(file);});const inc={id:'inc-'+Date.now().toString(36),amount:parseFloat(parsed.amount)||0,date:parsed.date||new Date().toISOString().split('T')[0],payer:parsed.payer||'',desc:parsed.desc||file.name,cat:'Check',receipt:dataUrl};if(!propData._income)propData._income=[];propData._income.push(inc);}catch(err){console.error(err);}}
+for(const file of _incomeScanFiles){try{const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=ev=>res(ev.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:getAuthHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:file.type,data:b64}},{type:'text',text:'Extract from this payment/check: amount, date (YYYY-MM-DD), payer name, description. JSON only: {"amount":0,"date":"","payer":"","desc":""}'}]}]})});const data=await resp.json();const parsed=JSON.parse((data.content?.[0]?.text||'{}').replace(/```json|```/g,'').trim());let receiptUrl='';try{const path='receipts/income-'+Date.now()+'-'+file.name.replace(/[^a-z0-9.]/gi,'-');receiptUrl=await uploadToStorage(file,path);}catch(upErr){console.warn('Income receipt upload failed, skipping receipt attachment:',upErr);}const inc={id:'inc-'+Date.now().toString(36),amount:parseFloat(parsed.amount)||0,date:parsed.date||new Date().toLocaleDateString('en-CA'),payer:parsed.payer||'',desc:parsed.desc||file.name,cat:'Check'};if(receiptUrl)inc.receipt=receiptUrl;if(!propData._income)propData._income=[];propData._income.push(inc);}catch(err){console.error(err);}}
 _incomeScanFiles=[];const q=document.getElementById('income-scan-queue');if(q)q.innerHTML='';if(btn){btn.disabled=false;btn.innerHTML='<svg class="ico"><use href="#ico-sparkles"/></svg> Scan All & Add';btn.style.display='none';}save();renderIncome();}
 
 function toggleCVV(idx, val){
@@ -1968,8 +1971,8 @@ function saveCalEvent(){
   save();renderCal();renderCalDay();closeModal('m-cal-ev');
 }
 
-function deleteCalEvent(evId,ds){
-  if(!confirm('Delete this event?'))return;
+async function deleteCalEvent(evId,ds){
+  if(!await appConfirm('Delete this event?','Delete'))return;
   const dashIdx=evId.indexOf('-');
   const type=evId.slice(0,dashIdx);
   const id=evId.slice(dashIdx+1);
@@ -2717,7 +2720,7 @@ function renderPropTasks(){
   });
 }
 function toggleTask(id){const t=tasks.find(t=>t.id===id);if(t){t.done=!t.done;save();renderTasks();renderPropTasks();if(typeof renderDashTasks==="function")renderDashTasks();}}
-function delTask(id){if(!confirm("Delete this task?"))return;const t=tasks.find(t=>t.id===id);if(t)trashItem('task',t.t||'Task',Object.assign({},t),t.p||'');tasks=tasks.filter(t=>t.id!==id);save();renderTasks();renderPropTasks();renderCal();if(typeof renderDashTasks==="function")renderDashTasks();refreshSite();}
+async function delTask(id){if(!await appConfirm("Delete this task?","Delete"))return;const t=tasks.find(t=>t.id===id);if(t)trashItem('task',t.t||'Task',Object.assign({},t),t.p||'');tasks=tasks.filter(t=>t.id!==id);save();renderTasks();renderPropTasks();renderCal();if(typeof renderDashTasks==="function")renderDashTasks();refreshSite();}
 function openAddPropTask(p){document.getElementById("task-prop").value=p;showModal("m-task");}
 function openEditTask(id){
   populateTaskPropDropdown('edit-task-prop');
@@ -2918,8 +2921,8 @@ function saveEditProp(){
   buildPropPage(p, true);
   renderE(p);renderDocs(p);restorePropImg(p);refreshSite();
 }
-function deleteProp(p){
-  if(!confirm('Delete "'+getProp(p).addr+'" and ALL its expenses, docs, and data? This cannot be undone.'))return;
+async function deleteProp(p){
+  if(!await appConfirm('Delete "'+getProp(p).addr+'" and ALL its expenses, docs, and data? This cannot be undone.','Delete'))return;
   delete propData[p];
   delete extra[p];
   delete propImgs[p];
@@ -2930,8 +2933,8 @@ function deleteProp(p){
   showPage(document.querySelector('.nav-tab[onclick*="dashboard"]'),'dashboard');
 }
 function renderEPPhoto(src){const w=document.getElementById("ep-photo-wrap");if(!w)return;w.innerHTML=`<div class="ep-photo" style="position:relative"><img src="${src}" onclick="openLightbox('${src}')" style="cursor:zoom-in"><button class="btn btn-danger btn-sm ep-photo-remove" onclick="removeEPPhoto()"><svg class="ico"><use href="#ico-trash"/></svg> Remove</button></div>`;}
-function removeEPPhoto(){const p=document.getElementById("ep-id").value;
-  if(!confirm('Remove this property photo?'))return;
+async function removeEPPhoto(){const p=document.getElementById("ep-id").value;
+  if(!await appConfirm('Remove this property photo?','Remove'))return;
   deletePropImg(p); // deletes from storage + resets hero and dashboard card
   const w=document.getElementById("ep-photo-wrap");if(w)w.innerHTML='';}
 function triggerEPPhoto(){document.getElementById("ep-photo-inp").click();}
@@ -3078,7 +3081,7 @@ function _recurDates(startDt,freq){
   }
   return dates;
 }
-function saveExp(){
+async function saveExp(){
   try{
   const p=document.getElementById("exp-pid").value;
   const amount=parseFloat(document.getElementById("exp-amt").value);
@@ -3097,7 +3100,7 @@ function saveExp(){
   if(isRecurring){
     const dates=_recurDates(dt,recurFreq);
     if(!dates.length){document.getElementById("exp-scan-status").innerHTML='<div style="font-size:12px;color:var(--red)">Start date must be today or earlier.</div>';return;}
-    if(!confirm(`This will add ${dates.length} ${recurFreq} expense${dates.length>1?'s':''} (${dates[0]} → ${dates[dates.length-1]}). Continue?`))return;
+    if(!await appConfirm(`This will add ${dates.length} ${recurFreq} expense${dates.length>1?'s':''} (${dates[0]} → ${dates[dates.length-1]}). Continue?`,'Add'))return;
     dates.forEach(date=>{
       const expObj={a:amount,d,c,v,dt:date,receipt,recur:recurFreq};
       if(w9)expObj.w9=true;
@@ -3105,8 +3108,8 @@ function saveExp(){
     });
   }else{
     // Duplicate check for single expenses only
-    const dupCheck=allE(p).find(x=>parseFloat(x.a||x.amount)===amount);
-    if(dupCheck&&!confirm(`An expense for ${fmt(amount)} already exists ("${dupCheck.d||dupCheck.desc||'Expense'}"). Add again?`))return;
+    const dupCheck=allE(p).find(x=>!x.credit&&parseFloat(x.a||x.amount)===amount&&x.dt===dt&&(x.d||x.desc||'').trim()===(d||'').trim());
+    if(dupCheck&&!await appConfirm(`An expense for ${fmt(amount)} on ${dt} already exists ("${dupCheck.d||dupCheck.desc||'Expense'}"). Add again?`,'Add Again'))return;
     const expObj={a:amount,d,c,v,dt,receipt};if(w9)expObj.w9=true;extra[p].unshift(expObj);
   }
   expReceiptUrls=[];expReceiptB64="";expReceiptMime="";
@@ -3194,8 +3197,8 @@ function openEditExpByIndex(p,origIdx){
   document.addEventListener('paste',handleExpPaste);
 }
 let editExpReceiptUrl=null;
-function deleteEditExpReceipt(){
-  if(!confirm('Delete receipt image(s)?'))return;
+async function deleteEditExpReceipt(){
+  if(!await appConfirm('Delete receipt image(s)?','Delete'))return;
   editExpReceiptUrl='__deleted__';
   const thumb=document.getElementById("eeexp-receipt-thumb");if(thumb)thumb.innerHTML='<div style="font-size:12px;color:var(--text3);font-style:italic">Receipt will be removed on save</div>';
 }
@@ -3252,8 +3255,8 @@ function saveEditExp(){
   editExpReceiptUrl=null;
   save();renderE(p);refreshSite();closeModal("m-edit-exp");renderContractors();
 }
-function delExpByIndex(p,origIdx){
-  if(!confirm('Delete this expense?'))return;
+async function delExpByIndex(p,origIdx){
+  if(!await appConfirm('Delete this expense?','Delete'))return;
   const allExp=allE(p);
   const item=allExp[origIdx];
   if(item){
@@ -3284,8 +3287,8 @@ function delExpByIndex(p,origIdx){
 // ====== CREDITS & REFUNDS ======
 let crReceiptUrl=null;let crReceiptB64="";let crReceiptMime="";
 let editCrReceiptUrl=null;
-function deleteEditCrReceipt(){
-  if(!confirm('Delete receipt image(s)?'))return;
+async function deleteEditCrReceipt(){
+  if(!await appConfirm('Delete receipt image(s)?','Delete'))return;
   editCrReceiptUrl='__deleted__';
   const thumb=document.getElementById("eecr-receipt-thumb");if(thumb)thumb.innerHTML='<div style="font-size:12px;color:var(--text3);font-style:italic">Receipt will be removed on save</div>';
 }
@@ -3304,7 +3307,7 @@ function openAddCr(p){
   showModal("m-credit");
 }
 
-function saveCr(){
+async function saveCr(){
   const p=document.getElementById("cr-pid").value;
   const amount=parseFloat(document.getElementById("cr-amt").value);
   const d=document.getElementById("cr-desc").value.trim()||"Credit / Refund";
@@ -3312,8 +3315,8 @@ function saveCr(){
   const c=getExpCat("cr-cat","cr-custom-cat");
   const v=document.getElementById("cr-vendor").value.trim();
   if(!amount){document.getElementById("cr-scan-status").innerHTML='<div style="font-size:12px;color:var(--red)">Please enter an amount.</div>';return;}
-  const crDup=allE(p).find(x=>x.credit&&parseFloat(x.a||x.amount)===amount);
-  if(crDup&&!confirm(`A credit for ${fmt(amount)} already exists ("${crDup.d||crDup.desc||'Credit'}"). Add again?`))return;
+  const crDup=allE(p).find(x=>x.credit&&parseFloat(x.a||x.amount)===amount&&x.dt===dt&&(x.d||x.desc||'').trim()===(d||'').trim());
+  if(crDup&&!await appConfirm(`A credit for ${fmt(amount)} on ${dt} already exists ("${crDup.d||crDup.desc||'Credit'}"). Add again?`,'Add Again'))return;
   if(!extra[p])extra[p]=[];
   const receipt=crReceiptUrl||(crReceiptB64?`data:${crReceiptMime||'image/jpeg'};base64,${crReceiptB64}`:'');
   saveVendor(v);
@@ -3370,8 +3373,8 @@ function saveEditCr(){
   save();renderE(p);refreshSite();closeModal("m-edit-credit");
 }
 
-function delCrByIndex(p,origIdx){
-  if(!confirm('Delete this credit/refund?'))return;
+async function delCrByIndex(p,origIdx){
+  if(!await appConfirm('Delete this credit/refund?','Delete'))return;
   const allExp=allE(p);
   const item=allExp[origIdx];
   if(item){
@@ -3865,8 +3868,8 @@ function saveEst(){
   else propData._estimates[p].unshift(obj);
   save();renderEstimates(p);closeModal('m-est');
 }
-function delEst(p,idx){
-  if(!confirm('Delete this estimate?'))return;
+async function delEst(p,idx){
+  if(!await appConfirm('Delete this estimate?','Delete'))return;
   if(!propData._estimates?.[p])return;
   const item=propData._estimates[p][idx];
   if(item)trashItem('estimate',(item.desc||'Estimate')+' '+(item.amount||''),Object.assign({},item),p);
@@ -4082,7 +4085,7 @@ function updateAuthStatus(){
   const s=_authSession();
   if(s&&s.access_token){
     el.innerHTML='Signed in as <b>'+esc(s.email||'account')+'</b>';
-    const b=document.getElementById('auth-btn');if(b){b.textContent='Sign Out';b.onclick=function(){if(confirm('Sign out of cloud account?'))sbLogout();};}
+    const b=document.getElementById('auth-btn');if(b){b.textContent='Sign Out';b.onclick=async function(){if(await appConfirm('Sign out of cloud account?','Sign Out'))sbLogout();};}
   }else{
     el.innerHTML='<span style="color:var(--text2)">Not signed in — using shared key</span>';
     const b=document.getElementById('auth-btn');if(b){b.textContent='Sign In';b.onclick=showLogin;}
@@ -4555,8 +4558,8 @@ async function saveDocCard(){
   }
   saveDocCards(cards);renderDocCards();closeModal('m-edit-dc');
 }
-function deleteDocCard(i){
-  if(!confirm('Delete this document category and all its files?'))return;
+async function deleteDocCard(i){
+  if(!await appConfirm('Delete this document category and all its files?','Delete'))return;
   const cards=getDocCards();const card=cards[i];
   if(card)trashItem('doc-category',card.name||'Category',Object.assign({},card,{files:(card.files||[]).map(f=>Object.assign({},f))}));
   cards.splice(i,1);
@@ -4591,8 +4594,8 @@ async function uploadDocCardFile(i,inp){
   const st2=document.getElementById('dc-status-'+c.id);
   if(st2){st2.innerHTML='<span style="color:var(--green)">✓ '+done+' file'+(done>1?'s':'')+' added</span>';setTimeout(()=>{if(st2)st2.innerHTML='';},4000);}
 }
-function deleteDocCardFile(ci,fi){
-  if(!confirm('Remove this file?'))return;
+async function deleteDocCardFile(ci,fi){
+  if(!await appConfirm('Remove this file?','Remove'))return;
   const cards=getDocCards();
   if(cards[ci]&&cards[ci].files){
     const file=cards[ci].files[fi];
@@ -4762,16 +4765,16 @@ function renderClosingPreview(key, data){
   if(importBtn) importBtn.style.display = '';
 }
 
-function importClosingStatement(key){
+async function importClosingStatement(key){
   const data = window._closingData[key];
   if(!data) return;
   const isSeller = data.statementType === 'seller';
   const typeLabel = isSeller ? 'sale price, settlement date' : 'purchase price, settlement date';
   const importFlag = isSeller ? '_sellerClosingImported' : '_buyerClosingImported';
   if(propData[key]&&propData[key][importFlag]){
-    if(!confirm('A '+(isSeller?'SELLER':'BUYER')+' closing statement was already imported for this property. Importing again will DUPLICATE all line items. Are you sure?')) return;
+    if(!await appConfirm('A '+(isSeller?'SELLER':'BUYER')+' closing statement was already imported for this property. Importing again will DUPLICATE all line items. Are you sure?','Import Anyway')) return;
   }
-  if(!confirm('Import this closing statement into '+key+'? This will set the '+typeLabel+' and add all line items as expenses.')) return;
+  if(!await appConfirm('Import this closing statement into '+key+'? This will set the '+typeLabel+' and add all line items as expenses.','Import')) return;
 
   if(!propData[key]) propData[key] = {};
   if(data.transactionPrice){
@@ -4837,8 +4840,8 @@ function renderDocs(p){
       +'</div></div>';
   }).join('');
 }
-function deleteDoc(p,uid){
-  if(!confirm("Delete this document?"))return;
+async function deleteDoc(p,uid){
+  if(!await appConfirm("Delete this document?","Delete"))return;
   if(!propData._docs||!propData._docs[p])return;
   const doc=propData._docs[p].find(d=>d.id===uid);
   if(doc)trashItem('document',doc.name||'Document',Object.assign({},doc),p);
@@ -4941,9 +4944,9 @@ function deleteTrashItem(tid){
   propData._trash=t.filter(i=>i.id!==tid);
   save();renderTrash();
 }
-function emptyTrash(){
+async function emptyTrash(){
   if(!getTrash().length)return;
-  if(!confirm('Permanently delete all items in trash?'))return;
+  if(!await appConfirm('Permanently delete all items in trash?','Empty Trash'))return;
   propData._trash=[];save();renderTrash();
 }
 function renderTrash(){
@@ -5448,8 +5451,8 @@ function saveContractor(){
   save();closeModal('m-contractor');renderContractors();
 }
 
-function deleteContractor(name){
-  if(!confirm('Delete '+name+'?'))return;
+async function deleteContractor(name){
+  if(!await appConfirm('Delete '+name+'?','Delete'))return;
   propData._contractors=(propData._contractors||[]).filter(c=>c.name.toLowerCase()!==name.toLowerCase());
   save();renderContractors();
 }
@@ -5627,5 +5630,44 @@ window.addEventListener('unhandledrejection',function(e){console.error('Unhandle
 }
 </style>
 <input type="file" id="prop-img-inp" accept="image/*" style="display:none" onchange="handlePropImg(this)">
+
+<!-- Custom confirm modal -->
+<div id="m-confirm" class="mo" style="display:none;z-index:9999">
+  <div class="mo-box" style="max-width:340px;width:92%;padding:24px 20px 20px">
+    <div id="m-confirm-msg" style="font-size:15px;line-height:1.5;color:var(--text);margin-bottom:20px;white-space:pre-wrap"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost btn-sm" id="m-confirm-cancel" style="min-width:72px">Cancel</button>
+      <button class="btn btn-danger btn-sm" id="m-confirm-ok" style="min-width:72px">Confirm</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  function appConfirm(msg,okLabel){
+    return new Promise(function(resolve){
+      var mo=document.getElementById('m-confirm');
+      var msgEl=document.getElementById('m-confirm-msg');
+      var okBtn=document.getElementById('m-confirm-ok');
+      var cancelBtn=document.getElementById('m-confirm-cancel');
+      msgEl.textContent=msg;
+      okBtn.textContent=okLabel||'Confirm';
+      mo.style.display='flex';
+      document.body.style.overflow='hidden';
+      function cleanup(result){
+        mo.style.display='none';
+        document.body.style.overflow='';
+        okBtn.removeEventListener('click',onOk);
+        cancelBtn.removeEventListener('click',onCancel);
+        resolve(result);
+      }
+      function onOk(){cleanup(true);}
+      function onCancel(){cleanup(false);}
+      okBtn.addEventListener('click',onOk);
+      cancelBtn.addEventListener('click',onCancel);
+    });
+  }
+  window.appConfirm=appConfirm;
+})();
+</script>
 </body>
 </html>
