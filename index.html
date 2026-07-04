@@ -1752,8 +1752,8 @@ async function handleIncomeReceipt(inp){
 }
 function openAddIncome(){document.getElementById('income-modal-title').textContent='Add Income';document.getElementById('income-id').value='';document.getElementById('income-amount').value='';document.getElementById('income-date').value=new Date().toLocaleDateString('en-CA');document.getElementById('income-desc').value='';document.getElementById('income-payer').value='';document.getElementById('income-notes').value='';_incomeReceiptUrl=null;_setIncomeReceiptThumb(null);const _irs=document.getElementById('income-receipt-status');if(_irs)_irs.innerHTML='';populateIncomeCats('Check');showModal('m-income');setTimeout(()=>{const d=document.getElementById('income-desc');if(d)d.setAttribute('oninput',"onExpDescInput(this.value,'income-cat','income-cat-suggest')");if(!document.getElementById('income-cat-suggest')){const sp=document.createElement('div');sp.id='income-cat-suggest';sp.style.cssText='min-height:16px;margin-bottom:3px';const cat=document.getElementById('income-cat');if(cat)cat.parentNode.insertBefore(sp,cat);}},50);}
 function openEditIncome(id){const inc=(propData._income||[]).find(i=>i.id===id);if(!inc)return;document.getElementById('income-modal-title').textContent='Edit Income';document.getElementById('income-id').value=id;document.getElementById('income-amount').value=inc.amount||'';document.getElementById('income-date').value=inc.date||'';document.getElementById('income-desc').value=inc.desc||'';document.getElementById('income-payer').value=inc.payer||'';document.getElementById('income-notes').value=inc.notes||'';_incomeReceiptUrl=inc.receipt||null;_setIncomeReceiptThumb(_incomeReceiptUrl);const _irs=document.getElementById('income-receipt-status');if(_irs)_irs.innerHTML='';populateIncomeCats(inc.cat||'Check');showModal('m-income');}
-function saveIncome(){const id=document.getElementById('income-id').value||('inc-'+Date.now().toString(36));const amount=parseFloat(document.getElementById('income-amount').value)||0;if(!amount){alert('Please enter an amount');return;}const inc={id,amount,date:document.getElementById('income-date').value,cat:getSelectedIncomeCat(),desc:document.getElementById('income-desc').value.trim(),payer:document.getElementById('income-payer').value.trim(),notes:document.getElementById('income-notes').value.trim()};if(_incomeReceiptUrl)inc.receipt=_incomeReceiptUrl;if(!propData._income)propData._income=[];const idx=(propData._income).findIndex(i=>i.id===id);if(idx>-1)propData._income[idx]=inc;else propData._income.push(inc);save();renderIncome();refreshSite();closeModal('m-income');}
-async function deleteIncome(id){if(!await appConfirm('Delete this income entry?','Delete'))return;propData._income=(propData._income||[]).filter(i=>i.id!==id);save();renderIncome();refreshSite();}
+function saveIncome(){const id=document.getElementById('income-id').value||('inc-'+Date.now().toString(36));const amount=parseFloat(document.getElementById('income-amount').value)||0;if(!amount){alert('Please enter an amount');return;}const inc={id,amount,date:document.getElementById('income-date').value,cat:getSelectedIncomeCat(),desc:document.getElementById('income-desc').value.trim(),payer:document.getElementById('income-payer').value.trim(),notes:document.getElementById('income-notes').value.trim()};if(_incomeReceiptUrl)inc.receipt=_incomeReceiptUrl;if(!propData._income)propData._income=[];const idx=(propData._income).findIndex(i=>i.id===id);if(idx>-1)propData._income[idx]=inc;else propData._income.push(inc);save();renderIncome();refreshSite('stats');closeModal('m-income');}
+async function deleteIncome(id){if(!await appConfirm('Delete this income entry?','Delete'))return;propData._income=(propData._income||[]).filter(i=>i.id!==id);save();renderIncome();refreshSite('stats');}
 let _incomeScanFiles=[];
 function handleIncomeFileDrop(ev){ev.preventDefault();handleIncomeScanFiles(ev.dataTransfer.files);}
 function handleIncomeScanFiles(files){_incomeScanFiles=[..._incomeScanFiles,...Array.from(files)];const q=document.getElementById('income-scan-queue');if(q)q.innerHTML=_incomeScanFiles.map(f=>`<div style="font-size:11px;color:var(--text3);padding:3px 0">${f.name}</div>`).join('');const btn=document.getElementById('scan-btn-income');if(btn)btn.style.display=_incomeScanFiles.length?'inline-flex':'none';}
@@ -1959,7 +1959,7 @@ function savePot(){
   const pots=getPots();const idx=pots.findIndex(p=>p.id===id);
   if(idx>-1)pots[idx]=pot;else pots.push(pot);
   if(!propData._pots)propData._pots=[];propData._pots=pots;
-  save();renderPots();refreshSite();closeModal('m-pot');
+  save();renderPots();renderDashPots();refreshSite('stats');closeModal('m-pot');
 }
 
 function renderDashTasks(){
@@ -2564,7 +2564,7 @@ function addPot(){
   ["pot-addr","pot-city","pot-price","pot-notes"].forEach(function(id){var el=document.getElementById(id);if(el)el.value="";});
   var pid=document.getElementById('pot-id');if(pid)pid.value='';
 }
-function deletePot(id){propData._pots=getPots().filter(p=>p.id!==id);save();renderPots();renderDashPots();refreshSite();}
+function deletePot(id){propData._pots=getPots().filter(p=>p.id!==id);save();renderPots();renderDashPots();refreshSite('stats');}
 function sortPotList(){renderPots();}
 renderPots();
 
@@ -2573,7 +2573,7 @@ function addTask(){
   const t=document.getElementById("task-title").value.trim();
   const dt=document.getElementById("task-date").value;
   const p=document.getElementById("task-prop").value;
-  if(!t)return;tasks.push({id:Date.now(),t,dt,p,done:false});save();renderTasks();renderPropTasks();refreshSite();closeModal("m-task");document.getElementById("task-title").value="";
+  if(!t)return;tasks.push({id:Date.now(),t,dt,p,done:false});save();renderTasks();renderPropTasks();renderDashTasks();refreshSite('stats');closeModal("m-task");document.getElementById("task-title").value="";
 }
 function populateTaskPropDropdown(selId, currentVal){
   const sel = document.getElementById(selId);
@@ -2610,7 +2610,7 @@ function renderPropTasks(){
   });
 }
 function toggleTask(id){const t=tasks.find(t=>t.id===id);if(t){t.done=!t.done;save();renderTasks();renderPropTasks();if(typeof renderDashTasks==="function")renderDashTasks();}}
-async function delTask(id){if(!await appConfirm("Delete this task?","Delete"))return;const t=tasks.find(t=>t.id===id);if(t)trashItem('task',t.t||'Task',Object.assign({},t),t.p||'');tasks=tasks.filter(t=>t.id!==id);save();renderTasks();renderPropTasks();renderCal();if(typeof renderDashTasks==="function")renderDashTasks();refreshSite();}
+async function delTask(id){if(!await appConfirm("Delete this task?","Delete"))return;const t=tasks.find(t=>t.id===id);if(t)trashItem('task',t.t||'Task',Object.assign({},t),t.p||'');tasks=tasks.filter(t=>t.id!==id);save();renderTasks();renderPropTasks();renderCal();if(typeof renderDashTasks==="function")renderDashTasks();refreshSite('stats');}
 function openAddPropTask(p){document.getElementById("task-prop").value=p;showModal("m-task");}
 function openEditTask(id){
   populateTaskPropDropdown('edit-task-prop');
@@ -2622,7 +2622,7 @@ function openEditTask(id){
 function saveEditTask(){
   const id=parseInt(document.getElementById("edit-task-id").value);const t=tasks.find(t=>t.id===id);if(!t)return;
   t.t=document.getElementById("edit-task-title").value.trim();t.dt=document.getElementById("edit-task-date").value;t.p=document.getElementById("edit-task-prop").value;
-  save();renderTasks();renderPropTasks();renderCal();if(typeof renderDashTasks==="function")renderDashTasks();refreshSite();closeModal("m-edit-task");
+  save();renderTasks();renderPropTasks();renderCal();if(typeof renderDashTasks==="function")renderDashTasks();refreshSite('stats');closeModal("m-edit-task");
 }
 
 // ====== CALENDAR ======
@@ -3005,7 +3005,7 @@ async function saveExp(){
   expReceiptUrls=[];expReceiptB64="";expReceiptMime="";
   const prev=document.getElementById("exp-receipt-preview");if(prev)prev.innerHTML="";
   const ss=document.getElementById("exp-scan-status");if(ss)ss.innerHTML="";
-  save();renderE(p);refreshSite();closeModal("m-exp");renderContractors();
+  save();renderE(p);refreshSite('stats');closeModal("m-exp");renderContractors();
   }catch(err){console.error('saveExp error:',err);alert('Error saving expense: '+err.message);}
 }
 function triggerCSVImport(pid){const inp=document.getElementById('csv-inp-'+pid);if(inp)inp.click();}
@@ -3050,7 +3050,7 @@ function importExpCSV(event,pid){
       extra[pid].push({a:amount,d,c,v,dt});
       added++;
     });
-    if(added){save();renderE(pid);refreshSite();renderContractors();}
+    if(added){save();renderE(pid);refreshSite('stats');renderContractors();}
     alert(added+' expense'+(added!==1?'s':'')+' imported'+(skipped?' ('+skipped+' rows skipped — no valid amount)':'')+'. ');
   };
   reader.readAsText(file);
@@ -3125,7 +3125,7 @@ function saveEditExp(){
   else if(editExpReceiptUrl)newData.receipt=editExpReceiptUrl;
   if(extra[p]&&extra[p][origIdx])Object.assign(extra[p][origIdx],newData);
   editExpReceiptUrl=null;
-  save();renderE(p);refreshSite();closeModal("m-edit-exp");renderContractors();
+  save();renderE(p);refreshSite('stats');closeModal("m-edit-exp");renderContractors();
 }
 async function delExpByIndex(p,origIdx){
   if(!await appConfirm('Delete this expense?','Delete'))return;
@@ -3137,7 +3137,7 @@ async function delExpByIndex(p,origIdx){
     trashItem(isCredit?'credit':'expense',label,Object.assign({},item),p);
   }
   if(extra[p])extra[p].splice(origIdx,1);
-  save();renderE(p);refreshSite();
+  save();renderE(p);refreshSite('stats');
 }
 
 // ====== CREDITS & REFUNDS ======
@@ -3181,7 +3181,7 @@ async function saveCr(){
   crReceiptUrl=null;crReceiptB64="";crReceiptMime="";
   const prev=document.getElementById("cr-receipt-preview");if(prev)prev.innerHTML="";
   const ss=document.getElementById("cr-scan-status");if(ss)ss.innerHTML="";
-  save();renderE(p);renderCr(p);refreshSite();closeModal("m-credit");renderContractors();
+  save();renderE(p);renderCr(p);refreshSite('stats');closeModal("m-credit");renderContractors();
 }
 
 function openEditCrByIndex(p,origIdx){
@@ -3221,7 +3221,7 @@ function saveEditCr(){
   else if(editCrReceiptUrl)newData.receipt=editCrReceiptUrl;
   if(extra[p]&&extra[p][origIdx])Object.assign(extra[p][origIdx],newData);
   editCrReceiptUrl=null;
-  save();renderE(p);refreshSite();closeModal("m-edit-credit");
+  save();renderE(p);refreshSite('stats');closeModal("m-edit-credit");
 }
 
 async function delCrByIndex(p,origIdx){
@@ -3232,7 +3232,7 @@ async function delCrByIndex(p,origIdx){
     trashItem('credit',(item.d||item.desc||'Credit')+' '+(item.a||item.amount||''),Object.assign({},item),p);
   }
   if(extra[p])extra[p].splice(origIdx,1);
-  save();renderE(p);refreshSite();
+  save();renderE(p);refreshSite('stats');
 }
 
 async function handleCrReceipt(f){
@@ -3575,7 +3575,7 @@ async function runScan(p){
     const files=pendingFiles[p]||[];if(!files.length)return;const results=[];for(let i=0;i<files.length;i++)results.push(await scanOne(files[i],p,i));
     const ok=results.filter(r=>r.ok&&r.data?.amount);const fail=results.length-ok.length;
     ok.forEach(r=>{if(!extra[p])extra[p]=[];extra[p].unshift({a:r.data.amount,d:r.data.desc||"Receipt",c:r.data.cat||"Other",v:r.data.vendor||"",dt:r.data.date||new Date().toLocaleDateString('en-CA'),receipt:`data:${r.mime};base64,${r.b64}`});});
-    save();renderE(p);refreshSite();
+    save();renderE(p);refreshSite('stats');
     const sr=document.getElementById("sr-"+p);if(sr)sr.innerHTML=ok.length?`<div class="scan-result-msg srm-ok"><svg class="ico"><use href="#ico-circle-check"/></svg> ${ok.length} receipt${ok.length>1?"s":""} added${fail?" ("+fail+" failed)":""}</div>`:`<div class="scan-result-msg srm-fail"><svg class="ico"><use href="#ico-alert-circle"/></svg> Could not read receipts — check API key in Company settings</div>`;
     if(btn){btn.innerHTML='<svg class="ico"><use href="#ico-sparkles"/></svg> Scan More';btn.disabled=false;}pendingFiles[p]=[];renderQ(p);
   }catch(e){console.warn("Scan error:",e);if(btn){btn.disabled=false;btn.innerHTML='<svg class="ico"><use href="#ico-sparkles"/></svg> Scan Receipts';}}
@@ -4170,7 +4170,7 @@ function saveNewProp(){
   refreshSite();
   setTimeout(()=>showProp(key),300);
 }
-function refreshSite(){
+function refreshSite(scope){
   const props=getPropKeys();
   const revenue=props.reduce((s,p)=>s+propSold(p),0);
   const totalExp=[...props,"general"].reduce((s,p)=>s+eTotal(p),0);
@@ -4251,9 +4251,10 @@ function refreshSite(){
   // offer dates handled in dynamic loop above
   props.forEach(p=>updateBudget(p));updateHoldDates();setEl("bs-prop-val",fmt(activeAllin));updateBalanceSheet();
   const genTotal=document.getElementById("general-exp-total");if(genTotal)genTotal.textContent=fmt(eTotal("general"));
+  refreshStatusBadges();
+  if(scope==='stats')return;
   renderE("general");
   loadNotes();
-  refreshStatusBadges();
   renderDocCards();
   loadBalanceSheetInputs();
   renderIncome();
@@ -4649,7 +4650,7 @@ async function importClosingStatement(key){
 
   save();
   renderE(key);
-  refreshSite();
+  refreshSite('stats');
   buildPropPage(key, true);
 
   const importBtn = document.getElementById('closing-import-btn-'+key);
@@ -4754,10 +4755,10 @@ function restoreTrashItem(tid){
     const p=item.prop||'general';
     if(!extra[p])extra[p]=[];
     extra[p].push(item.data);
-    save();renderE(p);refreshSite();
+    save();renderE(p);refreshSite('stats');
   }else if(item.type==='task'){
     tasks.push(item.data);
-    save();renderTasks();renderPropTasks();renderDashTasks();refreshSite();
+    save();renderTasks();renderPropTasks();renderDashTasks();refreshSite('stats');
   }else if(item.type==='mileage'){
     window._mileage.push(item.data);
     saveMileage();renderMileage();
