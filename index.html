@@ -1262,7 +1262,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
       <div style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Upload a receipt or refund confirmation and Claude will fill in all fields automatically.</div>
       <div class="drop-zone" id="cr-dz" onclick="document.getElementById('cr-receipt-inp').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleCrDrop(event)" style="padding:1.1rem">
         <svg class="ico dz-icon" style="width:26px;height:26px;margin-bottom:.4rem"><use href="#ico-photo-scan"/></svg>
-        <p style="font-size:12.5px">Click or drag &amp; drop a receipt photo</p>
+        <p style="font-size:12.5px">Tap to take photo, choose from library, or paste (Ctrl+V)</p>
       </div>
       <input type="file" id="cr-receipt-inp" accept="image/*,application/pdf" style="display:none" onchange="handleCrReceipt(this.files[0])">
       <div id="cr-receipt-preview" style="margin-top:.6rem"></div>
@@ -2703,7 +2703,7 @@ function showModal(id){
   }
   m.classList.add("open");const sy=window.scrollY;document.body.dataset.sy=sy;document.body.style.overflow="hidden";if(_moOpen===0)document.addEventListener('touchmove',_tmHandler,{passive:false});_moOpen++;if(id==='m-exp'||id==='m-edit-exp'){hookW9Listeners();setTimeout(()=>{if(id==='m-exp')checkW9Visibility('exp');else checkW9Visibility('eeexp');},50);}if(id==='tax-contractors'||m.closest('#tax-contractors'))renderContractors();
 }
-function closeModal(id){const m=document.getElementById(id);if(!m)return;m.classList.remove("open");_moOpen=Math.max(0,_moOpen-1);if(_moOpen===0){document.body.style.overflow="";document.removeEventListener('touchmove',_tmHandler);}if(id==='m-exp'||id==='m-eexp')document.removeEventListener('paste',handleExpPaste);}
+function closeModal(id){const m=document.getElementById(id);if(!m)return;m.classList.remove("open");_moOpen=Math.max(0,_moOpen-1);if(_moOpen===0){document.body.style.overflow="";document.removeEventListener('touchmove',_tmHandler);}if(id==='m-exp'||id==='m-edit-exp')document.removeEventListener('paste',handleExpPaste);if(id==='m-credit'||id==='m-edit-credit')document.removeEventListener('paste',handleCrPaste);}
 
 // iOS background-scroll lock: only active while a modal is open (dynamic listener avoids
 // passive:false overhead on every touchmove when no modal is showing).
@@ -3161,6 +3161,7 @@ function openAddCr(p){
   const prev=document.getElementById("cr-receipt-preview");if(prev)prev.innerHTML="";
   const ss=document.getElementById("cr-scan-status");if(ss)ss.innerHTML="";
   showModal("m-credit");
+  document.addEventListener('paste',handleCrPaste);
 }
 
 async function saveCr(){
@@ -3207,6 +3208,7 @@ function openEditCrByIndex(p,origIdx){
     thumb.innerHTML=`<div style="margin-bottom:.6rem"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase">Receipt${_crPages.length>1?' ('+_crPages.length+' pages)':''}</span><button onclick="deleteEditCrReceipt()" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;text-decoration:underline">Delete Receipt</button></div><div style="display:flex;gap:6px;flex-wrap:wrap">${_crPages.map(u=>`<img src="${esc(u)}" onclick="openLightbox(_receiptStore[${_cridx}])" style="max-height:90px;border-radius:6px;cursor:zoom-in;border:1px solid var(--border2)">`).join('')}</div></div>`;
   }else{thumb.innerHTML="";}
   showModal("m-edit-credit");
+  document.addEventListener('paste',handleCrPaste);
 }
 
 function saveEditCr(){
@@ -3265,6 +3267,10 @@ function handleCrDrop(ev){
   const dz=ev.currentTarget;if(dz)dz.classList.remove("over");
   const f=ev.dataTransfer&&ev.dataTransfer.files&&ev.dataTransfer.files[0];
   if(f)handleCrReceipt(f);
+}
+function handleCrPaste(ev){
+  const items=ev.clipboardData&&ev.clipboardData.items;if(!items)return;
+  for(let i=0;i<items.length;i++){if(items[i].type.startsWith('image/')){const f=items[i].getAsFile();if(f){ev.preventDefault();handleCrReceipt(f);return;}}}
 }
 
 async function scanCrReceipt(f,preB64=null,preMime=null){
