@@ -3010,7 +3010,7 @@ async function saveExp(){
     });
   }else{
     // Duplicate check for single expenses only
-    const dupCheck=allE(p).find(x=>!x.credit&&parseFloat(x.a||x.amount)===amount&&x.dt===dt&&(x.d||x.desc||'').trim().toLowerCase()===(d||'').trim().toLowerCase());
+    const dupCheck=allE(p).find(x=>!x.credit&&parseFloat(x.a||x.amount)===amount&&x.dt===dt);
     if(dupCheck&&!await appConfirm(`An expense for ${fmt(amount)} on ${dt} already exists ("${dupCheck.d||dupCheck.desc||'Expense'}"). Add again?`,'Add Again'))return;
     const expObj={a:amount,d,c,v,dt,receipt};if(w9)expObj.w9=true;extra[p].unshift(expObj);
   }
@@ -3184,7 +3184,7 @@ async function saveCr(){
   const c=getExpCat("cr-cat","cr-custom-cat");
   const v=document.getElementById("cr-vendor").value.trim();
   if(!amount){document.getElementById("cr-scan-status").innerHTML='<div style="font-size:12px;color:var(--red)">Please enter an amount.</div>';return;}
-  const crDup=allE(p).find(x=>x.credit&&parseFloat(x.a||x.amount)===amount&&x.dt===dt&&(x.d||x.desc||'').trim().toLowerCase()===(d||'').trim().toLowerCase());
+  const crDup=allE(p).find(x=>x.credit&&parseFloat(x.a||x.amount)===amount&&x.dt===dt);
   if(crDup&&!await appConfirm(`A credit for ${fmt(amount)} on ${dt} already exists ("${crDup.d||crDup.desc||'Credit'}"). Add again?`,'Add Again'))return;
   if(!extra[p])extra[p]=[];
   const receipt=crReceiptUrl||(crReceiptB64?`data:${crReceiptMime||'image/jpeg'};base64,${crReceiptB64}`:'');
