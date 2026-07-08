@@ -1297,6 +1297,18 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <div class="md-title" id="est-modal-title">Add Estimate<button class="md-close" onclick="closeModal('m-est')"><svg class="ico"><use href="#ico-x"/></svg></button></div>
     <input type="hidden" id="est-pid">
     <input type="hidden" id="est-idx" value="-1">
+    <!-- SCAN SECTION -->
+    <div style="background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);padding:1rem;margin-bottom:1.1rem">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:.4rem;font-size:13px;font-weight:600;color:var(--gold2)"><svg class="ico" style="color:#c4b5fd;width:15px;height:15px"><use href="#ico-sparkles"/></svg> Scan Estimate with AI</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Paste or upload an estimate image and Claude will fill in all fields automatically.</div>
+      <div class="drop-zone" id="est-dz" onclick="document.getElementById('est-img-inp').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleEstDrop(event)" style="padding:1.1rem">
+        <svg class="ico dz-icon" style="width:26px;height:26px;margin-bottom:.4rem"><use href="#ico-photo-scan"/></svg>
+        <p style="font-size:12.5px">Tap to take photo, choose from library, or paste (Ctrl+V)</p>
+      </div>
+      <input type="file" id="est-img-inp" accept="image/*,application/pdf" style="display:none" onchange="handleEstImage(this.files[0])">
+      <div id="est-img-preview" style="margin-top:.6rem"></div>
+      <div id="est-scan-status" style="margin-top:.5rem"></div>
+    </div>
     <div class="fg"><label>Contractor Name</label><input type="text" id="est-contractor" placeholder="Company or person" style="font-size:16px"></div>
     <div class="fr">
       <div class="fg"><label>Job Type</label><input type="text" id="est-job" placeholder="e.g. Roofing, Plumbing, HVAC" style="font-size:16px"></div>
@@ -2703,7 +2715,7 @@ function showModal(id){
   }
   m.classList.add("open");const sy=window.scrollY;document.body.dataset.sy=sy;document.body.style.overflow="hidden";if(_moOpen===0)document.addEventListener('touchmove',_tmHandler,{passive:false});_moOpen++;if(id==='m-exp'||id==='m-edit-exp'){hookW9Listeners();setTimeout(()=>{if(id==='m-exp')checkW9Visibility('exp');else checkW9Visibility('eeexp');},50);}if(id==='tax-contractors'||m.closest('#tax-contractors'))renderContractors();
 }
-function closeModal(id){const m=document.getElementById(id);if(!m)return;m.classList.remove("open");_moOpen=Math.max(0,_moOpen-1);if(_moOpen===0){document.body.style.overflow="";document.removeEventListener('touchmove',_tmHandler);}if(id==='m-exp'||id==='m-edit-exp')document.removeEventListener('paste',handleExpPaste);if(id==='m-credit'||id==='m-edit-credit')document.removeEventListener('paste',handleCrPaste);}
+function closeModal(id){const m=document.getElementById(id);if(!m)return;m.classList.remove("open");_moOpen=Math.max(0,_moOpen-1);if(_moOpen===0){document.body.style.overflow="";document.removeEventListener('touchmove',_tmHandler);}if(id==='m-exp'||id==='m-edit-exp')document.removeEventListener('paste',handleExpPaste);if(id==='m-credit'||id==='m-edit-credit')document.removeEventListener('paste',handleCrPaste);if(id==='m-est')document.removeEventListener('paste',handleEstPaste);}
 
 // iOS background-scroll lock: only active while a modal is open (dynamic listener avoids
 // passive:false overhead on every touchmove when no modal is showing).
@@ -3273,6 +3285,56 @@ function handleCrPaste(ev){
   for(let i=0;i<items.length;i++){if(items[i].type.startsWith('image/')){const f=items[i].getAsFile();if(f){ev.preventDefault();handleCrReceipt(f);return;}}}
 }
 
+async function handleEstImage(f){
+  if(!f)return;
+  const prev=document.getElementById("est-img-preview");
+  const status=document.getElementById("est-scan-status");
+  if(status)status.innerHTML='<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)"><div class="spin"></div> Processing...</div>';
+  try{
+    const processed=await processReceiptImage(f,false);
+    const dataUrl='data:'+processed.mime+';base64,'+processed.b64;
+    if(prev)prev.innerHTML='<img src="'+dataUrl+'" style="max-height:90px;border-radius:6px;border:1px solid var(--border2)">';
+    if(getApiKey()||IS_CLAUDE_AI)scanEstImage(processed.b64,processed.mime);
+    else if(status)status.innerHTML='<div style="font-size:12px;color:var(--text3)">No API key — fill fields manually.</div>';
+  }catch(err){
+    const fr=new FileReader();
+    fr.onload=ev=>{if(prev)prev.innerHTML='<img src="'+ev.target.result+'" style="max-height:90px;border-radius:6px;border:1px solid var(--border2)">';};
+    fr.readAsDataURL(f);
+    if(getApiKey()||IS_CLAUDE_AI)scanEstImage(null,null,f);
+    else if(status)status.innerHTML='<div style="font-size:12px;color:var(--text3)">No API key — fill fields manually.</div>';
+  }
+}
+function handleEstDrop(ev){
+  ev.preventDefault();
+  const dz=ev.currentTarget;if(dz)dz.classList.remove("over");
+  const f=ev.dataTransfer&&ev.dataTransfer.files&&ev.dataTransfer.files[0];
+  if(f)handleEstImage(f);
+}
+function handleEstPaste(ev){
+  const items=ev.clipboardData&&ev.clipboardData.items;if(!items)return;
+  for(let i=0;i<items.length;i++){if(items[i].type.startsWith('image/')){const f=items[i].getAsFile();if(f){ev.preventDefault();handleEstImage(f);return;}}}
+}
+async function scanEstImage(b64,mime,fallbackFile){
+  const status=document.getElementById("est-scan-status");
+  if(status)status.innerHTML='<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)"><div class="spin"></div>Scanning estimate...</div>';
+  try{
+    let imgB64=b64,imgMime=mime;
+    if(!imgB64&&fallbackFile){const p=await processReceiptImage(fallbackFile,false);imgB64=p.b64;imgMime=p.mime;}
+    const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:getAuthHeaders(),body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:700,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:imgMime,data:imgB64}},{type:"text",text:"You are an expert contractor estimate reader. Extract data from this estimate document and respond ONLY with raw JSON (no markdown, no explanation).\n\nIMPORTANT for date: use ONLY a clear estimate or document date. Do NOT use copyright years or footer years. Return null if none found.\n\nRespond ONLY with this JSON:\n{\"contractor\":\"Company or person name\",\"job\":\"Brief job type e.g. Roofing, HVAC, Plumbing\",\"amount\":12345.00,\"phone\":\"phone number or null\",\"email\":\"email or null\",\"date\":\"YYYY-MM-DD or null\",\"notes\":\"Brief scope summary or null\"}"}]}]})});
+    if(!resp.ok)throw new Error(await resp.text());
+    const data=await resp.json();
+    const parsed=JSON.parse(data.content[0].text.replace(/```json|```/g,"").trim());
+    if(parsed.contractor)document.getElementById("est-contractor").value=parsed.contractor;
+    if(parsed.job)document.getElementById("est-job").value=parsed.job;
+    if(parsed.amount){document.getElementById("est-amount").value=String(parsed.amount).replace(/[^0-9.\-]/g,'');}
+    if(parsed.phone)document.getElementById("est-phone").value=parsed.phone;
+    if(parsed.email)document.getElementById("est-email").value=parsed.email;
+    if(parsed.date)document.getElementById("est-avail").value=parsed.date;
+    if(parsed.notes)document.getElementById("est-notes").value=parsed.notes;
+    if(status)status.innerHTML='<div style="font-size:12px;color:var(--green)">✓ Estimate scanned</div>';
+  }catch(err){if(status)status.innerHTML=`<div style="font-size:12px;color:var(--red)">Scan failed: ${err.message.slice(0,80)}</div>`;}
+}
+
 async function scanCrReceipt(f,preB64=null,preMime=null){
   if(!f)return;const status=document.getElementById("cr-scan-status");
   if(status)status.innerHTML='<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)"><div class="spin"></div>Scanning receipt...</div>';
@@ -3683,7 +3745,10 @@ function openAddEst(p){
   document.getElementById('est-amount').value='';
   document.getElementById('est-avail').value='';
   document.getElementById('est-status').value='Pending';
+  const ep=document.getElementById('est-img-preview');if(ep)ep.innerHTML='';
+  const es=document.getElementById('est-scan-status');if(es)es.innerHTML='';
   showModal('m-est');
+  document.addEventListener('paste',handleEstPaste);
 }
 function openEditEst(p,idx){
   const est=getEstimates(p)[idx];if(!est)return;
@@ -3698,7 +3763,10 @@ function openEditEst(p,idx){
   document.getElementById('est-avail').value=est.avail||'';
   document.getElementById('est-status').value=est.status||'Pending';
   document.getElementById('est-notes').value=est.notes||'';
+  const ep=document.getElementById('est-img-preview');if(ep)ep.innerHTML='';
+  const es=document.getElementById('est-scan-status');if(es)es.innerHTML='';
   showModal('m-est');
+  document.addEventListener('paste',handleEstPaste);
 }
 function saveEst(){
   const p=document.getElementById('est-pid').value;
