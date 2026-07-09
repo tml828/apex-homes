@@ -1260,7 +1260,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
         <button class="btn btn-sm" style="background:var(--green);border-color:var(--green);color:#fff;font-weight:700;margin-top:.5rem" onclick="saveReturnCredit()">Save as Credit</button>
       </div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:.75rem"><button class="btn btn-primary" onclick="saveEditExp()"><svg class="ico"><use href="#ico-check"/></svg> Save Changes</button><button class="btn btn-ghost" onclick="closeModal('m-edit-exp')">Cancel</button></div>
+    <div id="eeexp-save-row" style="display:flex;gap:8px;margin-top:.75rem"><button class="btn btn-primary" onclick="saveEditExp()"><svg class="ico"><use href="#ico-check"/></svg> Save Changes</button><button class="btn btn-ghost" onclick="closeModal('m-edit-exp')">Cancel</button></div>
   </div>
 </div>
 
@@ -3109,6 +3109,7 @@ function openEditExpByIndex(p,origIdx){
     thumb.innerHTML=`<div style="margin-bottom:.6rem"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase">Receipt${_ePages.length>1?' ('+_ePages.length+' pages)':''}</span><button onclick="deleteEditExpReceipt()" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;text-decoration:underline">Delete Receipt</button></div><div style="display:flex;gap:6px;flex-wrap:wrap">${_ePages.map(u=>`<img src="${esc(u)}" onclick="openLightbox(_receiptStore[${_eidx}])" style="max-height:90px;border-radius:6px;cursor:zoom-in;border:1px solid var(--border2)">`).join('')}</div></div>`;
   }else{thumb.innerHTML="";}
   const _rf=document.getElementById('eeexp-return-form');if(_rf)_rf.style.display='none';
+  const _sr=document.getElementById('eeexp-save-row');if(_sr)_sr.style.display='flex';
   showModal("m-edit-exp");
   document.addEventListener('paste',handleExpPaste);
 }
@@ -3142,10 +3143,11 @@ function toggleReturnForm(){
   if(!form)return;
   const open=form.style.display==='none';
   form.style.display=open?'block':'none';
+  const saveRow=document.getElementById('eeexp-save-row');
+  if(saveRow)saveRow.style.display=open?'none':'flex';
   if(open){
     const origAmt=document.getElementById('eeexp-amt').value;
     const origDesc=document.getElementById('eeexp-desc').value;
-    const origDate=document.getElementById('eeexp-date').value;
     document.getElementById('eeexp-ret-amt').value=origAmt;
     document.getElementById('eeexp-ret-desc').value=origDesc?'Returned: '+origDesc:'';
     document.getElementById('eeexp-ret-date').value=new Date().toLocaleDateString('en-CA');
@@ -5577,7 +5579,7 @@ window.addEventListener('unhandledrejection',function(e){console.error('Unhandle
 <input type="file" id="prop-img-inp" accept="image/*" style="display:none" onchange="handlePropImg(this)">
 
 <!-- Custom confirm modal -->
-<div id="m-confirm" class="mo" style="display:none;z-index:9999">
+<div id="m-confirm" class="mo" style="display:none;z-index:9999;align-items:center !important;justify-content:center !important">
   <div class="mo-box" style="max-width:340px;width:92%;padding:24px 20px 20px">
     <div id="m-confirm-msg" style="font-size:15px;line-height:1.5;color:var(--text);margin-bottom:20px;white-space:pre-wrap"></div>
     <div style="display:flex;gap:10px;justify-content:flex-end">
