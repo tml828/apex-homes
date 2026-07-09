@@ -3161,7 +3161,14 @@ async function saveReturnCredit(){
   if(!amount||amount<=0){alert('Enter a return amount.');return;}
   if(!dt){alert('Enter a date.');return;}
   if(!extra[p])extra[p]=[];
-  extra[p].unshift({a:amount,d,c,v,dt,credit:true});
+  const origIdx=parseInt(document.getElementById('eeexp-origidx').value);
+  const origExp=allE(p)[origIdx];
+  if(origExp){
+    if(!origExp._rid)origExp._rid='r'+Date.now().toString(36);
+    extra[p].unshift({a:amount,d,c,v,dt,credit:true,_rid:origExp._rid});
+  }else{
+    extra[p].unshift({a:amount,d,c,v,dt,credit:true});
+  }
   save();renderE(p);renderCr(p);refreshSite('stats');
   closeModal('m-edit-exp');
 }
@@ -3718,6 +3725,7 @@ function renderE(p){
   if(!expenses.length){el.innerHTML='<div class="empty"><svg class="ico"><use href="#ico-receipt"/></svg>No expenses yet</div>';renderCr(p);return;}
   const _sq=_expSearchQuery[p]||'';
   if(_sq){renderEFiltered(p,expenses,_sq);return;}
+  const _allCredits=allE(p).filter(e=>e.credit);
   el.innerHTML=expenses.map(e=>{
     const cat=esc(e.c||e.cat||"");
     const vendor=esc(e.v||e.vendor||"");
@@ -3727,6 +3735,8 @@ function renderE(p){
     const receipt=_receiptThumb(e.receipt);
     const creditBadge=e.credit?`<span style="font-size:10px;font-weight:700;background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3);border-radius:4px;padding:1px 5px;margin-left:4px">CREDIT</span>`:"";
     const recurBadge=e.recur?`<span style="font-size:10px;font-weight:700;background:rgba(139,92,246,0.15);color:#a78bfa;border:1px solid rgba(139,92,246,0.3);border-radius:4px;padding:1px 5px;margin-left:4px">↻ ${e.recur}</span>`:"";
+    let returnBadge="";
+    if(e._rid){const returnedAmt=_allCredits.filter(c=>c._rid===e._rid).reduce((s,c)=>s+parseFloat(c.a||c.amount||0),0);if(returnedAmt>0){const origAmt=parseFloat(e.a||e.amount||0);const full=returnedAmt>=origAmt;returnBadge=`<span style="font-size:10px;font-weight:700;background:${full?'rgba(239,68,68,0.15)':'rgba(251,191,36,0.15)'};color:${full?'var(--red)':'var(--amber)'};border:1px solid ${full?'rgba(239,68,68,0.3)':'rgba(251,191,36,0.3)'};border-radius:4px;padding:1px 5px;margin-left:4px">${full?'RETURNED':'PARTIAL RETURN'}</span>`;}}
     const editFn=e.credit?`openEditCrByIndex('${p}',${e._origIdx})`:`openEditExpByIndex('${p}',${e._origIdx})`;
     const delFn=e.credit?`delCrByIndex('${p}',${e._origIdx})`:`delExpByIndex('${p}',${e._origIdx})`;
     const amtColor=e.credit?"var(--green)":"var(--gold2)";
@@ -3734,7 +3744,7 @@ function renderE(p){
     return `<div class="exp-item" style="display:flex;align-items:center;gap:10px;padding:.7rem 1rem;border-bottom:1px solid var(--border)${e.credit?";background:rgba(34,197,94,0.04)":""}">
       ${receipt}
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${desc}${creditBadge}${recurBadge}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${desc}${creditBadge}${recurBadge}${returnBadge}</div>
         <div style="font-size:11px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${meta}</div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
