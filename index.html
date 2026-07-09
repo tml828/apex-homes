@@ -1247,7 +1247,20 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <div id="eeexp-receipt-thumb" style="margin-bottom:.75rem"></div>
     <label class="btn btn-ghost btn-sm" style="cursor:pointer;margin-bottom:.75rem;display:inline-flex"><svg class="ico"><use href="#ico-upload"/></svg> Add / Replace Receipt<input type="file" accept="image/*,application/pdf" style="display:none" onchange="handleEditExpReceipt(this)"></label>
     <div id="eeexp-receipt-status" style="margin-bottom:.5rem"></div>
-    <div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-primary" onclick="saveEditExp()"><svg class="ico"><use href="#ico-check"/></svg> Save Changes</button><button class="btn btn-ghost" onclick="closeModal('m-edit-exp')">Cancel</button></div>
+    <!-- RETURN ITEM SECTION -->
+    <div style="border-top:1px solid var(--border2);margin-top:.75rem;padding-top:.75rem">
+      <button class="btn btn-ghost btn-sm" type="button" onclick="toggleReturnForm()" id="eeexp-return-btn" style="color:var(--green);border-color:var(--green);margin-bottom:.5rem">↩ Return Item / Refund</button>
+      <div id="eeexp-return-form" style="display:none;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:.85rem;margin-top:.25rem">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:.65rem">Creates a credit entry. The original expense stays unchanged.</div>
+        <div class="fr">
+          <div class="fg"><label>Return Amount ($)</label><input type="number" step="0.01" placeholder="0.00" id="eeexp-ret-amt" style="font-size:16px"></div>
+          <div class="fg"><label>Date</label><input type="date" id="eeexp-ret-date" style="font-size:16px;width:100%;min-width:0;box-sizing:border-box"></div>
+        </div>
+        <div class="fg"><label>Description</label><input type="text" id="eeexp-ret-desc" placeholder="e.g. Returned unused materials" style="font-size:16px"></div>
+        <button class="btn btn-sm" style="background:var(--green);border-color:var(--green);color:#fff;font-weight:700;margin-top:.5rem" onclick="saveReturnCredit()">Save as Credit</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:.75rem"><button class="btn btn-primary" onclick="saveEditExp()"><svg class="ico"><use href="#ico-check"/></svg> Save Changes</button><button class="btn btn-ghost" onclick="closeModal('m-edit-exp')">Cancel</button></div>
   </div>
 </div>
 
@@ -3095,6 +3108,7 @@ function openEditExpByIndex(p,origIdx){
     const _eidx=_receiptStore.length;_receiptStore.push(_ePages);
     thumb.innerHTML=`<div style="margin-bottom:.6rem"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase">Receipt${_ePages.length>1?' ('+_ePages.length+' pages)':''}</span><button onclick="deleteEditExpReceipt()" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;text-decoration:underline">Delete Receipt</button></div><div style="display:flex;gap:6px;flex-wrap:wrap">${_ePages.map(u=>`<img src="${esc(u)}" onclick="openLightbox(_receiptStore[${_eidx}])" style="max-height:90px;border-radius:6px;cursor:zoom-in;border:1px solid var(--border2)">`).join('')}</div></div>`;
   }else{thumb.innerHTML="";}
+  const _rf=document.getElementById('eeexp-return-form');if(_rf)_rf.style.display='none';
   showModal("m-edit-exp");
   document.addEventListener('paste',handleExpPaste);
 }
@@ -3122,6 +3136,34 @@ async function handleEditExpReceipt(inp){
   }catch(err){
     const fr=new FileReader();fr.onload=ev=>{editExpReceiptUrl=ev.target.result;if(thumb)thumb.innerHTML=`<img src="${ev.target.result}" style="max-height:90px;border-radius:6px;border:1px solid var(--border2)">`;if(status)status.innerHTML='<div style="font-size:12px;color:var(--amber)">Saved locally</div>';};fr.readAsDataURL(file);
   }
+}
+function toggleReturnForm(){
+  const form=document.getElementById('eeexp-return-form');
+  if(!form)return;
+  const open=form.style.display==='none';
+  form.style.display=open?'block':'none';
+  if(open){
+    const origAmt=document.getElementById('eeexp-amt').value;
+    const origDesc=document.getElementById('eeexp-desc').value;
+    const origDate=document.getElementById('eeexp-date').value;
+    document.getElementById('eeexp-ret-amt').value=origAmt;
+    document.getElementById('eeexp-ret-desc').value=origDesc?'Returned: '+origDesc:'';
+    document.getElementById('eeexp-ret-date').value=new Date().toLocaleDateString('en-CA');
+  }
+}
+async function saveReturnCredit(){
+  const p=document.getElementById('eeexp-pid').value;
+  const amount=parseFloat(document.getElementById('eeexp-ret-amt').value);
+  const dt=document.getElementById('eeexp-ret-date').value;
+  const d=document.getElementById('eeexp-ret-desc').value.trim()||'Return / Refund';
+  const v=document.getElementById('eeexp-vendor').value.trim();
+  const c=getExpCat('eeexp-cat','eeexp-custom-cat');
+  if(!amount||amount<=0){alert('Enter a return amount.');return;}
+  if(!dt){alert('Enter a date.');return;}
+  if(!extra[p])extra[p]=[];
+  extra[p].unshift({a:amount,d,c,v,dt,credit:true});
+  save();renderE(p);renderCr(p);refreshSite('stats');
+  closeModal('m-edit-exp');
 }
 function saveEditExp(){
   const p=document.getElementById("eeexp-pid").value;
