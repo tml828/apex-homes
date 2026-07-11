@@ -2242,7 +2242,7 @@ function exportTaxPDF(){
   const acquisitions=props.filter(p=>propSold(p,taxYear)>0).reduce((s,p)=>s+propPurchase(p,taxYear),0);
   const totalExp=[...props,'general'].reduce((s,p)=>s+eTotal(p,taxYear),0);
   setEl('pl-fy-year',taxYear);setEl('sc-fy-year',taxYear);
-  const totalMiles=(window._mileage||[]).filter(t=>String(t.date||t.dt||'').startsWith(String(taxYear))).reduce((s,t)=>s+t.miles,0);
+  const totalMiles=(window._mileage||[]).filter(t=>{const yr=String(taxYear);const d=String(t.date||t.dt||'');const de=String(t.dateEnd||'');return d.startsWith(yr)||de.startsWith(yr);}).reduce((s,t)=>s+t.miles,0);
   const mileDeduction=totalMiles*rate;
   const $ =n=>n.toLocaleString('en-US',{minimumFractionDigits:2});
   // Schedule C deduction categories
@@ -2340,7 +2340,7 @@ function ohioAutocomplete(inp){
 
 function exportTaxCSV(){
   const rate=parseFloat(propData._mileageRate)||0.725;
-  const totalMiles=(window._mileage||[]).filter(t=>String(t.date||t.dt||'').startsWith(String(taxYear))).reduce((s,t)=>s+t.miles,0);
+  const totalMiles=(window._mileage||[]).filter(t=>{const yr=String(taxYear);const d=String(t.date||t.dt||'');const de=String(t.dateEnd||'');return d.startsWith(yr)||de.startsWith(yr);}).reduce((s,t)=>s+t.miles,0);
   const mileDeduction=totalMiles*rate;
   const props=getPropKeys();
   const revenue=props.reduce((s,p)=>s+propSold(p,taxYear),0);
@@ -4388,7 +4388,7 @@ function refreshSite(scope){
   setEl('tax-ded-taxes',fmt((catMap['Property Tax']||0)+(catMap['Permits & Fees']||0)));
   setEl('tax-active-allin',fmt(activeAllin));
   const mileRate=parseFloat(propData._mileageRate)||0.725;
-  const totalMiles=(window._mileage||[]).filter(t=>String(t.date||t.dt||'').startsWith(String(taxYear))).reduce((s,p)=>s+p.miles,0);
+  const totalMiles=(window._mileage||[]).filter(t=>{const yr=String(taxYear);const d=String(t.date||t.dt||'');const de=String(t.dateEnd||'');return d.startsWith(yr)||de.startsWith(yr);}).reduce((s,t)=>s+t.miles,0);
   const mileDeduction=totalMiles*mileRate;
   // Mileage is a deduction (Schedule C Line 9) — subtract from net profit
   const netProfitAfterMileage=netProfitFull-mileDeduction;
