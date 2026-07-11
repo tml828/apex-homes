@@ -954,6 +954,34 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
           <div style="display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap">
             <button class="btn btn-primary btn-sm" id="mi-log-btn" onclick="addMileage()"><svg class="ico"><use href="#ico-plus"/></svg> <span id="mi-log-btn-label">Log Trip</span></button>
             <button class="btn btn-ghost btn-sm" id="mi-cancel-edit-btn" style="display:none" onclick="cancelMileageEdit()">Cancel</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleBulkMileage()" id="mi-bulk-toggle-btn" style="margin-left:auto">+ Bulk Add</button>
+          </div>
+          <!-- BULK ADD SECTION -->
+          <div id="mi-bulk-form" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border2)">
+            <div style="font-size:12px;font-weight:600;color:var(--gold2);margin-bottom:.65rem">Bulk Add by Date Range</div>
+            <div class="fg" style="margin-bottom:.65rem">
+              <label>Property</label>
+              <select id="mi-bulk-prop" onchange="onBulkPropChange()" style="font-size:16px"><option value="">General Business</option></select>
+            </div>
+            <div class="fr">
+              <div class="fg"><label>Start Date</label><input type="date" id="mi-bulk-start" style="width:100%;min-width:0;box-sizing:border-box" oninput="updateBulkPreview()"></div>
+              <div class="fg"><label>End Date</label><input type="date" id="mi-bulk-end" style="width:100%;min-width:0;box-sizing:border-box" oninput="updateBulkPreview()"></div>
+            </div>
+            <div class="fg" style="margin-bottom:.65rem">
+              <label>Days of Week</label>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500;cursor:pointer"><input type="checkbox" class="mi-bulk-day" value="0" onchange="updateBulkPreview()"> Sun</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500;cursor:pointer"><input type="checkbox" class="mi-bulk-day" value="1" onchange="updateBulkPreview()"> Mon</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500;cursor:pointer"><input type="checkbox" class="mi-bulk-day" value="2" onchange="updateBulkPreview()"> Tue</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500;cursor:pointer"><input type="checkbox" class="mi-bulk-day" value="3" onchange="updateBulkPreview()"> Wed</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500;cursor:pointer"><input type="checkbox" class="mi-bulk-day" value="4" onchange="updateBulkPreview()"> Thu</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500;cursor:pointer"><input type="checkbox" class="mi-bulk-day" value="5" onchange="updateBulkPreview()"> Fri</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500;cursor:pointer"><input type="checkbox" class="mi-bulk-day" value="6" onchange="updateBulkPreview()"> Sat</label>
+              </div>
+            </div>
+            <div id="mi-bulk-preview" style="font-size:12px;color:var(--text3);margin-bottom:.65rem;min-height:16px"></div>
+            <button class="btn btn-primary btn-sm" onclick="saveBulkMileage()"><svg class="ico"><use href="#ico-plus"/></svg> Add All Trips</button>
+            <div id="mi-bulk-status" style="margin-top:.5rem;font-size:12px"></div>
           </div>
         </div>
         <div class="card" style="padding:1.35rem">
@@ -3929,6 +3957,60 @@ function cancelMileageEdit(){
   window._editMileageId=null;_resetMileageBtn();
   document.getElementById("mi-miles").value="";
   document.getElementById("mi-purpose").value="";
+}
+function toggleBulkMileage(){
+  const f=document.getElementById('mi-bulk-form');if(!f)return;
+  const open=f.style.display==='none';
+  f.style.display=open?'block':'none';
+  if(open){
+    // Populate property dropdown
+    const sel=document.getElementById('mi-bulk-prop');
+    if(sel&&sel.options.length<=1){getPropKeys().forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=getProp(k).addr||k;sel.appendChild(o);});}
+    document.getElementById('mi-bulk-toggle-btn').textContent='✕ Close';
+  }else{document.getElementById('mi-bulk-toggle-btn').textContent='+ Bulk Add';}
+}
+function onBulkPropChange(){
+  const k=document.getElementById('mi-bulk-prop').value;
+  if(!k){updateBulkPreview();return;}
+  const p=getProp(k);
+  const start=p.offer||p.pdate||'';
+  const end=p.sdate||new Date().toLocaleDateString('en-CA');
+  if(start)document.getElementById('mi-bulk-start').value=start;
+  if(end)document.getElementById('mi-bulk-end').value=end;
+  // Default purpose
+  const purposeEl=document.getElementById('mi-purpose');
+  if(purposeEl&&!purposeEl.value)purposeEl.value='Site visit — '+(p.addr||k);
+  updateBulkPreview();
+}
+function _bulkMileageDates(){
+  const start=document.getElementById('mi-bulk-start').value;
+  const end=document.getElementById('mi-bulk-end').value;
+  const days=Array.from(document.querySelectorAll('.mi-bulk-day:checked')).map(c=>parseInt(c.value));
+  if(!start||!end||!days.length)return[];
+  const dates=[];
+  const cur=new Date(start+'T12:00:00');const endD=new Date(end+'T12:00:00');
+  while(cur<=endD){if(days.includes(cur.getDay()))dates.push(cur.toLocaleDateString('en-CA'));cur.setDate(cur.getDate()+1);}
+  return dates;
+}
+function updateBulkPreview(){
+  const dates=_bulkMileageDates();
+  const el=document.getElementById('mi-bulk-preview');
+  if(!el)return;
+  if(!dates.length){el.textContent='Select days of week and a date range to preview.';return;}
+  el.textContent=dates.length+' trip'+(dates.length>1?'s':'')+' will be added ('+dates[0]+' → '+dates[dates.length-1]+')';
+}
+async function saveBulkMileage(){
+  const dates=_bulkMileageDates();
+  if(!dates.length){alert('Select days of week and a date range.');return;}
+  const miles=parseFloat(document.getElementById('mi-miles').value);
+  const purpose=document.getElementById('mi-purpose').value.trim();
+  const prop=document.getElementById('mi-bulk-prop').value||document.getElementById('mi-prop').value||'General Business';
+  if(!miles||!purpose){alert('Enter miles and purpose in the form above.');return;}
+  if(!await appConfirm('Add '+dates.length+' trips ('+miles+' mi each) for "'+purpose+'"?','Add All'))return;
+  dates.forEach(dt=>{window._mileage.push({id:Date.now()+Math.random(),miles,purpose,date:dt,prop});});
+  window._mileage.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  saveMileage();renderMileage();
+  const st=document.getElementById('mi-bulk-status');if(st)st.innerHTML='<span style="color:var(--green)">✓ '+dates.length+' trips added</span>';
 }
 function deleteMileage(id){const t=window._mileage.find(t=>String(t.id)===String(id));if(t)trashItem('mileage',t.miles+'mi — '+(t.purpose||'Trip'),Object.assign({},t),t.prop||'');window._mileage=window._mileage.filter(t=>String(t.id)!==String(id));saveMileage();renderMileage();}
 function getMileageRate(){
