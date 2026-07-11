@@ -4336,6 +4336,9 @@ function refreshSite(scope){
   const activeAllin=props.filter(p=>{const st=propStatus(p);return st!=='Sold'&&st!=='Inactive'&&st!=='Closed';}).reduce((s,p)=>s+propAllin(p),0);
   const activeCount=props.filter(p=>{const st=propStatus(p);return st!=='Sold'&&st!=='Inactive'&&st!=='Closed';}).length;
   const otherInc=incomeTotal(taxYear);
+  const _mileRate=parseFloat(propData._mileageRate)||0.725;
+  const _totalMiles=(window._mileage||[]).filter(t=>{const yr=String(taxYear);const d=String(t.date||t.dt||'');const de=String(t.dateEnd||'');return d.startsWith(yr)||de.startsWith(yr);}).reduce((s,t)=>s+t.miles,0);
+  const mileDeduction=_totalMiles*_mileRate;
   const netP=(revenue+otherInc)-acquisitions-totalExp-mileDeduction+mealsAll*0.5;
   const soldWithROI=props.filter(p=>propSold(p,taxYear)>0&&propROI(p)!=null);
   const avgROI=soldWithROI.length?soldWithROI.reduce((s,p)=>s+propROI(p),0)/soldWithROI.length:null;
