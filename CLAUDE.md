@@ -246,6 +246,24 @@ Property keys are always lowercase, no spaces.
 - `.github/workflows/pages.yml` added — custom GitHub Pages workflow with 3-attempt retry logic (15s, 30s delays) for flaky GitHub Pages deploy API; `concurrency: group: pages` prevents overlapping deploys
 - `refreshSite(scope)` scoped: added `scope='stats'` param that skips 8 expensive DOM renders (renderPropCards, renderE general, renderIncome, renderDashPots, renderDashTasks, renderDocCards, loadNotes, loadBalanceSheetInputs); all hot-path callers (expense/credit/task/income/pot add/edit/delete, receipt scan, CSV import, closing import, trash restore) use 'stats'; full refresh kept for startup, tab switches, year changes, autoSyncPull
 - BEXP hardcoded expense data fully migrated: all entries confirmed in Supabase, `BEXP` const deleted from `index.html`, `allE()` simplified to `return extra[p]||[]`, migration function and all `_migrated` guards removed; one missing warblers entry ($15,629.56) was added via console before deletion
+- Paste receipt support added to credit modals (`#m-credit`, `#m-edit-credit`) via `handleCrPaste()`; registered on `openAddCr`/`openEditCrByIndex`, removed in `closeModal`
+- Estimates modal AI scan: drop zone + `handleEstImage()`/`handleEstDrop()`/`handleEstPaste()`/`scanEstImage()` — AI fills all estimate fields from a pasted/dropped image
+- Duplicate expense check: matches amount + date only (description comparison removed per user request — amount+date is the intended behavior)
+- Return Item feature in Edit Expense modal: hidden form (`id="eeexp-return-form"`) revealed by `toggleReturnForm()`; `saveReturnCredit()` stamps `_rid` on both original expense and new credit; `renderE()` shows RETURNED (red) / PARTIAL RETURN (amber) badges based on linked `_rid` credits
+- `#m-confirm` dialog: `align-items:center !important; justify-content:center !important` — stays centered on screen instead of top
+- Mileage form redesigned: property first (auto-fills start date from `pdate||offer`, end date from `sdate||today`, purpose from address); `onMilePropChange()` handles auto-fill; `window._editMileageId` flag for stable edit mode; `openEditMileage(id)`, `cancelMileageEdit()`, `_resetMileageBtn()` added; no bulk-add button
+- Mileage year filter: checks both `t.date` (start) and `t.dateEnd` — fixed in `refreshSite`, `exportTaxPDF`, `exportTaxCSV`, `renderMileage`
+- Tax calculation audit (first pass): `refreshSite` now passes `taxYear` to `propSold`, `eTotal`, `propPurchase`; `mealsAll` filter includes `taxYear`; `soldProps` filter uses `propSold(p,taxYear)>0`; P&L rows use year-filtered values; `netProfitAfterMileage = netProfitFull - mileDeduction + mealsAll*0.5`; `tax-revenue` uses `totalRevIncome` (includes other income); PDF/CSV export both include `otherIncome` in total revenue; `propSold(p,yr)` returns 0 when `sdate` empty and `yr` specified
+- Tax calculation audit (second pass — deep logic): fixed 9 bugs:
+  1. `setEl("bs-prop-val")` removed — no such element exists (was silent no-op)
+  2. `pl-total-rev` now uses `totalRevIncome` (was `revenue` — omitted other income, table didn't add up)
+  3. `stat-net-profit` now subtracts `mileDeduction` (was overstating dashboard net profit by full mileage amount)
+  4. `stat-avg-roi` filter now uses `propSold(p,taxYear)` (was unfiltered — included sold properties from all years)
+  5. `delEst` trash label uses `item.job||item.contractor||'Estimate'` (was `item.desc` — field doesn't exist on estimate objects)
+  6. `deleteIncome` now routes through `trashItem` before filtering (was permanently deleting without 30-day recovery)
+  7. `_recurDates` month-end overflow fixed: day clamped to `Math.min(day, new Date(y,m+2,0).getDate())` for monthly/quarterly/yearly — prevents Jan-31 drifting to Mar-3
+  8. Closing statement import fallback date uses `toLocaleDateString('en-CA')` (was `toISOString()` — UTC off-by-one after 8pm local)
+  9. `propNetProfit` now adds back `meals*0.5` (was over-deducting meals; per-property and portfolio figures now consistent)
 
 ---
 
@@ -256,15 +274,15 @@ Property keys are always lowercase, no spaces.
 
 ---
 
-## Audit Scores (last assessed 2026-07-04)
+## Audit Scores (last assessed 2026-07-11)
 | Area | Score | Main remaining gap |
 |---|---|---|
 | Security | 52/100 | Anthropic API key in public git history — rotate at console.anthropic.com |
 | Performance | 74/100 | `refreshSite()` still rebuilds full DOM on tab switches and year changes |
-| Reliability | 72/100 | — |
-| Data Integrity | 75/100 | — |
-| Maintainability | 36/100 | Single 5700-line file, no module system |
-| **Overall** | **64/100** | |
+| Reliability | 76/100 | — |
+| Data Integrity | 82/100 | — |
+| Maintainability | 36/100 | Single 5800-line file, no module system |
+| **Overall** | **68/100** | |
 
 ---
 

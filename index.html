@@ -1785,7 +1785,7 @@ async function handleIncomeReceipt(inp){
 function openAddIncome(){document.getElementById('income-modal-title').textContent='Add Income';document.getElementById('income-id').value='';document.getElementById('income-amount').value='';document.getElementById('income-date').value=new Date().toLocaleDateString('en-CA');document.getElementById('income-desc').value='';document.getElementById('income-payer').value='';document.getElementById('income-notes').value='';_incomeReceiptUrl=null;_setIncomeReceiptThumb(null);const _irs=document.getElementById('income-receipt-status');if(_irs)_irs.innerHTML='';populateIncomeCats('Check');showModal('m-income');setTimeout(()=>{const d=document.getElementById('income-desc');if(d)d.setAttribute('oninput',"onExpDescInput(this.value,'income-cat','income-cat-suggest')");if(!document.getElementById('income-cat-suggest')){const sp=document.createElement('div');sp.id='income-cat-suggest';sp.style.cssText='min-height:16px;margin-bottom:3px';const cat=document.getElementById('income-cat');if(cat)cat.parentNode.insertBefore(sp,cat);}},50);}
 function openEditIncome(id){const inc=(propData._income||[]).find(i=>i.id===id);if(!inc)return;document.getElementById('income-modal-title').textContent='Edit Income';document.getElementById('income-id').value=id;document.getElementById('income-amount').value=inc.amount||'';document.getElementById('income-date').value=inc.date||'';document.getElementById('income-desc').value=inc.desc||'';document.getElementById('income-payer').value=inc.payer||'';document.getElementById('income-notes').value=inc.notes||'';_incomeReceiptUrl=inc.receipt||null;_setIncomeReceiptThumb(_incomeReceiptUrl);const _irs=document.getElementById('income-receipt-status');if(_irs)_irs.innerHTML='';populateIncomeCats(inc.cat||'Check');showModal('m-income');}
 function saveIncome(){const id=document.getElementById('income-id').value||('inc-'+Date.now().toString(36));const amount=parseFloat(document.getElementById('income-amount').value)||0;if(!amount){alert('Please enter an amount');return;}const inc={id,amount,date:document.getElementById('income-date').value,cat:getSelectedIncomeCat(),desc:document.getElementById('income-desc').value.trim(),payer:document.getElementById('income-payer').value.trim(),notes:document.getElementById('income-notes').value.trim()};if(_incomeReceiptUrl)inc.receipt=_incomeReceiptUrl;if(!propData._income)propData._income=[];const idx=(propData._income).findIndex(i=>i.id===id);if(idx>-1)propData._income[idx]=inc;else propData._income.push(inc);save();renderIncome();refreshSite('stats');closeModal('m-income');}
-async function deleteIncome(id){if(!await appConfirm('Delete this income entry?','Delete'))return;propData._income=(propData._income||[]).filter(i=>i.id!==id);save();renderIncome();refreshSite('stats');}
+async function deleteIncome(id){if(!await appConfirm('Delete this income entry?','Delete'))return;const item=(propData._income||[]).find(i=>i.id===id);if(item)trashItem('income',(item.desc||item.payer||'Income')+' '+(item.amount||''),Object.assign({},item),'general');propData._income=(propData._income||[]).filter(i=>i.id!==id);save();renderIncome();refreshSite('stats');}
 let _incomeScanFiles=[];
 function handleIncomeFileDrop(ev){ev.preventDefault();handleIncomeScanFiles(ev.dataTransfer.files);}
 function handleIncomeScanFiles(files){_incomeScanFiles=[..._incomeScanFiles,...Array.from(files)];const q=document.getElementById('income-scan-queue');if(q)q.innerHTML=_incomeScanFiles.map(f=>`<div style="font-size:11px;color:var(--text3);padding:3px 0">${f.name}</div>`).join('');const btn=document.getElementById('scan-btn-income');if(btn)btn.style.display=_incomeScanFiles.length?'inline-flex':'none';}
@@ -2221,7 +2221,7 @@ function saveMileage(){localStorage.setItem('apex_mileage',JSON.stringify(window
 function getProp(p){return{...(propDefaults[p]||{}),...(propData[p]||{})};}
 function propPurchase(p,yr){const pr=getProp(p);const v=parseFloat(pr.purchase||0);if(!v)return 0;if(!yr)return v;const sd=pr.sdate||"";if(!sd)return 0;return sd.startsWith(String(yr))?v:0;}
 function propSold(p,yr){const pr=getProp(p);const v=parseFloat(pr.sold||0);if(!v)return 0;if(!yr)return v;const sd=pr.sdate||"";if(!sd)return 0;return sd.startsWith(String(yr))?v:0;}
-function propNetProfit(p){const s=propSold(p);if(!s)return null;return s-propPurchase(p)-eTotal(p);}
+function propNetProfit(p){const s=propSold(p);if(!s)return null;const meals=allE(p).filter(e=>!e.credit&&(e.c||e.cat||'')==='Meals (50% deductible)').reduce((t,e)=>t+(parseFloat(e.a||e.amount)||0),0);return s-propPurchase(p)-eTotal(p)+meals*0.5;}
 function propROI(p){const cost=propPurchase(p)+eTotal(p);const s=propSold(p);if(!s||!cost)return null;return((s-cost)/cost*100);}
 function propAllin(p){return propPurchase(p)+eTotal(p);}
 function propStatus(p){
@@ -2999,9 +2999,9 @@ function _recurDates(startDt,freq){
     dates.push(cur.toLocaleDateString('en-CA'));
     const y=cur.getFullYear(),m=cur.getMonth(),day=cur.getDate();
     if(freq==='weekly')cur=new Date(y,m,day+7);
-    else if(freq==='monthly')cur=new Date(y,m+1,day);
-    else if(freq==='quarterly')cur=new Date(y,m+3,day);
-    else if(freq==='yearly')cur=new Date(y+1,m,day);
+    else if(freq==='monthly'){const d2=Math.min(day,new Date(y,m+2,0).getDate());cur=new Date(y,m+1,d2);}
+    else if(freq==='quarterly'){const d2=Math.min(day,new Date(y,m+4,0).getDate());cur=new Date(y,m+3,d2);}
+    else if(freq==='yearly')cur=new Date(y+1,m,Math.min(day,new Date(y+1,m+1,0).getDate()));
     else break;
     if(dates.length>500)break; // safety cap
   }
@@ -3857,7 +3857,7 @@ async function delEst(p,idx){
   if(!await appConfirm('Delete this estimate?','Delete'))return;
   if(!propData._estimates?.[p])return;
   const item=propData._estimates[p][idx];
-  if(item)trashItem('estimate',(item.desc||'Estimate')+' '+(item.amount||''),Object.assign({},item),p);
+  if(item)trashItem('estimate',(item.job||item.contractor||'Estimate')+' '+(item.amount||''),Object.assign({},item),p);
   propData._estimates[p].splice(idx,1);
   save();renderEstimates(p);
 }
@@ -4336,8 +4336,8 @@ function refreshSite(scope){
   const activeAllin=props.filter(p=>{const st=propStatus(p);return st!=='Sold'&&st!=='Inactive'&&st!=='Closed';}).reduce((s,p)=>s+propAllin(p),0);
   const activeCount=props.filter(p=>{const st=propStatus(p);return st!=='Sold'&&st!=='Inactive'&&st!=='Closed';}).length;
   const otherInc=incomeTotal(taxYear);
-  const netP=(revenue+otherInc)-acquisitions-totalExp+mealsAll*0.5;
-  const soldWithROI=props.filter(p=>propSold(p)>0&&propROI(p)!=null);
+  const netP=(revenue+otherInc)-acquisitions-totalExp-mileDeduction+mealsAll*0.5;
+  const soldWithROI=props.filter(p=>propSold(p,taxYear)>0&&propROI(p)!=null);
   const avgROI=soldWithROI.length?soldWithROI.reduce((s,p)=>s+propROI(p),0)/soldWithROI.length:null;
   setEl("stat-net-profit",(netP>=0?'+':'')+fmt(netP));
   setEl("stat-allin",fmt(activeAllin));
@@ -4372,7 +4372,7 @@ function refreshSite(scope){
       plExpEl.innerHTML=sorted.map(([cat,amt])=>`<div class="pl-row"><span>${cat}</span><span>${fmt(amt)}</span></div>`).join('');
     }
   }
-  setEl("pl-total-rev",fmt(revenue));
+  setEl("pl-total-rev",fmt(totalRevIncome));
   setEl("pl-total-exp-row",fmt(totalExp));
   const plAcqEl=document.getElementById('pl-acq-rows');
   if(plAcqEl){plAcqEl.innerHTML=soldProps.map(p=>`<div class="pl-row"><span>${getProp(p).addr||p}</span><span id="pl-${p}-acq">${fmt(propPurchase(p,taxYear))}</span></div>`).join('');}
@@ -4401,7 +4401,7 @@ function refreshSite(scope){
   setEl("mi-total-miles",totalMiles.toFixed(1)+" mi");setEl("mi-total-deduction",fmt(mileDeduction));
   props.forEach(p=>{const st=propStatus(p);const s2=document.getElementById("status-text-"+p);if(s2)s2.textContent=st;});
   // offer dates handled in dynamic loop above
-  props.forEach(p=>updateBudget(p));updateHoldDates();setEl("bs-prop-val",fmt(activeAllin));updateBalanceSheet();
+  props.forEach(p=>updateBudget(p));updateHoldDates();updateBalanceSheet();
   const genTotal=document.getElementById("general-exp-total");if(genTotal)genTotal.textContent=fmt(eTotal("general"));
   refreshStatusBadges();
   if(scope==='stats')return;
@@ -4792,7 +4792,7 @@ async function importClosingStatement(key){
   propData[key][importFlag] = true;
 
   if(!extra[key]) extra[key] = [];
-  const dt = data.settlementDate || new Date().toISOString().split('T')[0];
+  const dt = data.settlementDate || new Date().toLocaleDateString('en-CA');
   (data.debits||[]).forEach(d=>{
     extra[key].unshift({a:parseFloat(d.amount).toFixed(2),d:d.description,c:d.category||'Closing Costs',v:d.vendor||'',dt,credit:false});
   });
