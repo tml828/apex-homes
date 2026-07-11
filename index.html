@@ -951,7 +951,10 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
           <div class="fr">
             <div class="fg"><label>Property</label><select id="mi-prop"><option>General Business</option></select></div>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="addMileage()" style="margin-top:4px"><svg class="ico"><use href="#ico-plus"/></svg> Log Trip</button>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap">
+            <button class="btn btn-primary btn-sm" id="mi-log-btn" onclick="addMileage()"><svg class="ico"><use href="#ico-plus"/></svg> <span id="mi-log-btn-label">Log Trip</span></button>
+            <button class="btn btn-ghost btn-sm" id="mi-cancel-edit-btn" style="display:none" onclick="cancelMileageEdit()">Cancel</button>
+          </div>
         </div>
         <div class="card" style="padding:1.35rem">
           <div class="sec-hd">
@@ -3900,9 +3903,32 @@ window._mileage=(propData&&propData._mileage)?propData._mileage:JSON.parse(local
 // Init mileage rate
 if(!propData._mileageRate) propData._mileageRate=0.725;
 function addMileage(){
-  const miles=parseFloat(document.getElementById("mi-miles").value);const purpose=document.getElementById("mi-purpose").value.trim();const date=document.getElementById("mi-date").value;const prop=document.getElementById("mi-prop")?.value||"";
-  if(!miles||!purpose)return;window._mileage.unshift({id:Date.now(),miles,purpose,date,prop});saveMileage();renderMileage();
-  document.getElementById("mi-miles").value="";document.getElementById("mi-purpose").value="";
+  const miles=parseFloat(document.getElementById("mi-miles").value);
+  const purpose=document.getElementById("mi-purpose").value.trim();
+  const date=document.getElementById("mi-date").value;
+  const prop=document.getElementById("mi-prop")?.value||"";
+  if(!miles||!purpose)return;
+  if(window._editMileageId){
+    const idx=window._mileage.findIndex(x=>String(x.id)===String(window._editMileageId));
+    if(idx>-1)window._mileage[idx]={...window._mileage[idx],miles,purpose,date,prop};
+    window._editMileageId=null;
+    _resetMileageBtn();
+  }else{
+    window._mileage.unshift({id:Date.now(),miles,purpose,date,prop});
+  }
+  saveMileage();renderMileage();
+  document.getElementById("mi-miles").value="";
+  document.getElementById("mi-purpose").value="";
+}
+function _resetMileageBtn(){
+  const lbl=document.getElementById('mi-log-btn-label');if(lbl)lbl.textContent='Log Trip';
+  const btn=document.getElementById('mi-log-btn');if(btn){btn.innerHTML='<svg class="ico"><use href="#ico-plus"/></svg> <span id="mi-log-btn-label">Log Trip</span>';}
+  const cb=document.getElementById('mi-cancel-edit-btn');if(cb)cb.style.display='none';
+}
+function cancelMileageEdit(){
+  window._editMileageId=null;_resetMileageBtn();
+  document.getElementById("mi-miles").value="";
+  document.getElementById("mi-purpose").value="";
 }
 function deleteMileage(id){const t=window._mileage.find(t=>String(t.id)===String(id));if(t)trashItem('mileage',t.miles+'mi — '+(t.purpose||'Trip'),Object.assign({},t),t.prop||'');window._mileage=window._mileage.filter(t=>String(t.id)!==String(id));saveMileage();renderMileage();}
 function getMileageRate(){
@@ -3924,28 +3950,10 @@ function openEditMileage(id){
   document.getElementById('mi-purpose').value=t.purpose||'';
   populateTaskPropDropdown('mi-prop',t.prop);
   document.getElementById('mi-prop').value=t.prop||'General Business';
-  // Set edit mode
   window._editMileageId=String(id);
-  const btn=document.querySelector('[onclick="addMileage()"]');
-  if(btn){btn.textContent='';btn.innerHTML='<svg class="ico"><use href="#ico-check"/></svg> Update Trip';btn.setAttribute('onclick','saveMileageEdit()');}
-}
-function saveMileageEdit(){
-  const id=window._editMileageId;
-  if(!id)return;
-  const miles=parseFloat(document.getElementById('mi-miles').value);
-  const purpose=document.getElementById('mi-purpose').value.trim();
-  const date=document.getElementById('mi-date').value;
-  const prop=document.getElementById('mi-prop')?.value||'';
-  if(!miles||!purpose)return;
-  const idx=window._mileage.findIndex(x=>String(x.id)===id);
-  if(idx>-1) window._mileage[idx]={...window._mileage[idx],miles,purpose,date,prop};
-  window._editMileageId=null;
-  // Reset button
-  const btn=document.querySelector('[onclick="saveMileageEdit()"]');
-  if(btn){btn.innerHTML='<svg class="ico"><use href="#ico-plus"/></svg> Log Trip';btn.setAttribute('onclick','addMileage()');}
-  document.getElementById('mi-miles').value='';
-  document.getElementById('mi-purpose').value='';
-  saveMileage();renderMileage();
+  const lbl=document.getElementById('mi-log-btn-label');if(lbl)lbl.textContent='Update Trip';
+  const cb=document.getElementById('mi-cancel-edit-btn');if(cb)cb.style.display='inline-flex';
+  document.getElementById('mi-miles').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function renderMileage(){
   const el=document.getElementById("mileage-list");
