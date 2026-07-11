@@ -3939,7 +3939,7 @@ function onMilePropChange(){
   const k=document.getElementById('mi-prop').value;
   if(!k||k==='General Business')return;
   const p=getProp(k);
-  const start=p.offer||p.pdate||'';
+  const start=p.pdate||p.offer||'';
   const end=p.sdate||new Date().toLocaleDateString('en-CA');
   if(start)document.getElementById('mi-date').value=start;
   document.getElementById('mi-date-end').value=end;
