@@ -898,6 +898,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
         <div class="pl-sec"><div class="pl-sec-title">Revenue</div><div id="pl-rev-rows"></div><div class="pl-row tot"><span>Total Revenue</span><span style="color:var(--green)" id="pl-total-rev">—</span></div></div>
         <div class="pl-sec"><div class="pl-sec-title">Operating Expenses</div><div id="pl-exp-rows"></div><div class="pl-row tot"><span>Total Expenses</span><span style="color:var(--red)" id="pl-total-exp-row">—</span></div></div>
         <div class="pl-sec"><div class="pl-sec-title">Property Acquisitions (COGS)</div><div id="pl-acq-rows"></div><div class="pl-row tot"><span>Total Acquisitions</span><span id="pl-total-acq">—</span></div></div>
+        <div class="pl-sec"><div class="pl-sec-title">Schedule C Deductions</div><div class="pl-row"><span>Mileage (Line 9)</span><span style="color:var(--red)" id="pl-mile-deduction">—</span></div><div class="pl-row"><span>Meals — 50% limit (Line 24b)</span><span style="color:var(--red)" id="pl-meals-addback">—</span></div></div>
         <div class="pl-row net"><span>Net Profit / (Loss)</span><span id="pl-net-row">—</span></div>
       </div></div>
       <div style="width:min(220px,100%);display:flex;flex-direction:column;gap:10px">
@@ -4379,7 +4380,12 @@ function refreshSite(scope){
   setEl("pl-total-exp-row",fmt(totalExp));
   const plAcqEl=document.getElementById('pl-acq-rows');
   if(plAcqEl){plAcqEl.innerHTML=soldProps.map(p=>`<div class="pl-row"><span>${getProp(p).addr||p}</span><span id="pl-${p}-acq">${fmt(propPurchase(p,taxYear))}</span></div>`).join('');}
-  setEl("pl-total-acq",fmt(acquisitions));setEl("pl-net-row",fmt(netProfitFull));
+  setEl("pl-total-acq",fmt(acquisitions));
+  setEl("pl-mile-deduction",mealsAll||mileDeduction?'('+fmt(mileDeduction)+')':'—');
+  setEl("pl-meals-addback",mealsAll?'('+fmt(mealsAll*0.5)+')':'—');
+  const plNet=netProfitFull-mileDeduction+mealsAll*0.5;
+  setEl("pl-net-row",fmt(plNet));
+  const plNetEl=document.getElementById("pl-net-row");if(plNetEl)plNetEl.style.color=plNet>=0?'var(--green)':'var(--red)';
   
   // Dynamic Schedule C deductions by category
   const allExpenses=[...props,'general'].flatMap(p=>allE(p)).filter(e=>(e.dt||e.date||'').startsWith(String(taxYear)));
