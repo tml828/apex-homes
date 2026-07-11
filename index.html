@@ -941,34 +941,23 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
       <div style="flex:1;min-width:min(300px,100%)">
         <div class="card" style="padding:1.35rem;margin-bottom:1rem">
           <div class="sec-hd"><div class="sec-title">Log a Trip</div></div>
-          <div class="fr">
-            <div class="fg"><label>Date</label><input type="date" id="mi-date"></div>
-            <div class="fg"><label>Miles</label><input type="number" step="0.1" placeholder="0.0" id="mi-miles"></div>
+          <div class="fg">
+            <label>Property</label>
+            <select id="mi-prop" onchange="onMilePropChange()" style="font-size:16px"><option value="General Business">General Business</option></select>
+          </div>
+          <div class="fr" style="margin-top:.65rem">
+            <div class="fg"><label>Start Date</label><input type="date" id="mi-date" style="width:100%;min-width:0;box-sizing:border-box"></div>
+            <div class="fg"><label>End Date</label><input type="date" id="mi-date-end" style="width:100%;min-width:0;box-sizing:border-box"></div>
           </div>
           <div class="fr">
-            <div class="fg" style="flex:2"><label>Purpose / Destination</label><input type="text" placeholder="e.g. Site visit — property address" id="mi-purpose"></div>
+            <div class="fg"><label>Miles</label><input type="number" step="0.1" placeholder="0.0" id="mi-miles" style="font-size:16px"></div>
           </div>
           <div class="fr">
-            <div class="fg"><label>Property</label><select id="mi-prop"><option>General Business</option></select></div>
+            <div class="fg" style="flex:2"><label>Purpose / Destination</label><input type="text" placeholder="e.g. Site visit" id="mi-purpose" style="font-size:16px"></div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px;margin-top:.75rem;flex-wrap:wrap">
             <button class="btn btn-primary btn-sm" id="mi-log-btn" onclick="addMileage()"><svg class="ico"><use href="#ico-plus"/></svg> <span id="mi-log-btn-label">Log Trip</span></button>
             <button class="btn btn-ghost btn-sm" id="mi-cancel-edit-btn" style="display:none" onclick="cancelMileageEdit()">Cancel</button>
-            <button class="btn btn-ghost btn-sm" onclick="toggleBulkMileage()" id="mi-bulk-toggle-btn" style="margin-left:auto">+ Bulk Add</button>
-          </div>
-          <!-- BULK ADD SECTION -->
-          <div id="mi-bulk-form" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border2)">
-            <div style="font-size:12px;font-weight:600;color:var(--gold2);margin-bottom:.65rem">Add Trip for Property</div>
-            <div class="fg" style="margin-bottom:.65rem">
-              <label>Property</label>
-              <select id="mi-bulk-prop" onchange="onBulkPropChange()" style="font-size:16px"><option value="">General Business</option></select>
-            </div>
-            <div class="fr">
-              <div class="fg"><label>Start Date</label><input type="date" id="mi-bulk-start" style="width:100%;min-width:0;box-sizing:border-box"></div>
-              <div class="fg"><label>End Date</label><input type="date" id="mi-bulk-end" style="width:100%;min-width:0;box-sizing:border-box"></div>
-            </div>
-            <button class="btn btn-primary btn-sm" onclick="saveBulkMileage()"><svg class="ico"><use href="#ico-plus"/></svg> Log Trip</button>
-            <div id="mi-bulk-status" style="margin-top:.5rem;font-size:12px"></div>
           </div>
         </div>
         <div class="card" style="padding:1.35rem">
@@ -3921,15 +3910,16 @@ function addMileage(){
   const miles=parseFloat(document.getElementById("mi-miles").value);
   const purpose=document.getElementById("mi-purpose").value.trim();
   const date=document.getElementById("mi-date").value;
-  const prop=document.getElementById("mi-prop")?.value||"";
+  const dateEnd=document.getElementById("mi-date-end").value;
+  const prop=document.getElementById("mi-prop")?.value||"General Business";
   if(!miles||!purpose)return;
   if(window._editMileageId){
     const idx=window._mileage.findIndex(x=>String(x.id)===String(window._editMileageId));
-    if(idx>-1)window._mileage[idx]={...window._mileage[idx],miles,purpose,date,prop};
+    if(idx>-1)window._mileage[idx]={...window._mileage[idx],miles,purpose,date,dateEnd,prop};
     window._editMileageId=null;
     _resetMileageBtn();
   }else{
-    window._mileage.unshift({id:Date.now(),miles,purpose,date,prop});
+    window._mileage.unshift({id:Date.now(),miles,purpose,date,dateEnd,prop});
   }
   saveMileage();renderMileage();
   document.getElementById("mi-miles").value="";
@@ -3945,37 +3935,16 @@ function cancelMileageEdit(){
   document.getElementById("mi-miles").value="";
   document.getElementById("mi-purpose").value="";
 }
-function toggleBulkMileage(){
-  const f=document.getElementById('mi-bulk-form');if(!f)return;
-  const open=f.style.display==='none';
-  f.style.display=open?'block':'none';
-  if(open){
-    const sel=document.getElementById('mi-bulk-prop');
-    if(sel&&sel.options.length<=1){getPropKeys().forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=getProp(k).addr||k;sel.appendChild(o);});}
-    document.getElementById('mi-bulk-toggle-btn').textContent='✕ Close';
-  }else{document.getElementById('mi-bulk-toggle-btn').textContent='+ Bulk Add';}
-}
-function onBulkPropChange(){
-  const k=document.getElementById('mi-bulk-prop').value;
-  if(!k)return;
+function onMilePropChange(){
+  const k=document.getElementById('mi-prop').value;
+  if(!k||k==='General Business')return;
   const p=getProp(k);
   const start=p.offer||p.pdate||'';
   const end=p.sdate||new Date().toLocaleDateString('en-CA');
-  if(start)document.getElementById('mi-bulk-start').value=start;
-  if(end)document.getElementById('mi-bulk-end').value=end;
+  if(start)document.getElementById('mi-date').value=start;
+  document.getElementById('mi-date-end').value=end;
   const purposeEl=document.getElementById('mi-purpose');
   if(purposeEl&&!purposeEl.value)purposeEl.value='Site visit — '+(p.addr||k);
-}
-async function saveBulkMileage(){
-  const miles=parseFloat(document.getElementById('mi-miles').value);
-  const purpose=document.getElementById('mi-purpose').value.trim();
-  const prop=document.getElementById('mi-bulk-prop').value||'General Business';
-  const date=document.getElementById('mi-bulk-start').value;
-  if(!miles||!purpose){alert('Enter miles and purpose in the form above.');return;}
-  if(!date){alert('Select a start date.');return;}
-  window._mileage.unshift({id:Date.now(),miles,purpose,date,prop});
-  saveMileage();renderMileage();
-  const st=document.getElementById('mi-bulk-status');if(st)st.innerHTML='<span style="color:var(--green)">✓ Trip logged</span>';
 }
 function deleteMileage(id){const t=window._mileage.find(t=>String(t.id)===String(id));if(t)trashItem('mileage',t.miles+'mi — '+(t.purpose||'Trip'),Object.assign({},t),t.prop||'');window._mileage=window._mileage.filter(t=>String(t.id)!==String(id));saveMileage();renderMileage();}
 function getMileageRate(){
@@ -3993,6 +3962,7 @@ function openEditMileage(id){
   const t=window._mileage.find(x=>String(x.id)===String(id));
   if(!t)return;
   document.getElementById('mi-date').value=t.date||'';
+  document.getElementById('mi-date-end').value=t.dateEnd||t.date||'';
   document.getElementById('mi-miles').value=t.miles||'';
   document.getElementById('mi-purpose').value=t.purpose||'';
   populateTaskPropDropdown('mi-prop',t.prop);
@@ -4008,7 +3978,6 @@ function renderMileage(){
   // Set rate input value
   const rateInp=document.getElementById('mi-rate-inp');
   if(rateInp&&!rateInp.value) rateInp.value=(parseFloat(propData._mileageRate)||0.725).toFixed(3);
-  // Populate property dropdown dynamically
   const miProp=document.getElementById("mi-prop");
   if(miProp&&miProp.children.length<=1){
     getPropKeys().forEach(k=>{const opt=document.createElement("option");opt.value=k;opt.textContent=getProp(k).addr||k;miProp.appendChild(opt);});
@@ -4016,7 +3985,7 @@ function renderMileage(){
   if(!window._mileage.length){el.innerHTML='<div class="empty"><svg class="ico"><use href="#ico-car"/></svg>No trips logged</div>';return;}
   const yearMileage=window._mileage.filter(t=>String(t.date||t.dt||'').startsWith(String(taxYear)));
   const total=yearMileage.reduce((s,t)=>s+t.miles,0);
-  el.innerHTML=(yearMileage.length?yearMileage:window._mileage).map(t=>`<div class="exp-item"><div class="exp-left"><div><div class="exp-desc">${t.purpose}</div><div class="exp-meta">${t.prop||""}${t.date?" · "+fmtD(t.date):""}</div></div></div><div class="exp-right"><div><div class="exp-amt">${t.miles.toFixed(1)} mi</div><div style="font-size:11px;color:var(--text3)">${fmt(t.miles*rate)}</div></div><button class="btn btn-danger btn-sm btn-icon" onclick="deleteMileage('${t.id}')"><svg class="ico" style="width:12px;height:12px"><use href="#ico-trash"/></svg></button><button class="btn btn-sm btn-icon" style="margin-left:3px;border-color:var(--border2);color:var(--text1)" onclick="openEditMileage('${t.id}')"><svg class="ico" style="width:12px;height:12px"><use href="#ico-edit"/></svg></button></div></div>`).join("")+`<div class="exp-item" style="background:var(--bg3);font-weight:700"><div class="exp-left"><div class="exp-desc">Total Deduction</div></div><div class="exp-right"><div class="exp-amt">${fmt(total*rate)}</div></div></div>`;
+  el.innerHTML=(yearMileage.length?yearMileage:window._mileage).map(t=>{const dateStr=t.dateEnd&&t.dateEnd!==t.date?fmtD(t.date)+' → '+fmtD(t.dateEnd):(t.date?fmtD(t.date):'');return`<div class="exp-item"><div class="exp-left"><div><div class="exp-desc">${t.purpose}</div><div class="exp-meta">${t.prop||""}${dateStr?" · "+dateStr:""}</div></div></div><div class="exp-right"><div><div class="exp-amt">${t.miles.toFixed(1)} mi</div><div style="font-size:11px;color:var(--text3)">${fmt(t.miles*rate)}</div></div><button class="btn btn-danger btn-sm btn-icon" onclick="deleteMileage('${t.id}')"><svg class="ico" style="width:12px;height:12px"><use href="#ico-trash"/></svg></button><button class="btn btn-sm btn-icon" style="margin-left:3px;border-color:var(--border2);color:var(--text1)" onclick="openEditMileage('${t.id}')"><svg class="ico" style="width:12px;height:12px"><use href="#ico-edit"/></svg></button></div></div>`}).join("")+`<div class="exp-item" style="background:var(--bg3);font-weight:700"><div class="exp-left"><div class="exp-desc">Total Deduction</div></div><div class="exp-right"><div class="exp-amt">${fmt(total*rate)}</div></div></div>`;
   setEl("mi-total-miles",total.toFixed(1)+" mi");setEl("mi-total-deduction",fmt(total*rate));
   setEl("mi-stat-miles",total.toFixed(1));setEl("mi-stat-deduction",fmt(total*rate));
 }
