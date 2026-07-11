@@ -2220,7 +2220,7 @@ function saveMileage(){localStorage.setItem('apex_mileage',JSON.stringify(window
 // ====== LIVE DATA HELPERS ======
 function getProp(p){return{...(propDefaults[p]||{}),...(propData[p]||{})};}
 function propPurchase(p,yr){const pr=getProp(p);const v=parseFloat(pr.purchase||0);if(!v)return 0;if(!yr)return v;const sd=pr.sdate||"";if(!sd)return 0;return sd.startsWith(String(yr))?v:0;}
-function propSold(p,yr){const pr=getProp(p);const v=parseFloat(pr.sold||0);if(!v)return 0;if(!yr)return v;const sd=pr.sdate||"";return(!sd||sd.startsWith(String(yr)))?v:0;}
+function propSold(p,yr){const pr=getProp(p);const v=parseFloat(pr.sold||0);if(!v)return 0;if(!yr)return v;const sd=pr.sdate||"";if(!sd)return 0;return sd.startsWith(String(yr))?v:0;}
 function propNetProfit(p){const s=propSold(p);if(!s)return null;return s-propPurchase(p)-eTotal(p);}
 function propROI(p){const cost=propPurchase(p)+eTotal(p);const s=propSold(p);if(!s||!cost)return null;return((s-cost)/cost*100);}
 function propAllin(p){return propPurchase(p)+eTotal(p);}
@@ -2239,6 +2239,8 @@ function exportTaxPDF(){
   const props=getPropKeys();
   const rate=parseFloat(propData._mileageRate)||0.725;
   const revenue=props.reduce((s,p)=>s+propSold(p,taxYear),0);
+  const otherIncomePDF=incomeTotal(taxYear);
+  const totalRevenuePDF=revenue+otherIncomePDF;
   const acquisitions=props.filter(p=>propSold(p,taxYear)>0).reduce((s,p)=>s+propPurchase(p,taxYear),0);
   const totalExp=[...props,'general'].reduce((s,p)=>s+eTotal(p,taxYear),0);
   setEl('pl-fy-year',taxYear);setEl('sc-fy-year',taxYear);
@@ -2252,7 +2254,7 @@ function exportTaxPDF(){
   const mealsGross=catMap['Meals (50% deductible)']||0;
   const mealsDeductible=mealsGross*0.5;
   // totalExp already includes full meals amount; add back non-deductible half
-  const netProfit=revenue-acquisitions-totalExp-mileDeduction+mealsGross*0.5;
+  const netProfit=totalRevenuePDF-acquisitions-totalExp-mileDeduction+mealsGross*0.5;
   const seTax=Math.max(0,netProfit*0.1413);
   const seHalf=seTax/2;
   // Contractor / 1099 data
@@ -2344,6 +2346,8 @@ function exportTaxCSV(){
   const mileDeduction=totalMiles*rate;
   const props=getPropKeys();
   const revenue=props.reduce((s,p)=>s+propSold(p,taxYear),0);
+  const otherIncomeCSV=incomeTotal(taxYear);
+  const totalRevenueCSV=revenue+otherIncomeCSV;
   const acquisitions=props.filter(p=>propSold(p,taxYear)>0).reduce((s,p)=>s+propPurchase(p,taxYear),0);
   const totalExp=[...props,'general'].reduce((s,p)=>s+eTotal(p,taxYear),0);
   // Schedule C deduction breakdown by category
@@ -2353,7 +2357,7 @@ function exportTaxCSV(){
   const mealsGross=catMap['Meals (50% deductible)']||0;
   const mealsDeductible=mealsGross*0.5;
   // totalExp includes full meals; add back non-deductible half
-  const netProfit=revenue-acquisitions-totalExp-mileDeduction+mealsGross*0.5;
+  const netProfit=totalRevenueCSV-acquisitions-totalExp-mileDeduction+mealsGross*0.5;
   const seTax=Math.max(0,netProfit*0.1413);
   const seHalf=seTax/2;
 
@@ -3985,7 +3989,8 @@ function renderMileage(){
   if(!window._mileage.length){el.innerHTML='<div class="empty"><svg class="ico"><use href="#ico-car"/></svg>No trips logged</div>';return;}
   const yearMileage=window._mileage.filter(t=>{const yr=String(taxYear);const d=String(t.date||t.dt||'');const de=String(t.dateEnd||'');return d.startsWith(yr)||de.startsWith(yr);});
   const total=yearMileage.reduce((s,t)=>s+t.miles,0);
-  el.innerHTML=(yearMileage.length?yearMileage:window._mileage).map(t=>{const dateStr=t.dateEnd&&t.dateEnd!==t.date?fmtD(t.date)+' → '+fmtD(t.dateEnd):(t.date?fmtD(t.date):'');return`<div class="exp-item"><div class="exp-left"><div><div class="exp-desc">${t.purpose}</div><div class="exp-meta">${t.prop||""}${dateStr?" · "+dateStr:""}</div></div></div><div class="exp-right"><div><div class="exp-amt">${t.miles.toFixed(1)} mi</div><div style="font-size:11px;color:var(--text3)">${fmt(t.miles*rate)}</div></div><button class="btn btn-danger btn-sm btn-icon" onclick="deleteMileage('${t.id}')"><svg class="ico" style="width:12px;height:12px"><use href="#ico-trash"/></svg></button><button class="btn btn-sm btn-icon" style="margin-left:3px;border-color:var(--border2);color:var(--text1)" onclick="openEditMileage('${t.id}')"><svg class="ico" style="width:12px;height:12px"><use href="#ico-edit"/></svg></button></div></div>`}).join("")+`<div class="exp-item" style="background:var(--bg3);font-weight:700"><div class="exp-left"><div class="exp-desc">Total Deduction</div></div><div class="exp-right"><div class="exp-amt">${fmt(total*rate)}</div></div></div>`;
+  if(!yearMileage.length){el.innerHTML=`<div class="empty"><svg class="ico"><use href="#ico-car"/></svg>No trips logged for ${taxYear}</div>`;setEl("mi-total-miles","0.0 mi");setEl("mi-total-deduction",fmt(0));setEl("mi-stat-miles","0.0");setEl("mi-stat-deduction",fmt(0));renderCr&&0;return;}
+  el.innerHTML=yearMileage.map(t=>{const dateStr=t.dateEnd&&t.dateEnd!==t.date?fmtD(t.date)+' → '+fmtD(t.dateEnd):(t.date?fmtD(t.date):'');return`<div class="exp-item"><div class="exp-left"><div><div class="exp-desc">${t.purpose}</div><div class="exp-meta">${t.prop||""}${dateStr?" · "+dateStr:""}</div></div></div><div class="exp-right"><div><div class="exp-amt">${t.miles.toFixed(1)} mi</div><div style="font-size:11px;color:var(--text3)">${fmt(t.miles*rate)}</div></div><button class="btn btn-danger btn-sm btn-icon" onclick="deleteMileage('${t.id}')"><svg class="ico" style="width:12px;height:12px"><use href="#ico-trash"/></svg></button><button class="btn btn-sm btn-icon" style="margin-left:3px;border-color:var(--border2);color:var(--text1)" onclick="openEditMileage('${t.id}')"><svg class="ico" style="width:12px;height:12px"><use href="#ico-edit"/></svg></button></div></div>`}).join("")+`<div class="exp-item" style="background:var(--bg3);font-weight:700"><div class="exp-left"><div class="exp-desc">Total Deduction</div></div><div class="exp-right"><div class="exp-amt">${fmt(total*rate)}</div></div></div>`;
   setEl("mi-total-miles",total.toFixed(1)+" mi");setEl("mi-total-deduction",fmt(total*rate));
   setEl("mi-stat-miles",total.toFixed(1));setEl("mi-stat-deduction",fmt(total*rate));
 }
@@ -4324,11 +4329,10 @@ function saveNewProp(){
 }
 function refreshSite(scope){
   const props=getPropKeys();
-  const revenue=props.reduce((s,p)=>s+propSold(p),0);
-  const totalExp=[...props,"general"].reduce((s,p)=>s+eTotal(p),0);
-  const acquisitions=props.filter(p=>propSold(p)>0).reduce((s,p)=>s+propPurchase(p),0);
-  const mealsAll=[...props,"general"].flatMap(p=>allE(p)).filter(e=>(e.c||e.cat||'')==='Meals (50% deductible)'&&!e.credit).reduce((s,e)=>s+(parseFloat(e.a||e.amount)||0),0);
-  const netProfit=revenue-acquisitions-totalExp+mealsAll*0.5;
+  const revenue=props.reduce((s,p)=>s+propSold(p,taxYear),0);
+  const totalExp=[...props,"general"].reduce((s,p)=>s+eTotal(p,taxYear),0);
+  const acquisitions=props.filter(p=>propSold(p,taxYear)>0).reduce((s,p)=>s+propPurchase(p,taxYear),0);
+  const mealsAll=[...props,"general"].flatMap(p=>allE(p)).filter(e=>(e.dt||e.date||'').startsWith(String(taxYear))&&(e.c||e.cat||'')==='Meals (50% deductible)'&&!e.credit).reduce((s,e)=>s+(parseFloat(e.a||e.amount)||0),0);
   const activeAllin=props.filter(p=>{const st=propStatus(p);return st!=='Sold'&&st!=='Inactive'&&st!=='Closed';}).reduce((s,p)=>s+propAllin(p),0);
   const activeCount=props.filter(p=>{const st=propStatus(p);return st!=='Sold'&&st!=='Inactive'&&st!=='Closed';}).length;
   const otherInc=incomeTotal(taxYear);
@@ -4351,16 +4355,14 @@ function refreshSite(scope){
     setEl(p+"-ir-profit",profit!=null?fmt(profit):"—");setEl(p+"-roi-profit",profit!=null?fmt(profit):"—");
     setEl(p+"-roi-pct",roi!=null?roi.toFixed(1)+"%":"—");setEl(p+"-ir-sdate",fmtD(pr.sdate)||"—");setEl(p+"-roi-sdate",fmtD(pr.sdate)||"—");
   });
-  const otherIncome=incomeTotal(taxYear);const totalRevIncome=revenue+otherIncome;const netProfitFull=totalRevIncome-acquisitions-totalExp;
+  const otherIncome=otherInc;const totalRevIncome=revenue+otherIncome;const netProfitFull=totalRevIncome-acquisitions-totalExp;
   setEl("pl-stat-revenue",fmt(totalRevIncome));setEl("pl-stat-expenses",fmt(totalExp));setEl("pl-stat-net",fmt(netProfitFull));
   // P&L rows - dynamic for sold properties
-  const soldProps=props.filter(p=>propSold(p)>0);
-  const plRevEl=document.getElementById('pl-total-rev'); 
+  const soldProps=props.filter(p=>propSold(p,taxYear)>0);
+  const plRevEl=document.getElementById('pl-total-rev');
   if(plRevEl){
-    // rebuild P&L sold rows dynamically
     const plBody=document.getElementById('pl-rev-rows');
-    if(plBody){plBody.innerHTML=soldProps.map(p=>`<div class="pl-row"><span>${getProp(p).addr||p} (sold)</span><span style="color:var(--green)">${fmt(propSold(p))}</span></div>`).join('');}
-    // rebuild operating expenses by category dynamically
+    if(plBody){plBody.innerHTML=soldProps.map(p=>`<div class="pl-row"><span>${getProp(p).addr||p} (sold)</span><span style="color:var(--green)">${fmt(propSold(p,taxYear))}</span></div>`).join('');}
     const plExpEl=document.getElementById('pl-exp-rows');
     if(plExpEl){
       const allExp=[...props,'general'].flatMap(p=>allE(p)).filter(e=>(e.dt||e.date||'').startsWith(String(taxYear)));
@@ -4371,11 +4373,9 @@ function refreshSite(scope){
     }
   }
   setEl("pl-total-rev",fmt(revenue));
-  setEl("pl-other-income",fmt(otherIncome));setEl("pl-total-rev-income",fmt(totalRevIncome));
   setEl("pl-total-exp-row",fmt(totalExp));
-  // Dynamic acquisitions rows — all sold properties
   const plAcqEl=document.getElementById('pl-acq-rows');
-  if(plAcqEl){const soldPs=props.filter(p=>propSold(p)>0);plAcqEl.innerHTML=soldPs.map(p=>`<div class="pl-row"><span>${getProp(p).addr||p}</span><span id="pl-${p}-acq">${fmt(propPurchase(p))}</span></div>`).join('');}
+  if(plAcqEl){plAcqEl.innerHTML=soldProps.map(p=>`<div class="pl-row"><span>${getProp(p).addr||p}</span><span id="pl-${p}-acq">${fmt(propPurchase(p,taxYear))}</span></div>`).join('');}
   setEl("pl-total-acq",fmt(acquisitions));setEl("pl-net-row",fmt(netProfitFull));
   
   // Dynamic Schedule C deductions by category
@@ -4390,10 +4390,10 @@ function refreshSite(scope){
   const mileRate=parseFloat(propData._mileageRate)||0.725;
   const totalMiles=(window._mileage||[]).filter(t=>{const yr=String(taxYear);const d=String(t.date||t.dt||'');const de=String(t.dateEnd||'');return d.startsWith(yr)||de.startsWith(yr);}).reduce((s,t)=>s+t.miles,0);
   const mileDeduction=totalMiles*mileRate;
-  // Mileage is a deduction (Schedule C Line 9) — subtract from net profit
-  const netProfitAfterMileage=netProfitFull-mileDeduction;
+  // Mileage deduction (Line 9) + meals addback (50% non-deductible half)
+  const netProfitAfterMileage=netProfitFull-mileDeduction+mealsAll*0.5;
   const seTaxAmt=Math.max(0,netProfitAfterMileage*0.1413);
-  setEl("tax-revenue",fmt(revenue));setEl("tax-acquisitions",fmt(acquisitions));setEl("tax-total-exp",fmt(totalExp));
+  setEl("tax-revenue",fmt(totalRevIncome));setEl("tax-acquisitions",fmt(acquisitions));setEl("tax-total-exp",fmt(totalExp));
   setEl("tax-mileage-deduction",fmt(mileDeduction));
   setEl("tax-net-profit",fmt(netProfitAfterMileage));
   setEl("tax-se-tax",fmt(seTaxAmt));
