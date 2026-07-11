@@ -4390,9 +4390,6 @@ function refreshSite(scope){
   setEl('tax-ded-insurance',fmt(catMap['Insurance']||0));
   setEl('tax-ded-taxes',fmt((catMap['Property Tax']||0)+(catMap['Permits & Fees']||0)));
   setEl('tax-active-allin',fmt(activeAllin));
-  const mileRate=parseFloat(propData._mileageRate)||0.725;
-  const totalMiles=(window._mileage||[]).filter(t=>{const yr=String(taxYear);const d=String(t.date||t.dt||'');const de=String(t.dateEnd||'');return d.startsWith(yr)||de.startsWith(yr);}).reduce((s,t)=>s+t.miles,0);
-  const mileDeduction=totalMiles*mileRate;
   // Mileage deduction (Line 9) + meals addback (50% non-deductible half)
   const netProfitAfterMileage=netProfitFull-mileDeduction+mealsAll*0.5;
   const seTaxAmt=Math.max(0,netProfitAfterMileage*0.1413);
@@ -4401,7 +4398,7 @@ function refreshSite(scope){
   setEl("tax-net-profit",fmt(netProfitAfterMileage));
   setEl("tax-se-tax",fmt(seTaxAmt));
   setEl("tax-se-half",fmt(seTaxAmt/2));
-  setEl("mi-total-miles",totalMiles.toFixed(1)+" mi");setEl("mi-total-deduction",fmt(mileDeduction));
+  setEl("mi-total-miles",_totalMiles.toFixed(1)+" mi");setEl("mi-total-deduction",fmt(mileDeduction));
   props.forEach(p=>{const st=propStatus(p);const s2=document.getElementById("status-text-"+p);if(s2)s2.textContent=st;});
   // offer dates handled in dynamic loop above
   props.forEach(p=>updateBudget(p));updateHoldDates();updateBalanceSheet();
