@@ -5360,20 +5360,22 @@ function openEditContractorByIdx(i){
   if(!name)return;
   openEditContractor(name);
 }
-function deleteContractorByIdx(i){
+async function deleteContractorByIdx(i){
   const name=window._conVendors?.[i];
   if(!name)return;
-  deleteContractor(name);
+  await deleteContractor(name);
 }
 
 
 function openAddContractor(){
-  const name=prompt('Contractor / Vendor name:');
-  if(!name||!name.trim())return;
   if(!propData._contractors)propData._contractors=[];
-  if(propData._contractors.find(c=>c.name.toLowerCase()===name.trim().toLowerCase())){alert('Already exists.');return;}
-  propData._contractors.push({name:name.trim(),ein:'',phone:'',email:'',notes:''});
-  save();renderContractors();
+  showModal('m-contractor');
+  document.getElementById('con-name').value='';
+  document.getElementById('con-ein').value='';
+  document.getElementById('con-phone').value='';
+  document.getElementById('con-email').value='';
+  document.getElementById('con-notes').value='';
+  document.getElementById('con-orig-name').value='';
 }
 
 function openEditContractor(name){
@@ -5429,8 +5431,20 @@ function saveContractor(){
 }
 
 async function deleteContractor(name){
-  if(!await appConfirm('Delete '+name+'?','Delete'))return;
-  propData._contractors=(propData._contractors||[]).filter(c=>c.name.toLowerCase()!==name.toLowerCase());
+  // Check if this contractor exists in W9 expenses (auto-detected)
+  const nameLc=name.toLowerCase();
+  let w9Count=0;
+  getPropKeys().concat(['general']).forEach(p=>{(allE(p)||[]).forEach(e=>{if(e.w9&&e.v&&e.v.trim().toLowerCase()===nameLc)w9Count++;});});
+  let msg=w9Count>0
+    ?`Remove ${name} from the Contractors list?\n\nThis will also clear the W-9 flag on ${w9Count} expense${w9Count!==1?'s':''} so they no longer appear here.`
+    :`Delete ${name}?`;
+  if(!await appConfirm(msg,'Delete'))return;
+  // Clear W9 flag from all matching expenses
+  if(w9Count>0){
+    getPropKeys().concat(['general']).forEach(p=>{(extra[p]||[]).forEach(e=>{if(e.w9&&e.v&&e.v.trim().toLowerCase()===nameLc)e.w9=false;});});
+  }
+  // Remove from manual contractor list
+  propData._contractors=(propData._contractors||[]).filter(c=>c.name.toLowerCase()!==nameLc);
   save();renderContractors();
 }
 
