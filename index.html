@@ -3046,10 +3046,10 @@ async function saveExp(){
   }catch(err){console.error('saveExp error:',err);alert('Error saving expense: '+err.message);}
 }
 function triggerCSVImport(pid){const inp=document.getElementById('csv-inp-'+pid);if(inp)inp.click();}
-function importExpCSV(event,pid){
+async function importExpCSV(event,pid){
   const file=event.target.files[0];event.target.value="";if(!file)return;
   const reader=new FileReader();
-  reader.onload=function(e){
+  reader.onload=async function(e){
     const text=e.target.result;
     const lines=text.split(/\r?\n/).filter(l=>l.trim());
     if(!lines.length){alert('CSV file is empty.');return;}
@@ -3070,9 +3070,10 @@ function importExpCSV(event,pid){
         else if(hl==='vendor'||hl==='payee')colVendor=i;
       });
     }
-    const validCats=["Materials / Supplies","Labor / Contractor","Permits & Fees","Utilities","Insurance","Marketing / Staging","Professional Services","Financing / Interest","Property Taxes","Miscellaneous"];
-    let added=0,skipped=0;
-    if(!extra[pid])extra[pid]=[];
+    const validCats=["Materials & Supplies","Labor / Contractor","Permits & Fees","Utilities","Insurance","Marketing / Staging","Professional Services","Financing / Interest","Property Taxes","Meals (50% deductible)","Miscellaneous"];
+    // Parse all valid rows first
+    const pending=[];let skipped=0;
+    const existing=extra[pid]||[];
     dataLines.forEach(line=>{
       if(!line.trim())return;
       const cols=parseCSVLine(line);
@@ -3084,11 +3085,22 @@ function importExpCSV(event,pid){
       const rawCat=(cols[colCat]||'').trim();
       const c=validCats.find(vc=>vc.toLowerCase()===rawCat.toLowerCase())||rawCat||'Miscellaneous';
       const v=(cols[colVendor]||'').trim();
-      extra[pid].push({a:amount,d,c,v,dt});
-      added++;
+      // Duplicate check: same amount + date already on this property
+      const isDupe=existing.some(ex=>!ex.credit&&parseFloat(ex.a)===amount&&(ex.dt||'')===(dt||''));
+      if(isDupe){skipped++;return;}
+      pending.push({a:amount,d,c,v,dt});
     });
-    if(added){save();renderE(pid);refreshSite('stats');renderContractors();}
-    alert(added+' expense'+(added!==1?'s':'')+' imported'+(skipped?' ('+skipped+' rows skipped — no valid amount)':'')+'. ');
+    if(!pending.length){
+      alert('Nothing to import — '+(skipped?skipped+' rows skipped (no valid amount or duplicates).':'file had no valid rows.'));
+      return;
+    }
+    const total=pending.reduce((s,r)=>s+r.a,0);
+    const msg=`Import ${pending.length} expense${pending.length!==1?'s':''} totaling ${fmt(total)} into ${pid}?`+(skipped?`\n\n${skipped} row${skipped!==1?'s':''} skipped (no valid amount or duplicates).`:'');
+    if(!await appConfirm(msg,'Import'))return;
+    if(!extra[pid])extra[pid]=[];
+    pending.forEach(r=>extra[pid].push(r));
+    save();renderE(pid);refreshSite('stats');renderContractors();
+    alert(pending.length+' expense'+(pending.length!==1?'s':'')+' imported.'+(skipped?' '+skipped+' skipped.':''));
   };
   reader.readAsText(file);
 }
