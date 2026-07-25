@@ -1110,6 +1110,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
       <button class="btn btn-primary btn-sm" onclick="exportBackup()"><svg class="ico"><use href="#ico-download"/></svg> Download Backup</button>
       <button class="btn btn-sm" onclick="document.getElementById('restore-file-inp').click()"><svg class="ico"><use href="#ico-upload"/></svg> Restore from File</button>
       <button class="btn btn-sm" onclick="saveHourlyBackup(true)"><svg class="ico"><use href="#ico-save"/></svg> Save Snapshot Now</button>
+      <button class="btn btn-sm" id="retry-receipts-btn" onclick="retryFailedReceiptUploads()"><svg class="ico"><use href="#ico-upload"/></svg> Retry Failed Receipts</button>
       <input type="file" id="restore-file-inp" accept=".json,application/json" style="display:none" onchange="restoreBackup(this.files[0])">
     </div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:.5rem;font-weight:600">Cloud Snapshots (last 24)</div>
@@ -1659,6 +1660,56 @@ async function restoreCloudBackup(id){
   }catch(e){const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--red)">✗ '+e.message+'</span>';}
 }
 setInterval(()=>saveHourlyBackup(false),60*60*1000);
+
+async function retryFailedReceiptUploads(){
+  const st=document.getElementById('backup-status');
+  const btn=document.getElementById('retry-receipts-btn');
+  // Scan all expenses in memory for base64 receipts
+  const targets=[];
+  getPropKeys().concat(['general']).forEach(p=>{
+    (extra[p]||[]).forEach((e,i)=>{
+      const arr=Array.isArray(e.receipt)?e.receipt:(e.receipt?[e.receipt]:[]);
+      const b64s=arr.filter(u=>u&&u.startsWith('data:'));
+      if(b64s.length)targets.push({p,i,e,b64s});
+    });
+  });
+  if(!targets.length){
+    if(st)st.innerHTML='<span style="color:var(--green)">✓ No failed receipts found — all receipts are already in cloud storage.</span>';
+    setTimeout(()=>{if(st)st.innerHTML='';},4000);
+    return;
+  }
+  if(!await appConfirm(`Found ${targets.length} expense${targets.length!==1?'s':''} with receipts not yet uploaded to cloud.\n\nUpload them now?`,'Upload'))return;
+  if(btn){btn.disabled=true;btn.textContent='Uploading...';}
+  let ok=0,fail=0;
+  for(const {p,i,e} of targets){
+    const arr=Array.isArray(e.receipt)?e.receipt:[e.receipt];
+    const uploaded=[];
+    let anyFail=false;
+    for(const u of arr){
+      if(!u||!u.startsWith('data:')){uploaded.push(u);continue;}
+      try{
+        const blob=await fetch(u).then(r=>r.blob());
+        const ext=u.startsWith('data:image/png')?'.png':'.jpg';
+        const path='receipts/retry-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+ext;
+        const url=await _uploadBlob(blob,path,blob.type||'image/jpeg');
+        uploaded.push(url);
+      }catch(err){uploaded.push(u);anyFail=true;console.warn('Retry upload failed:',err);}
+    }
+    if(!anyFail){
+      extra[p][i].receipt=uploaded.length>1?uploaded:uploaded[0];
+      ok++;
+    }else{fail++;}
+  }
+  if(ok)save();
+  if(btn){btn.disabled=false;btn.innerHTML='<svg class="ico"><use href="#ico-upload"/></svg> Retry Failed Receipts';}
+  if(st){
+    const msg=ok&&!fail?`✓ ${ok} receipt${ok!==1?'s':''} uploaded successfully — phone will sync within seconds.`
+      :ok?`✓ ${ok} uploaded, ${fail} still failed — try again on a better connection.`
+      :`✗ All ${fail} uploads failed — check your connection and try again.`;
+    st.innerHTML=`<span style="color:${fail?'var(--red)':'var(--green)'}">${msg}</span>`;
+    setTimeout(()=>{if(st)st.innerHTML='';},6000);
+  }
+}
 
 async function restoreBackup(file){if(!file)return;const st=document.getElementById('backup-status');if(!await appConfirm('This will REPLACE all current data with the backup. Continue?','Replace'))return;const reader=new FileReader();reader.onload=function(ev){try{const backup=JSON.parse(ev.target.result);if(!backup.propData)throw new Error('Invalid backup file');Object.keys(propData).forEach(k=>delete propData[k]);Object.assign(propData,backup.propData);if(backup.extra&&typeof extra!=='undefined'){Object.keys(extra).forEach(k=>delete extra[k]);Object.assign(extra,backup.extra);}if(backup.tasks){tasks.length=0;backup.tasks.forEach(t=>tasks.push(t));}if(backup.mileage){window._mileage=backup.mileage;localStorage.setItem('apex_mileage',JSON.stringify(window._mileage));}save();refreshSite();if(st)st.innerHTML='<span style="color:var(--green)">✓ Restored</span>';setTimeout(()=>{alert('Backup restored! Reloading.');location.reload();},500);}catch(err){if(st)st.innerHTML='<span style="color:var(--red)">✗ '+err.message+'</span>';}};reader.readAsText(file);}
 
