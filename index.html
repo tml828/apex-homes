@@ -2975,12 +2975,13 @@ function updateHoldDates(){
 
 // ====== EXPENSES ======
 var expReceiptB64="",expReceiptMime="";
+var _receiptUploadFailed=false;
 let pendingFiles={};
 function openAddExp(p){
   document.getElementById("exp-pid").value=p;document.getElementById("exp-amt").value="";document.getElementById("exp-desc").value="";
   document.getElementById("exp-date").value=new Date().toLocaleDateString('en-CA');document.getElementById("exp-vendor").value="";
   document.getElementById("exp-cat").selectedIndex=0;const cc=document.getElementById("exp-custom-cat");if(cc){cc.value="";cc.style.display="none";}
-  expReceiptUrls=[];expReceiptB64="";expReceiptMime="";const ss=document.getElementById("exp-scan-status");if(ss)ss.innerHTML="";const _erp=document.getElementById("exp-receipt-preview");if(_erp)_erp.innerHTML="";pendingFiles[p]=[];renderQ(p);
+  expReceiptUrls=[];expReceiptB64="";expReceiptMime="";_receiptUploadFailed=false;const ss=document.getElementById("exp-scan-status");if(ss)ss.innerHTML="";const _erp=document.getElementById("exp-receipt-preview");if(_erp)_erp.innerHTML="";pendingFiles[p]=[];renderQ(p);
   const _rc=document.getElementById("exp-recurring");if(_rc){_rc.checked=false;}
   const _rr=document.getElementById("exp-recur-row");if(_rr)_rr.style.display="none";
   const _rf=document.getElementById("exp-recur-freq");if(_rf)_rf.value="monthly";
@@ -3017,6 +3018,7 @@ async function saveExp(){
   const c=getExpCat("exp-cat","exp-custom-cat");
   const v=document.getElementById("exp-vendor").value.trim();
   if(!amount){document.getElementById("exp-scan-status").innerHTML='<div style="font-size:12px;color:var(--red)">Please enter an amount.</div>';return;}
+  if(_receiptUploadFailed){document.getElementById("exp-scan-status").innerHTML='<div style="font-size:13px;color:var(--red);font-weight:600;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.3);border-radius:8px;padding:8px 12px">⚠ Receipt upload failed. Remove the photo and re-attach on a better connection, or remove it to save without a receipt.</div>';return;}
   const isRecurring=document.getElementById("exp-recurring")?.checked;
   const recurFreq=document.getElementById("exp-recur-freq")?.value||"monthly";
   if(!extra[p])extra[p]=[];
@@ -3592,7 +3594,7 @@ async function handleExpReceipt(f){
         }catch(e){uploadFailed=true;console.warn('Receipt upload failed:',e);}
         expReceiptUrls.push(url);
       }
-      if(uploadFailed&&status)status.innerHTML='<div style="font-size:12px;color:var(--amber)">⚠ Upload failed — receipt saved locally only</div>';
+      if(uploadFailed){_receiptUploadFailed=true;if(status)status.innerHTML='<div style="font-size:13px;color:var(--red);font-weight:600;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.3);border-radius:8px;padding:8px 12px;margin-top:6px">⚠ Receipt upload failed — not saved to cloud.<br><span style="font-size:12px;font-weight:400">Remove the photo and re-attach when you have a stronger connection.</span></div>';}
       expReceiptB64=pages[0].b64;expReceiptMime=pages[0].mime;
       _renderExpReceiptPreview();
       if(prev)prev.scrollIntoView({behavior:"smooth",block:"nearest"});
@@ -3612,7 +3614,8 @@ async function handleExpReceipt(f){
       expReceiptUrls.push(url);
       _renderExpReceiptPreview();
       if(prev)prev.scrollIntoView({behavior:"smooth",block:"nearest"});
-      if(status)status.innerHTML=url.startsWith('http')?'':'<div style="font-size:12px;color:var(--amber)">⚠ Upload failed — receipt saved locally only</div>';
+      if(!url.startsWith('http')){_receiptUploadFailed=true;if(status)status.innerHTML='<div style="font-size:13px;color:var(--red);font-weight:600;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.3);border-radius:8px;padding:8px 12px;margin-top:6px">⚠ Receipt upload failed — not saved to cloud.<br><span style="font-size:12px;font-weight:400">Remove the photo and re-attach when you have a stronger connection.</span></div>';}else{_receiptUploadFailed=false;if(status)status.innerHTML='';}
+
       var uncropped=await processReceiptImage(f,false);
       if(getApiKey()||IS_CLAUDE_AI)scanExpReceipt(f,uncropped.b64,uncropped.mime);
     }
@@ -3640,7 +3643,7 @@ function removeExpReceiptPage(i){
   expReceiptUrls.splice(i,1);_renderExpReceiptPreview();
 }
 function clearExpReceipt(){
-  expReceiptUrls=[];expReceiptB64='';expReceiptMime='';
+  expReceiptUrls=[];expReceiptB64='';expReceiptMime='';_receiptUploadFailed=false;
   const prev=document.getElementById('exp-receipt-preview');if(prev)prev.innerHTML='';
   const status=document.getElementById('exp-scan-status');if(status)status.innerHTML='';
   const inp=document.getElementById('exp-receipt-inp');if(inp)inp.value='';
