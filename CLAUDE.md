@@ -1,7 +1,7 @@
 # Apex Homes LLC — Developer Reference
 
 ## What This App Is
-Single-file (`index.html`) property management web app for a house-flipping business. No build toolchain — all HTML, CSS, and JavaScript are inline. Deployed on GitHub Pages, syncs data to Supabase every 5 seconds. ~5700+ lines.
+Single-file (`index.html`) property management web app for a house-flipping business. No build toolchain — all HTML, CSS, and JavaScript are inline. Deployed on GitHub Pages, syncs data to Supabase every 5 seconds. ~5900+ lines.
 
 ## Deployment
 - **Live site:** tml828.github.io/apex-homes
@@ -264,6 +264,13 @@ Property keys are always lowercase, no spaces.
   7. `_recurDates` month-end overflow fixed: day clamped to `Math.min(day, new Date(y,m+2,0).getDate())` for monthly/quarterly/yearly — prevents Jan-31 drifting to Mar-3
   8. Closing statement import fallback date uses `toLocaleDateString('en-CA')` (was `toISOString()` — UTC off-by-one after 8pm local)
   9. `propNetProfit` now adds back `meals*0.5` (was over-deducting meals; per-property and portfolio figures now consistent)
+- Contractor delete fixed: `deleteContractor` now clears `w9=false` on all matching expenses (was only removing `propData._contractors` entry — auto-detected contractors kept reappearing); `deleteContractorByIdx` made async; `openAddContractor` replaced native `prompt()` with modal
+- CSV import: preview confirm before importing ("Import 722 expenses totaling $X?"), duplicate check (amount+date), `importExpCSV` made async
+- W9 checkbox: `hookW9Listeners` guarded with `_done` flag to prevent listener stacking on every modal open; `scanExpReceipt` now calls `checkW9Visibility('exp')` after AI fills fields
+- Receipt upload failure: `_receiptUploadFailed` flag set on failed Supabase storage uploads; prominent red error shown; `saveExp` blocked until receipt is removed or re-attached on better connection
+- Retry Failed Receipts button on Company tab: scans all expenses in memory for base64 receipts, uploads to Supabase storage, updates records so other devices sync
+- Scan date `"null"` bug fixed: AI returns string `"null"` (not JSON null) when no date found; `"null"` is truthy so fallback to today never triggered; fixed on both expense and credit scan paths
+- Fixed Assets tab added to Tax page: `propData._assets` array; Section 179 / Bonus Depreciation / MACRS 5-yr elections; vehicle fields (make/model/year/VIN/GVWR/miles); IRS caps enforced (passenger car $12,200, heavy SUV $28,900, truck/equipment no cap); loan interest tracked separately (Schedule C Line 16); deductions flow into `refreshSite` net profit, P&L, Tax Summary, exportTaxPDF, exportTaxCSV; functions: `getAssets`, `assetDeduction`, `totalAssetDeductions`, `totalAssetInterest`, `renderAssets`, `openAddAsset`, `openEditAsset`, `saveAsset`, `deleteAsset`, `toggleAssetTypeFields`, `toggleAssetElectionFields`, `updateAssetCalc`
 
 ---
 
