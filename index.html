@@ -888,6 +888,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <button class="tb" onclick="stab(this,'tax-mileage')">Mileage Tracker</button>
     <button class="tb" onclick="stab(this,'tax-summary')">Tax Summary</button>
     <button class="tb" onclick="stab(this,'tax-contractors');renderContractors();">Contractors</button>
+    <button class="tb" onclick="stab(this,'tax-assets');renderAssets();">Fixed Assets</button>
   </div>
 
   <!-- P&L -->
@@ -898,7 +899,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
         <div class="pl-sec"><div class="pl-sec-title">Revenue</div><div id="pl-rev-rows"></div><div class="pl-row tot"><span>Total Revenue</span><span style="color:var(--green)" id="pl-total-rev">—</span></div></div>
         <div class="pl-sec"><div class="pl-sec-title">Operating Expenses</div><div id="pl-exp-rows"></div><div class="pl-row tot"><span>Total Expenses</span><span style="color:var(--red)" id="pl-total-exp-row">—</span></div></div>
         <div class="pl-sec"><div class="pl-sec-title">Property Acquisitions (COGS)</div><div id="pl-acq-rows"></div><div class="pl-row tot"><span>Total Acquisitions</span><span id="pl-total-acq">—</span></div></div>
-        <div class="pl-sec"><div class="pl-sec-title">Schedule C Deductions</div><div class="pl-row"><span>Mileage (Line 9)</span><span style="color:var(--red)" id="pl-mile-deduction">—</span></div><div class="pl-row"><span>Meals — 50% limit (Line 24b)</span><span style="color:var(--red)" id="pl-meals-addback">—</span></div></div>
+        <div class="pl-sec"><div class="pl-sec-title">Schedule C Deductions</div><div class="pl-row"><span>Mileage (Line 9)</span><span style="color:var(--red)" id="pl-mile-deduction">—</span></div><div class="pl-row"><span>Meals — 50% limit (Line 24b)</span><span style="color:var(--red)" id="pl-meals-addback">—</span></div><div class="pl-row" id="pl-asset-row" style="display:none"><span>Depreciation / Sec 179 + Interest (Lines 13, 16)</span><span style="color:var(--red)" id="pl-asset-deduction">—</span></div></div>
         <div class="pl-row net"><span>Net Profit / (Loss)</span><span id="pl-net-row">—</span></div>
       </div></div>
       <div style="width:min(220px,100%);display:flex;flex-direction:column;gap:10px">
@@ -1006,6 +1007,8 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
           <div class="pl-row"><span>Insurance (Line 15)</span><span id="tax-ded-insurance">—</span></div>
           <div class="pl-row"><span>Taxes &amp; Licenses (Line 23)</span><span id="tax-ded-taxes">—</span></div>
           <div class="pl-row"><span>Mileage Deduction (Line 9)</span><span id="tax-mileage-deduction">$0.00</span></div>
+          <div class="pl-row" id="tax-asset-ded-row"><span>Depreciation / Sec 179 (Line 13)</span><span id="tax-asset-deduction">$0.00</span></div>
+          <div class="pl-row" id="tax-asset-int-row"><span>Business Interest / Vehicle Loan (Line 16)</span><span id="tax-asset-interest">$0.00</span></div>
         </div>
         <div class="pl-row net"><span>Estimated Net Profit (Line 31)</span><span id="tax-net-profit">—</span></div>
         <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)">
@@ -1029,6 +1032,19 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
       <button class="btn btn-primary btn-sm" onclick="openAddContractor()"><svg class="ico"><use href="#ico-plus"/></svg> Add Manually</button>
     </div>
     <div id="contractors-list"></div>
+  </div>
+
+  <!-- FIXED ASSETS TAB -->
+  <div class="tab-pane" id="tax-assets">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--text)">Fixed Assets — Section 179 / Depreciation</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">Vehicles and equipment purchased for the business. Deduction flows into Schedule C Line 13.</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openAddAsset()"><svg class="ico"><use href="#ico-plus"/></svg> Add Asset</button>
+    </div>
+    <div id="assets-list"></div>
+    <div id="assets-summary" style="margin-top:1rem"></div>
   </div>
 
 </div>
@@ -2306,7 +2322,9 @@ function exportTaxPDF(){
   const mealsGross=catMap['Meals (50% deductible)']||0;
   const mealsDeductible=mealsGross*0.5;
   // totalExp already includes full meals amount; add back non-deductible half
-  const netProfit=totalRevenuePDF-acquisitions-totalExp-mileDeduction+mealsGross*0.5;
+  const assetDedPDF=totalAssetDeductions(taxYear);
+  const assetIntPDF=totalAssetInterest(taxYear);
+  const netProfit=totalRevenuePDF-acquisitions-totalExp-mileDeduction-assetDedPDF-assetIntPDF+mealsGross*0.5;
   const seTax=Math.max(0,netProfit*0.1413);
   const seHalf=seTax/2;
   // Contractor / 1099 data
@@ -2346,6 +2364,8 @@ function exportTaxPDF(){
     <tr><td>23</td><td>Taxes &amp; Licenses</td><td class="red">($${$(((catMap['Property Tax']||0)+(catMap['Permits & Fees']||0)))})</td></tr>
     <tr><td>24b</td><td>Meals (50% of $${$(mealsGross)} actual)</td><td class="red">($${$(mealsDeductible)})</td></tr>
     <tr><td>9</td><td>Mileage Deduction (${totalMiles.toFixed(1)} mi × $${rate.toFixed(3)}/mi)</td><td class="red">($${$(mileDeduction)})</td></tr>
+    ${assetDedPDF?`<tr><td>13</td><td>Section 179 / Depreciation</td><td class="red">($${$(assetDedPDF)})</td></tr>`:''}
+    ${assetIntPDF?`<tr><td>16</td><td>Business Interest (Vehicle Loan)</td><td class="red">($${$(assetIntPDF)})</td></tr>`:''}
     <tr class="tot"><td>31</td><td><strong>Estimated Net Profit / (Loss)</strong></td><td><strong class="${netProfit>=0?'green':'red'}">$${$(netProfit)}</strong></td></tr>
   </table>
 
@@ -2372,6 +2392,12 @@ function exportTaxPDF(){
   <table>
     <tr><th>Contractor / Vendor</th><th>EIN / SSN</th><th>Total Paid</th><th>Status</th></tr>
     ${allContractors.map(c=>`<tr><td>${c.vendor}</td><td>${c.ein||'—'}</td><td>${c.total>0?'$'+$(c.total):'(manual entry)'}</td><td>${c.manual?'Manually added':'1099-NEC required'}</td></tr>`).join('')}
+  </table>`:''}
+  ${getAssets().filter(a=>String(a.taxYear)===String(taxYear)).length?`
+  <h3>Fixed Assets — Section 179 / Depreciation</h3>
+  <table>
+    <tr><th>Asset</th><th>Type</th><th>Cost Basis</th><th>Biz Use %</th><th>Election</th><th>Deduction</th></tr>
+    ${getAssets().filter(a=>String(a.taxYear)===String(taxYear)).map(a=>`<tr><td>${a.description||a.type}</td><td>${a.type}</td><td>$${$(a.purchasePrice||0)}</td><td>${a.businessUsePct||100}%</td><td>${a.election==='179'?'Sec 179':a.election==='bonus'?'Bonus Dep':'MACRS'}</td><td class="red">($${$(assetDeduction(a))})</td></tr>`).join('')}
   </table>`:''}
 `);
   w.document.write(`</body></html>`);
@@ -2409,7 +2435,9 @@ function exportTaxCSV(){
   const mealsGross=catMap['Meals (50% deductible)']||0;
   const mealsDeductible=mealsGross*0.5;
   // totalExp includes full meals; add back non-deductible half
-  const netProfit=totalRevenueCSV-acquisitions-totalExp-mileDeduction+mealsGross*0.5;
+  const assetDedCSV=totalAssetDeductions(taxYear);
+  const assetIntCSV=totalAssetInterest(taxYear);
+  const netProfit=totalRevenueCSV-acquisitions-totalExp-mileDeduction-assetDedCSV-assetIntCSV+mealsGross*0.5;
   const seTax=Math.max(0,netProfit*0.1413);
   const seHalf=seTax/2;
 
@@ -2451,7 +2479,10 @@ function exportTaxCSV(){
     ["Insurance (Line 15)",(catMap['Insurance']||0).toFixed(2)],
     ["Taxes & Licenses (Line 23)",((catMap['Property Tax']||0)+(catMap['Permits & Fees']||0)).toFixed(2)],
     ["Meals — 50% of $"+mealsGross.toFixed(2)+" actual (Line 24b)",mealsDeductible.toFixed(2)],
-    ["Mileage Deduction — "+totalMiles.toFixed(1)+" mi @ $"+rate.toFixed(3)+"/mi (Line 9)",mileDeduction.toFixed(2)],[""],
+    ["Mileage Deduction — "+totalMiles.toFixed(1)+" mi @ $"+rate.toFixed(3)+"/mi (Line 9)",mileDeduction.toFixed(2)],
+    ...(assetDedCSV?[["Section 179 / Depreciation (Line 13)",assetDedCSV.toFixed(2)]]:[] ),
+    ...(assetIntCSV?[["Business Interest — Vehicle Loan (Line 16)",assetIntCSV.toFixed(2)]]:[] ),
+    [""],
     ["NET PROFIT (Line 31)",netProfit.toFixed(2)],[""],
     ["SELF-EMPLOYMENT TAX ESTIMATE"],
     ["SE Tax (15.3% on 92.35% of net)",seTax.toFixed(2)],
@@ -2462,6 +2493,17 @@ function exportTaxCSV(){
     ["=== CONTRACTORS / 1099 ==="],
     ["Vendor / Contractor","EIN / Category","Amount Paid","Note"],
     ...contractorRows,
+    ...(getAssets().filter(a=>String(a.taxYear)===String(taxYear)).length?[
+      [""],["=== FIXED ASSETS ==="],
+      ["Asset","Type","Cost Basis","Biz Use %","Election","Deduction","Loan Interest"],
+      ...getAssets().filter(a=>String(a.taxYear)===String(taxYear)).map(a=>[
+        a.description||a.type, a.type, (a.purchasePrice||0).toFixed(2),
+        (a.businessUsePct||100)+'%',
+        a.election==='179'?'Section 179':a.election==='bonus'?'Bonus Depreciation':'MACRS 5-yr',
+        assetDeduction(a).toFixed(2),
+        (a.loanInterestPaid||0).toFixed(2)
+      ])
+    ]:[]),
   ];
 
   const csv=rows.map(r=>r.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(",")).join("\n");
@@ -4407,7 +4449,9 @@ function refreshSite(scope){
   const _mileRate=parseFloat(propData._mileageRate)||0.725;
   const _totalMiles=(window._mileage||[]).filter(t=>{const yr=String(taxYear);const d=String(t.date||t.dt||'');const de=String(t.dateEnd||'');return d.startsWith(yr)||de.startsWith(yr);}).reduce((s,t)=>s+t.miles,0);
   const mileDeduction=_totalMiles*_mileRate;
-  const netP=(revenue+otherInc)-acquisitions-totalExp-mileDeduction+mealsAll*0.5;
+  const assetDed=totalAssetDeductions(taxYear);
+  const assetInt=totalAssetInterest(taxYear);
+  const netP=(revenue+otherInc)-acquisitions-totalExp-mileDeduction-assetDed-assetInt+mealsAll*0.5;
   const soldWithROI=props.filter(p=>propSold(p,taxYear)>0&&propROI(p)!=null);
   const avgROI=soldWithROI.length?soldWithROI.reduce((s,p)=>s+propROI(p),0)/soldWithROI.length:null;
   setEl("stat-net-profit",(netP>=0?'+':'')+fmt(netP));
@@ -4450,7 +4494,9 @@ function refreshSite(scope){
   setEl("pl-total-acq",fmt(acquisitions));
   setEl("pl-mile-deduction",mealsAll||mileDeduction?'('+fmt(mileDeduction)+')':'—');
   setEl("pl-meals-addback",mealsAll?'('+fmt(mealsAll*0.5)+')':'—');
-  const plNet=netProfitFull-mileDeduction+mealsAll*0.5;
+  setEl("pl-asset-deduction",assetDed||assetInt?'('+fmt(assetDed+assetInt)+')':'—');
+  const plAssetRow=document.getElementById('pl-asset-row');if(plAssetRow)plAssetRow.style.display=(assetDed||assetInt)?'flex':'none';
+  const plNet=netProfitFull-mileDeduction-assetDed-assetInt+mealsAll*0.5;
   setEl("pl-net-row",fmt(plNet));
   const plNetEl=document.getElementById("pl-net-row");if(plNetEl)plNetEl.style.color=plNet>=0?'var(--green)':'var(--red)';
   
@@ -4463,11 +4509,13 @@ function refreshSite(scope){
   setEl('tax-ded-insurance',fmt(catMap['Insurance']||0));
   setEl('tax-ded-taxes',fmt((catMap['Property Tax']||0)+(catMap['Permits & Fees']||0)));
   setEl('tax-active-allin',fmt(activeAllin));
-  // Mileage deduction (Line 9) + meals addback (50% non-deductible half)
-  const netProfitAfterMileage=netProfitFull-mileDeduction+mealsAll*0.5;
+  // Mileage deduction (Line 9) + meals addback (50% non-deductible half) + asset deductions
+  const netProfitAfterMileage=netProfitFull-mileDeduction-assetDed-assetInt+mealsAll*0.5;
   const seTaxAmt=Math.max(0,netProfitAfterMileage*0.1413);
   setEl("tax-revenue",fmt(totalRevIncome));setEl("tax-acquisitions",fmt(acquisitions));setEl("tax-total-exp",fmt(totalExp));
   setEl("tax-mileage-deduction",fmt(mileDeduction));
+  setEl("tax-asset-deduction",fmt(assetDed));
+  setEl("tax-asset-interest",fmt(assetInt));
   setEl("tax-net-profit",fmt(netProfitAfterMileage));
   setEl("tax-se-tax",fmt(seTaxAmt));
   setEl("tax-se-half",fmt(seTaxAmt/2));
@@ -5517,6 +5565,250 @@ async function deleteContractor(name){
   save();renderContractors();
 }
 
+// ====== FIXED ASSETS ======
+function getAssets(){return propData._assets||[];}
+
+function assetDeduction(a){
+  const price=parseFloat(a.purchasePrice)||0;
+  const bizPct=(parseFloat(a.businessUsePct)||100)/100;
+  const bizBasis=price*bizPct;
+  if(a.election==='179'){
+    let cap=Infinity;
+    if(a.type==='vehicle'){
+      const gvwr=parseFloat(a.gvwr)||0;
+      if(gvwr>0&&gvwr<=6000)cap=12200;
+      else if(gvwr>6000&&gvwr<=14000)cap=28900;
+    }
+    const raw=parseFloat(a.section179Amt)||bizBasis;
+    return Math.min(raw,Math.min(bizBasis,cap));
+  }
+  if(a.election==='bonus'){
+    const pct=(parseFloat(a.bonusPct)||60)/100;
+    return bizBasis*pct;
+  }
+  // MACRS 5-year half-year: 20% year 1
+  return bizBasis*0.2;
+}
+
+function totalAssetDeductions(yr){
+  return getAssets().filter(a=>String(a.taxYear)===String(yr)).reduce((s,a)=>s+assetDeduction(a),0);
+}
+function totalAssetInterest(yr){
+  return getAssets().filter(a=>String(a.taxYear)===String(yr)).reduce((s,a)=>s+(parseFloat(a.loanInterestPaid)||0),0);
+}
+
+function renderAssets(){
+  const list=document.getElementById('assets-list');
+  const summary=document.getElementById('assets-summary');
+  if(!list)return;
+  const allAssets=getAssets();
+  if(!allAssets.length){
+    list.innerHTML='<div style="text-align:center;padding:3rem;color:var(--text3);font-size:14px">No assets added yet.<br>Add a vehicle or equipment purchase to track Section 179 / depreciation.</div>';
+    if(summary)summary.innerHTML='';
+    return;
+  }
+  let out='';
+  allAssets.forEach((a,i)=>{
+    const ded=assetDeduction(a);
+    const interest=parseFloat(a.loanInterestPaid)||0;
+    const isCurYear=String(a.taxYear)===String(taxYear);
+    out+=`<div class="card" style="margin-bottom:1rem;padding:1.25rem${isCurYear?'':';opacity:0.6'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-size:15px;font-weight:700;color:var(--text)">${esc(a.description||a.type)}</div>
+            <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${isCurYear?'rgba(192,57,43,0.15)':'var(--bg4)'};color:${isCurYear?'var(--gold2)':'var(--text3)'};font-weight:600">${a.taxYear}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text3);margin-top:3px">
+            ${a.type==='vehicle'?`${esc(a.year||'')} ${esc(a.make||'')} ${esc(a.model||'')}${a.gvwr?' · '+a.gvwr+' lbs GVWR':''}`.trim()+' · ':''}Cost basis: <strong>${fmt(a.purchasePrice)}</strong> · Business use: <strong>${a.businessUsePct||100}%</strong> · Election: <strong>${a.election==='179'?'Section 179':a.election==='bonus'?'Bonus Depreciation':'MACRS 5-yr'}</strong>
+          </div>
+          ${a.vin?`<div style="font-size:11px;color:var(--text3);margin-top:2px">VIN: ${esc(a.vin)}</div>`:''}
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="openEditAsset(${i})"><svg class="ico"><use href="#ico-edit"/></svg></button>
+          <button class="btn btn-sm" style="background:rgba(244,63,94,0.1);border-color:rgba(244,63,94,0.3);color:#f43f5e" onclick="deleteAsset(${i})"><svg class="ico"><use href="#ico-trash"/></svg></button>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:.75rem;padding-top:.65rem;border-top:1px solid var(--border)">
+        <div style="font-size:12px"><span style="color:var(--text3)">Depreciation Deduction</span><br><strong style="font-size:15px;color:var(--gold2)">${fmt(ded)}</strong><br><span style="font-size:11px;color:var(--text3)">Sch C Line 13</span></div>
+        ${interest?`<div style="font-size:12px"><span style="color:var(--text3)">Loan Interest</span><br><strong style="font-size:15px;color:var(--gold2)">${fmt(interest)}</strong><br><span style="font-size:11px;color:var(--text3)">Sch C Line 16</span></div>`:''}
+        ${a.loanAmount?`<div style="font-size:12px"><span style="color:var(--text3)">Loan Amount</span><br><strong>${fmt(a.loanAmount)}</strong></div>`:''}
+        ${a.type==='vehicle'&&a.businessMilesYear?`<div style="font-size:12px"><span style="color:var(--text3)">Business Miles</span><br><strong>${Number(a.businessMilesYear).toLocaleString()}</strong> of ${Number(a.totalMilesYear||a.businessMilesYear).toLocaleString()}</div>`:''}
+        ${a.notes?`<div style="font-size:12px;flex:1"><span style="color:var(--text3)">Notes</span><br>${esc(a.notes)}</div>`:''}
+      </div>
+    </div>`;
+  });
+  list.innerHTML=out;
+  const curDed=totalAssetDeductions(taxYear);
+  const curInt=totalAssetInterest(taxYear);
+  if(summary){
+    summary.innerHTML=curDed||curInt?`<div class="card" style="padding:1rem;background:var(--gold-bg);border-color:var(--border2)">
+      <div style="font-size:12px;font-weight:700;color:var(--gold2);margin-bottom:8px">FY ${taxYear} Asset Deductions (included in Tax Summary)</div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap">
+        ${curDed?`<div><div style="font-size:11px;color:var(--text3)">Section 179 / Depreciation (Line 13)</div><div style="font-size:16px;font-weight:700;color:var(--text)">${fmt(curDed)}</div></div>`:''}
+        ${curInt?`<div><div style="font-size:11px;color:var(--text3)">Loan Interest (Line 16)</div><div style="font-size:16px;font-weight:700;color:var(--text)">${fmt(curInt)}</div></div>`:''}
+      </div>
+    </div>`:'';
+  }
+}
+
+function calcAssetDeductionPreview(){
+  const price=parseFloat(document.getElementById('asset-price')?.value)||0;
+  const bizPct=(parseFloat(document.getElementById('asset-biz-pct')?.value)||100)/100;
+  const election=document.getElementById('asset-election')?.value||'179';
+  const gvwr=parseFloat(document.getElementById('asset-gvwr')?.value)||0;
+  const type=document.getElementById('asset-type')?.value||'vehicle';
+  const bizBasis=price*bizPct;
+  let ded=0,note='';
+  if(election==='179'){
+    let cap=Infinity;
+    let capNote='';
+    if(type==='vehicle'){
+      if(gvwr<=0){capNote=' (enter GVWR to confirm cap)';}
+      else if(gvwr<=6000){cap=12200;capNote=' (passenger car cap: $12,200)';}
+      else if(gvwr<=14000){cap=28900;capNote=' (heavy SUV cap: $28,900)';}
+      else{capNote=' (no cap — heavy truck/van)';}
+    }
+    const raw=parseFloat(document.getElementById('asset-179-amt')?.value)||bizBasis;
+    ded=Math.min(raw,cap);
+    note=`Section 179: ${fmt(ded)}${capNote}`;
+  } else if(election==='bonus'){
+    const pct=(parseFloat(document.getElementById('asset-bonus-pct')?.value)||60)/100;
+    ded=bizBasis*pct;
+    note=`Bonus Depreciation (${Math.round(pct*100)}%): ${fmt(ded)}`;
+  } else {
+    ded=bizBasis*0.2;
+    note=`MACRS Year 1 (20%): ${fmt(ded)}`;
+  }
+  return {ded,note,bizBasis};
+}
+
+function updateAssetCalc(){
+  const det=document.getElementById('asset-calc-detail');
+  if(!det)return;
+  const {ded,note,bizBasis}=calcAssetDeductionPreview();
+  const price=parseFloat(document.getElementById('asset-price')?.value)||0;
+  const bizPct=parseFloat(document.getElementById('asset-biz-pct')?.value)||100;
+  if(!price){det.innerHTML='Enter cost basis to calculate.';return;}
+  det.innerHTML=`<div style="margin-bottom:4px">${note}</div><div style="font-size:11px;color:var(--text3)">Business basis: ${fmt(bizBasis)} (${fmt(price)} × ${bizPct}%)</div>`;
+}
+
+function toggleAssetTypeFields(){
+  const type=document.getElementById('asset-type')?.value;
+  const vf=document.getElementById('asset-vehicle-fields');
+  if(vf)vf.style.display=type==='vehicle'?'':'none';
+  updateAssetCalc();
+}
+
+function toggleAssetElectionFields(){
+  const el=document.getElementById('asset-election')?.value;
+  const r179=document.getElementById('asset-179-row');
+  const rb=document.getElementById('asset-bonus-row');
+  if(r179)r179.style.display=el==='179'?'':'none';
+  if(rb)rb.style.display=el==='bonus'?'':'none';
+  updateAssetCalc();
+}
+
+function openAddAsset(){
+  document.getElementById('asset-modal-title').textContent='Add Asset';
+  document.getElementById('asset-id').value='';
+  document.getElementById('asset-type').value='vehicle';
+  document.getElementById('asset-tax-year').value=taxYear;
+  document.getElementById('asset-desc').value='';
+  document.getElementById('asset-make').value='';
+  document.getElementById('asset-model').value='';
+  document.getElementById('asset-year').value='';
+  document.getElementById('asset-vin').value='';
+  document.getElementById('asset-gvwr').value='';
+  document.getElementById('asset-service-date').value=new Date().toLocaleDateString('en-CA');
+  document.getElementById('asset-price').value='';
+  document.getElementById('asset-biz-pct').value='100';
+  document.getElementById('asset-total-miles').value='';
+  document.getElementById('asset-biz-miles').value='';
+  document.getElementById('asset-election').value='179';
+  document.getElementById('asset-179-amt').value='';
+  document.getElementById('asset-bonus-pct').value='60';
+  document.getElementById('asset-loan-amt').value='';
+  document.getElementById('asset-loan-interest').value='';
+  document.getElementById('asset-notes').value='';
+  toggleAssetTypeFields();
+  toggleAssetElectionFields();
+  updateAssetCalc();
+  showModal('m-asset');
+}
+
+function openEditAsset(i){
+  const a=getAssets()[i];
+  if(!a)return;
+  document.getElementById('asset-modal-title').textContent='Edit Asset';
+  document.getElementById('asset-id').value=a.id||'';
+  document.getElementById('asset-type').value=a.type||'vehicle';
+  document.getElementById('asset-tax-year').value=a.taxYear||taxYear;
+  document.getElementById('asset-desc').value=a.description||'';
+  document.getElementById('asset-make').value=a.make||'';
+  document.getElementById('asset-model').value=a.model||'';
+  document.getElementById('asset-year').value=a.year||'';
+  document.getElementById('asset-vin').value=a.vin||'';
+  document.getElementById('asset-gvwr').value=a.gvwr||'';
+  document.getElementById('asset-service-date').value=a.serviceDate||'';
+  document.getElementById('asset-price').value=a.purchasePrice||'';
+  document.getElementById('asset-biz-pct').value=a.businessUsePct||100;
+  document.getElementById('asset-total-miles').value=a.totalMilesYear||'';
+  document.getElementById('asset-biz-miles').value=a.businessMilesYear||'';
+  document.getElementById('asset-election').value=a.election||'179';
+  document.getElementById('asset-179-amt').value=a.section179Amt||'';
+  document.getElementById('asset-bonus-pct').value=a.bonusPct||60;
+  document.getElementById('asset-loan-amt').value=a.loanAmount||'';
+  document.getElementById('asset-loan-interest').value=a.loanInterestPaid||'';
+  document.getElementById('asset-notes').value=a.notes||'';
+  toggleAssetTypeFields();
+  toggleAssetElectionFields();
+  updateAssetCalc();
+  showModal('m-asset');
+}
+
+function saveAsset(){
+  const id=document.getElementById('asset-id').value||('asset-'+Date.now());
+  const type=document.getElementById('asset-type').value;
+  const election=document.getElementById('asset-election').value;
+  const price=parseFloat(document.getElementById('asset-price').value)||0;
+  if(!price){alert('Please enter a cost basis.');return;}
+  const asset={
+    id,type,
+    description:document.getElementById('asset-desc').value.trim()||(document.getElementById('asset-make').value+' '+document.getElementById('asset-model').value).trim(),
+    make:document.getElementById('asset-make').value.trim(),
+    model:document.getElementById('asset-model').value.trim(),
+    year:document.getElementById('asset-year').value.trim(),
+    vin:document.getElementById('asset-vin').value.trim(),
+    gvwr:parseFloat(document.getElementById('asset-gvwr').value)||0,
+    serviceDate:document.getElementById('asset-service-date').value,
+    purchasePrice:price,
+    businessUsePct:parseFloat(document.getElementById('asset-biz-pct').value)||100,
+    totalMilesYear:parseFloat(document.getElementById('asset-total-miles').value)||0,
+    businessMilesYear:parseFloat(document.getElementById('asset-biz-miles').value)||0,
+    election,
+    section179Amt:parseFloat(document.getElementById('asset-179-amt').value)||0,
+    bonusPct:parseFloat(document.getElementById('asset-bonus-pct').value)||60,
+    loanAmount:parseFloat(document.getElementById('asset-loan-amt').value)||0,
+    loanInterestPaid:parseFloat(document.getElementById('asset-loan-interest').value)||0,
+    notes:document.getElementById('asset-notes').value.trim(),
+    taxYear:parseInt(document.getElementById('asset-tax-year').value)||taxYear,
+  };
+  if(!propData._assets)propData._assets=[];
+  const idx=propData._assets.findIndex(a=>a.id===id);
+  if(idx>-1)propData._assets[idx]=asset;
+  else propData._assets.push(asset);
+  save();closeModal('m-asset');renderAssets();refreshSite('stats');
+}
+
+async function deleteAsset(i){
+  const a=getAssets()[i];
+  if(!a)return;
+  if(!await appConfirm('Delete '+esc(a.description||'this asset')+'?','Delete'))return;
+  propData._assets=(propData._assets||[]).filter((_,idx)=>idx!==i);
+  save();renderAssets();refreshSite('stats');
+}
+
 window.addEventListener('unhandledrejection',function(e){console.error('Unhandled promise rejection:',e.reason);});
 </script>
 
@@ -5729,5 +6021,98 @@ window.addEventListener('unhandledrejection',function(e){console.error('Unhandle
   window.appConfirm=appConfirm;
 })();
 </script>
+
+<div class="mo" id="m-asset" onclick="if(event.target===this)closeModal('m-asset')">
+  <div class="md" style="width:560px;max-width:100%;box-sizing:border-box;max-height:88dvh;overflow-y:auto;touch-action:pan-y">
+    <div class="md-title"><span id="asset-modal-title">Add Asset</span><button class="md-close" onclick="closeModal('m-asset')"><svg class="ico"><use href="#ico-x"/></svg></button></div>
+    <input type="hidden" id="asset-id">
+
+    <div class="fr"><div class="fg"><label>Asset Type</label>
+      <select id="asset-type" onchange="toggleAssetTypeFields()">
+        <option value="vehicle">Vehicle</option>
+        <option value="equipment">Equipment / Machinery</option>
+        <option value="other">Other Asset</option>
+      </select>
+    </div><div class="fg"><label>Tax Year Placed in Service</label>
+      <input type="number" id="asset-tax-year" placeholder="2026" style="font-size:16px">
+    </div></div>
+
+    <div class="fr"><div class="fg" style="flex:2"><label>Description</label>
+      <input type="text" id="asset-desc" placeholder="e.g. 2024 Ford F-150 SuperCrew" style="font-size:16px">
+    </div></div>
+
+    <div id="asset-vehicle-fields">
+      <div class="fr">
+        <div class="fg"><label>Make</label><input type="text" id="asset-make" placeholder="Ford" style="font-size:16px"></div>
+        <div class="fg"><label>Model</label><input type="text" id="asset-model" placeholder="F-150" style="font-size:16px"></div>
+        <div class="fg"><label>Year</label><input type="text" id="asset-year" placeholder="2024" style="font-size:16px"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>VIN</label><input type="text" id="asset-vin" placeholder="17-char VIN" style="font-size:16px"></div>
+        <div class="fg"><label>GVWR (lbs)</label><input type="number" id="asset-gvwr" placeholder="e.g. 8500" oninput="updateAssetCalc()" style="font-size:16px">
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Found on door jamb sticker. Determines IRS deduction cap.</div>
+        </div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>Total Miles Driven This Year</label><input type="number" id="asset-total-miles" placeholder="15000" oninput="updateAssetCalc()" style="font-size:16px"></div>
+        <div class="fg"><label>Business Miles This Year</label><input type="number" id="asset-biz-miles" placeholder="15000" oninput="updateAssetCalc()" style="font-size:16px"></div>
+      </div>
+    </div>
+
+    <div class="fr">
+      <div class="fg"><label>Date Placed in Service</label><input type="date" id="asset-service-date" style="font-size:16px;width:100%;min-width:0;box-sizing:border-box"></div>
+      <div class="fg"><label>Total Cost Basis ($)</label>
+        <input type="number" id="asset-price" placeholder="45000" oninput="updateAssetCalc()" style="font-size:16px">
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">Include purchase price + tax + title + fees</div>
+      </div>
+    </div>
+
+    <div class="fr"><div class="fg"><label>Business Use %</label>
+      <input type="number" id="asset-biz-pct" placeholder="100" min="1" max="100" oninput="updateAssetCalc()" style="font-size:16px">
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">Business miles ÷ total miles × 100</div>
+    </div><div class="fg"><label>Depreciation Election</label>
+      <select id="asset-election" onchange="toggleAssetElectionFields()">
+        <option value="179">Section 179 (deduct full cost year 1)</option>
+        <option value="bonus">Bonus Depreciation (60% in 2024, 40% in 2025)</option>
+        <option value="macrs">Standard MACRS (5-year, 20% year 1)</option>
+      </select>
+    </div></div>
+
+    <div id="asset-179-row" class="fr"><div class="fg"><label>Section 179 Amount ($)</label>
+      <input type="number" id="asset-179-amt" placeholder="Auto-calculated" oninput="updateAssetCalc()" style="font-size:16px">
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">Leave blank to auto-calculate. Override if your CPA advises a partial election.</div>
+    </div></div>
+
+    <div id="asset-bonus-row" class="fr" style="display:none"><div class="fg"><label>Bonus Depreciation % (federal)</label>
+      <input type="number" id="asset-bonus-pct" placeholder="60" oninput="updateAssetCalc()" style="font-size:16px">
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">60% for 2024, 40% for 2025, 20% for 2026</div>
+    </div></div>
+
+    <div style="background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:.75rem 1rem;margin:.75rem 0" id="asset-calc-preview">
+      <div style="font-size:12px;font-weight:700;color:var(--gold2);margin-bottom:6px">Estimated Deduction</div>
+      <div id="asset-calc-detail" style="font-size:13px;color:var(--text2)">Enter cost and business use % to calculate.</div>
+    </div>
+
+    <div style="background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:.75rem 1rem;margin-bottom:.75rem">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">Financing (if applicable)</div>
+      <div class="fr">
+        <div class="fg"><label>Loan Amount ($)</label><input type="number" id="asset-loan-amt" placeholder="0" style="font-size:16px"></div>
+        <div class="fg"><label>Interest Paid This Year ($)</label>
+          <input type="number" id="asset-loan-interest" placeholder="0" style="font-size:16px">
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Schedule C Line 16 — separate from depreciation</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fr"><div class="fg"><label>Notes</label>
+      <textarea id="asset-notes" placeholder="Any additional details for your records..." style="height:60px;resize:vertical;font-size:16px"></textarea>
+    </div></div>
+
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-primary" onclick="saveAsset()"><svg class="ico"><use href="#ico-check"/></svg> Save Asset</button>
+      <button class="btn btn-ghost" onclick="closeModal('m-asset')">Cancel</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
