@@ -1591,17 +1591,24 @@ async function sbLogin(email,pw){
   if(!r.ok||!j.access_token)throw new Error(j.error_description||j.msg||'Login failed');
   _saveAuthSession(j);return j;
 }
+let _refreshInFlight=null;
 async function sbRefreshAuth(force){
+  // Deduplicate concurrent refresh calls — Supabase rotates tokens, so two simultaneous
+  // requests with the same refresh_token cause invalid_grant and log the user out.
+  if(_refreshInFlight)return _refreshInFlight;
   const s=_authSession();if(!s||!s.refresh_token)return false;
   if(!force&&s.expires_at&&(s.expires_at-Math.floor(Date.now()/1000))>300)return true;
-  try{
-    const r=await fetch(SB_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY},body:JSON.stringify({refresh_token:s.refresh_token})});
-    const j=await r.json().catch(()=>({}));
-    if(r.ok&&j.access_token){_saveAuthSession(j);return true;}
-    // Only clear session on confirmed invalid_grant — not network errors or server hiccups
-    if((r.status===400||r.status===401)&&(j.error==='invalid_grant'||j.error_code==='refresh_token_not_found')){_saveAuthSession(null);return false;}
-    return true; // any other error — keep existing token and try again later
-  }catch(e){return true;} // network blip — keep existing token
+  _refreshInFlight=(async()=>{
+    try{
+      const r=await fetch(SB_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY},body:JSON.stringify({refresh_token:s.refresh_token})});
+      const j=await r.json().catch(()=>({}));
+      if(r.ok&&j.access_token){_saveAuthSession(j);return true;}
+      if((r.status===400||r.status===401)&&(j.error==='invalid_grant'||j.error_code==='refresh_token_not_found')){_saveAuthSession(null);return false;}
+      return true;
+    }catch(e){return true;}
+    finally{_refreshInFlight=null;}
+  })();
+  return _refreshInFlight;
 }
 function sbLogout(){_saveAuthSession(null);sessionStorage.removeItem('apex_unlocked');location.reload();}
 setInterval(()=>{sbRefreshAuth().catch(()=>{});},60000);
