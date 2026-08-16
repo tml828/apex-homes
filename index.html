@@ -1208,13 +1208,20 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <div class="md-title">Add Expense<button class="md-close" onclick="closeModal('m-exp')"><svg class="ico"><use href="#ico-x"/></svg></button></div>
     <input type="hidden" id="exp-pid">
     <!-- SCAN SECTION -->
-    <div style="background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);padding:1rem;margin-bottom:1.1rem">
-      <div style="display:flex;align-items:center;gap:7px;margin-bottom:.4rem;font-size:13px;font-weight:600;color:var(--gold2)"><svg class="ico" style="color:#c4b5fd;width:15px;height:15px"><use href="#ico-sparkles"/></svg> Scan Receipt(s) with AI</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Select or paste receipt image(s). Multiple images attach as pages to this expense.</div>
-      <div class="drop-zone" id="exp-dz" onclick="document.getElementById('exp-receipt-inp').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleExpDrop(event)" style="padding:1.1rem">
-        <svg class="ico dz-icon" style="width:26px;height:26px;margin-bottom:.4rem"><use href="#ico-photo-scan"/></svg>
-        <p style="font-size:12.5px">Tap to take photo, choose from library, or paste (Ctrl+V)</p>
-        <span style="font-size:11px">Select multiple for multi-page receipt</span>
+    <div id="exp-scan-section" style="background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);padding:1rem;margin-bottom:1.1rem">
+      <div id="exp-dz-full">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:.4rem;font-size:13px;font-weight:600;color:var(--gold2)"><svg class="ico" style="color:#c4b5fd;width:15px;height:15px"><use href="#ico-sparkles"/></svg> Scan Receipt(s) with AI</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Select or paste receipt image(s). Multiple images attach as pages to this expense.</div>
+        <div class="drop-zone" id="exp-dz" onclick="document.getElementById('exp-receipt-inp').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleExpDrop(event)" style="padding:1.1rem">
+          <svg class="ico dz-icon" style="width:26px;height:26px;margin-bottom:.4rem"><use href="#ico-photo-scan"/></svg>
+          <p style="font-size:12.5px">Tap to take photo, choose from library, or paste (Ctrl+V)</p>
+          <span style="font-size:11px">Select multiple for multi-page receipt</span>
+        </div>
+      </div>
+      <!-- Compact view shown after upload -->
+      <div id="exp-dz-compact" style="display:none;align-items:center;gap:10px;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--gold2)"><svg class="ico" style="color:#c4b5fd;width:13px;height:13px"><use href="#ico-sparkles"/></svg> Receipt attached</div>
+        <button onclick="clearExpReceipt()" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;text-decoration:underline;white-space:nowrap">Remove</button>
       </div>
       <input type="file" id="exp-receipt-inp" accept="image/*,application/pdf" multiple style="display:none" onchange="handleExpReceiptMulti(this.files)">
       <div id="exp-receipt-preview" style="margin-top:.6rem"></div>
@@ -3081,7 +3088,7 @@ function openAddExp(p){
   document.getElementById("exp-pid").value=p;document.getElementById("exp-amt").value="";document.getElementById("exp-desc").value="";
   document.getElementById("exp-date").value=new Date().toLocaleDateString('en-CA');document.getElementById("exp-vendor").value="";
   document.getElementById("exp-cat").selectedIndex=0;const cc=document.getElementById("exp-custom-cat");if(cc){cc.value="";cc.style.display="none";}
-  expReceiptUrls=[];expReceiptB64="";expReceiptMime="";_receiptUploadFailed=false;const ss=document.getElementById("exp-scan-status");if(ss)ss.innerHTML="";const _erp=document.getElementById("exp-receipt-preview");if(_erp)_erp.innerHTML="";pendingFiles[p]=[];renderQ(p);
+  expReceiptUrls=[];expReceiptB64="";expReceiptMime="";_receiptUploadFailed=false;const ss=document.getElementById("exp-scan-status");if(ss)ss.innerHTML="";const _erp=document.getElementById("exp-receipt-preview");if(_erp)_erp.innerHTML="";_expDzExpand();pendingFiles[p]=[];renderQ(p);
   const _rc=document.getElementById("exp-recurring");if(_rc){_rc.checked=false;}
   const _rr=document.getElementById("exp-recur-row");if(_rr)_rr.style.display="none";
   const _rf=document.getElementById("exp-recur-freq");if(_rf)_rf.value="monthly";
@@ -3734,10 +3741,17 @@ async function handleExpReceipt(f){
 }
 function _renderExpReceiptPreview(){
   const prev=document.getElementById('exp-receipt-preview');if(!prev)return;
-  if(!expReceiptUrls.length){prev.innerHTML='';return;}
-  prev.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:6px">'+expReceiptUrls.map((u,i)=>
-    `<div style="position:relative;display:inline-block"><img src="${u}" style="height:100px;border-radius:8px;border:1px solid var(--border2);cursor:zoom-in" onclick="openLightbox(expReceiptUrls)"><button onclick="removeExpReceiptPage(${i})" style="position:absolute;top:-6px;right:-6px;background:#c0392b;border:none;color:#fff;border-radius:50%;width:20px;height:20px;font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button><div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px">${i+1}</div></div>`
-  ).join('')+'</div><div style="text-align:center"><button onclick="clearExpReceipt()" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;text-decoration:underline">Remove All</button></div>';
+  if(!expReceiptUrls.length){prev.innerHTML='';_expDzExpand();return;}
+  // Collapse the drop zone to a compact bar; show thumbnail inline
+  const full=document.getElementById('exp-dz-full');const compact=document.getElementById('exp-dz-compact');
+  if(full)full.style.display='none';if(compact)compact.style.display='flex';
+  prev.innerHTML='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">'+expReceiptUrls.map((u,i)=>
+    `<div style="position:relative;display:inline-block"><img src="${u}" style="height:54px;border-radius:6px;border:1px solid var(--border2);cursor:zoom-in" onclick="openLightbox(expReceiptUrls)"><button onclick="removeExpReceiptPage(${i})" style="position:absolute;top:-5px;right:-5px;background:#c0392b;border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button></div>`
+  ).join('')+'</div>';
+}
+function _expDzExpand(){
+  const full=document.getElementById('exp-dz-full');const compact=document.getElementById('exp-dz-compact');
+  if(full)full.style.display='';if(compact)compact.style.display='none';
 }
 function removeExpReceiptPage(i){
   expReceiptUrls.splice(i,1);_renderExpReceiptPreview();
@@ -3747,6 +3761,7 @@ function clearExpReceipt(){
   const prev=document.getElementById('exp-receipt-preview');if(prev)prev.innerHTML='';
   const status=document.getElementById('exp-scan-status');if(status)status.innerHTML='';
   const inp=document.getElementById('exp-receipt-inp');if(inp)inp.value='';
+  _expDzExpand();
 }
 function handleExpDrop(ev){
   ev.preventDefault();
