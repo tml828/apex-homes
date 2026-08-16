@@ -271,6 +271,27 @@ Property keys are always lowercase, no spaces.
 - Retry Failed Receipts button on Company tab: scans all expenses in memory for base64 receipts, uploads to Supabase storage, updates records so other devices sync
 - Scan date `"null"` bug fixed: AI returns string `"null"` (not JSON null) when no date found; `"null"` is truthy so fallback to today never triggered; fixed on both expense and credit scan paths
 - Fixed Assets tab added to Tax page: `propData._assets` array; Section 179 / Bonus Depreciation / MACRS 5-yr elections; vehicle fields (make/model/year/VIN/GVWR/miles); IRS caps enforced (passenger car $12,200, heavy SUV $28,900, truck/equipment no cap); loan interest tracked separately (Schedule C Line 16); deductions flow into `refreshSite` net profit, P&L, Tax Summary, exportTaxPDF, exportTaxCSV; functions: `getAssets`, `assetDeduction`, `totalAssetDeductions`, `totalAssetInterest`, `renderAssets`, `openAddAsset`, `openEditAsset`, `saveAsset`, `deleteAsset`, `toggleAssetTypeFields`, `toggleAssetElectionFields`, `updateAssetCalc`
+- `syncAllReceiptsToCloud` forEach body was empty — filled with base64 receipt scan logic
+- `exportTaxPDF` popup null check added: alerts user if pop-up is blocked and returns early
+- `propPurchase` year filter: was checking `pr.sdate` (sale date) instead of `pr.pdate` (purchase date) — fixed
+- `scanOne` JSON guard added: uses regex match for `{...}` block instead of direct `JSON.parse` on raw text
+- `downloadDoc` now uses `doc.url||doc.data` — supports both old data-URL and new Supabase URL storage paths
+- `saveDocFile` catch block now sets `doc._pending=true` and calls `save()` on upload failure
+- `runIncomeScan` wrapped in try/finally — button re-enabled even on error; also validates file is an image before API call (FIX 17)
+- `exportTaxPDF` XSS: added local `he()` helper; wrapped `pr.addr`, `cat`, `c.vendor`, `c.ein`, `a.description`, `a.type` in HTML escaping
+- `renderContractors` manual-only section: wrapped `c.name`, `c.ein`, `c.phone`, `c.email` with `esc()`
+- `ohioAutocomplete` debounced with 350ms `window._ohioTimer`; fetch wrapped in try/catch
+- `pl-stat-net` stat card now updated after `plNet` is computed (fully adjusted for mileage, assets, meals)
+- `taxYear` default changed from hardcoded `2026` to `new Date().getFullYear()`
+- `renderTaxYearBtns` start year changed from 2026 to 2024
+- `_recurDates` 500-cap: logs `console.warn` when hit; `saveExp` shows user-visible error and blocks save if cap reached
+- `restoreBackup` FileReader wrapped in Promise — async function now properly awaits file reading
+- `checkPin` first-use flow: if no PIN stored in localStorage, auto-unlocks and prompts user to set a PIN; also clears `pinEntry` after successful unlock
+- `startAutoSync` `visibilitychange` listener: removes old handler before adding new one via `window._visHandler` guard
+- `saveHourlyBackup` skips automatic snapshots if last backup was < 55 minutes ago (uses `propData._backups` timestamps)
+- `appConfirm` keyboard-accessible: Escape key cancels; `#m-confirm` element has `role="dialog" aria-modal="true"`
+- `renderQ` and `handleIncomeScanFiles`: `f.name` wrapped with `esc()` in innerHTML
+- Duplicate `expReceiptMime` declaration removed (kept the one in expenses section at line ~3084, removed from top-of-script var declarations)
 
 ---
 
