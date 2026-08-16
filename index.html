@@ -1572,7 +1572,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
   </div>
 </div>
 <script>
-var expReceiptUrls=[],expReceiptMime='';
+var expReceiptUrls=[];
 let pinEntry='';
 const IS_CLAUDE_AI = window.location.hostname.includes('claude.ai') || 
                      window.location.hostname.includes('artifact') ||
@@ -1631,6 +1631,8 @@ async function saveHourlyBackup(manual){
   if(!syncEnabled)return;
   // Never snapshot empty data — would rotate out good backups with bad ones
   if(getPropKeys().length===0&&!(extra.general&&extra.general.length))return;
+  // Skip if last backup was less than 55 minutes ago (unless triggered manually)
+  if(!manual){const backups=(propData._backups||[]);if(backups.length){const last=backups[backups.length-1];if(last&&last.ts&&(Date.now()-last.ts)<55*60*1000)return;}}
   try{
     const ts=Date.now();
     const id='backup-'+ts;
@@ -1741,7 +1743,7 @@ async function retryFailedReceiptUploads(){
   }
 }
 
-async function restoreBackup(file){if(!file)return;const st=document.getElementById('backup-status');if(!await appConfirm('This will REPLACE all current data with the backup. Continue?','Replace'))return;const reader=new FileReader();reader.onload=function(ev){try{const backup=JSON.parse(ev.target.result);if(!backup.propData)throw new Error('Invalid backup file');Object.keys(propData).forEach(k=>delete propData[k]);Object.assign(propData,backup.propData);if(backup.extra&&typeof extra!=='undefined'){Object.keys(extra).forEach(k=>delete extra[k]);Object.assign(extra,backup.extra);}if(backup.tasks){tasks.length=0;backup.tasks.forEach(t=>tasks.push(t));}if(backup.mileage){window._mileage=backup.mileage;localStorage.setItem('apex_mileage',JSON.stringify(window._mileage));}save();refreshSite();if(st)st.innerHTML='<span style="color:var(--green)">✓ Restored</span>';setTimeout(()=>{alert('Backup restored! Reloading.');location.reload();},500);}catch(err){if(st)st.innerHTML='<span style="color:var(--red)">✗ '+err.message+'</span>';}};reader.readAsText(file);}
+async function restoreBackup(file){if(!file)return;const st=document.getElementById('backup-status');if(!await appConfirm('This will REPLACE all current data with the backup. Continue?','Replace'))return;try{const text=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsText(file);});const backup=JSON.parse(text);if(!backup.propData)throw new Error('Invalid backup file');Object.keys(propData).forEach(k=>delete propData[k]);Object.assign(propData,backup.propData);if(backup.extra&&typeof extra!=='undefined'){Object.keys(extra).forEach(k=>delete extra[k]);Object.assign(extra,backup.extra);}if(backup.tasks){tasks.length=0;backup.tasks.forEach(t=>tasks.push(t));}if(backup.mileage){window._mileage=backup.mileage;localStorage.setItem('apex_mileage',JSON.stringify(window._mileage));}save();refreshSite();if(st)st.innerHTML='<span style="color:var(--green)">✓ Restored</span>';setTimeout(()=>{alert('Backup restored! Reloading.');location.reload();},500);}catch(err){if(st)st.innerHTML='<span style="color:var(--red)">✗ '+err.message+'</span>';}}
 
 // On mobile, move status dot under logo
 (function(){
@@ -1870,10 +1872,15 @@ function saveIncome(){const id=document.getElementById('income-id').value||('inc
 async function deleteIncome(id){if(!await appConfirm('Delete this income entry?','Delete'))return;const item=(propData._income||[]).find(i=>i.id===id);if(item)trashItem('income',(item.desc||item.payer||'Income')+' '+(item.amount||''),Object.assign({},item),'general');propData._income=(propData._income||[]).filter(i=>i.id!==id);save();renderIncome();refreshSite('stats');}
 let _incomeScanFiles=[];
 function handleIncomeFileDrop(ev){ev.preventDefault();handleIncomeScanFiles(ev.dataTransfer.files);}
-function handleIncomeScanFiles(files){_incomeScanFiles=[..._incomeScanFiles,...Array.from(files)];const q=document.getElementById('income-scan-queue');if(q)q.innerHTML=_incomeScanFiles.map(f=>`<div style="font-size:11px;color:var(--text3);padding:3px 0">${f.name}</div>`).join('');const btn=document.getElementById('scan-btn-income');if(btn)btn.style.display=_incomeScanFiles.length?'inline-flex':'none';}
+function handleIncomeScanFiles(files){_incomeScanFiles=[..._incomeScanFiles,...Array.from(files)];const q=document.getElementById('income-scan-queue');if(q)q.innerHTML=_incomeScanFiles.map(f=>`<div style="font-size:11px;color:var(--text3);padding:3px 0">${esc(f.name)}</div>`).join('');const btn=document.getElementById('scan-btn-income');if(btn)btn.style.display=_incomeScanFiles.length?'inline-flex':'none';}
 async function runIncomeScan(){if(!_incomeScanFiles.length)return;const btn=document.getElementById('scan-btn-income');if(btn){btn.disabled=true;btn.innerHTML='Scanning...';}
-for(const file of _incomeScanFiles){try{const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=ev=>res(ev.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:getAuthHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:file.type,data:b64}},{type:'text',text:'Extract from this payment/check: amount, date (YYYY-MM-DD), payer name, description. JSON only: {"amount":0,"date":"","payer":"","desc":""}'}]}]})});const data=await resp.json();const parsed=JSON.parse((data.content?.[0]?.text||'{}').replace(/```json|```/g,'').trim());let receiptUrl='';try{const path='receipts/income-'+Date.now()+'-'+file.name.replace(/[^a-z0-9.]/gi,'-');receiptUrl=await uploadToStorage(file,path);}catch(upErr){console.warn('Income receipt upload failed, skipping receipt attachment:',upErr);}const inc={id:'inc-'+Date.now().toString(36),amount:parseFloat(parsed.amount)||0,date:parsed.date||new Date().toLocaleDateString('en-CA'),payer:parsed.payer||'',desc:parsed.desc||file.name,cat:'Check'};if(receiptUrl)inc.receipt=receiptUrl;if(!propData._income)propData._income=[];propData._income.push(inc);}catch(err){console.error(err);}}
-_incomeScanFiles=[];const q=document.getElementById('income-scan-queue');if(q)q.innerHTML='';if(btn){btn.disabled=false;btn.innerHTML='<svg class="ico"><use href="#ico-sparkles"/></svg> Scan All & Add';btn.style.display='none';}save();renderIncome();}
+try{
+for(const file of _incomeScanFiles){
+  if(!file.type.startsWith('image/')){setEl('income-scan-status',`Skipped ${esc(file.name)}: not an image`);continue;}
+  try{const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=ev=>res(ev.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:getAuthHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:file.type,data:b64}},{type:'text',text:'Extract from this payment/check: amount, date (YYYY-MM-DD), payer name, description. JSON only: {"amount":0,"date":"","payer":"","desc":""}'}]}]})});const data=await resp.json();const parsed=JSON.parse((data.content?.[0]?.text||'{}').replace(/```json|```/g,'').trim());let receiptUrl='';try{const path='receipts/income-'+Date.now()+'-'+file.name.replace(/[^a-z0-9.]/gi,'-');receiptUrl=await uploadToStorage(file,path);}catch(upErr){console.warn('Income receipt upload failed, skipping receipt attachment:',upErr);}const inc={id:'inc-'+Date.now().toString(36),amount:parseFloat(parsed.amount)||0,date:parsed.date||new Date().toLocaleDateString('en-CA'),payer:parsed.payer||'',desc:parsed.desc||file.name,cat:'Check'};if(receiptUrl)inc.receipt=receiptUrl;if(!propData._income)propData._income=[];propData._income.push(inc);}catch(err){console.error(err);}
+}
+_incomeScanFiles=[];const q=document.getElementById('income-scan-queue');if(q)q.innerHTML='';save();renderIncome();
+}finally{if(btn){btn.disabled=false;btn.innerHTML='<svg class="ico"><use href="#ico-sparkles"/></svg> Scan All & Add';btn.style.display='none';}}}
 
 function toggleCVV(idx, val){
   const el=document.getElementById('cvv-'+idx);
@@ -2301,7 +2308,7 @@ function saveMileage(){localStorage.setItem('apex_mileage',JSON.stringify(window
 
 // ====== LIVE DATA HELPERS ======
 function getProp(p){return{...(propDefaults[p]||{}),...(propData[p]||{})};}
-function propPurchase(p,yr){const pr=getProp(p);const v=parseFloat(pr.purchase||0);if(!v)return 0;if(!yr)return v;const sd=pr.sdate||"";if(!sd)return 0;return sd.startsWith(String(yr))?v:0;}
+function propPurchase(p,yr){const pr=getProp(p);const v=parseFloat(pr.purchase||0);if(!v)return 0;if(!yr)return v;const sd=pr.pdate||"";if(!sd)return 0;return sd.startsWith(String(yr))?v:0;}
 function propSold(p,yr){const pr=getProp(p);const v=parseFloat(pr.sold||0);if(!v)return 0;if(!yr)return v;const sd=pr.sdate||"";if(!sd)return 0;return sd.startsWith(String(yr))?v:0;}
 function propNetProfit(p){const s=propSold(p);if(!s)return null;const meals=allE(p).filter(e=>!e.credit&&(e.c||e.cat||'')==='Meals (50% deductible)').reduce((t,e)=>t+(parseFloat(e.a||e.amount)||0),0);return s-propPurchase(p)-eTotal(p)+meals*0.5;}
 function propROI(p){const cost=propPurchase(p)+eTotal(p);const s=propSold(p);if(!s||!cost)return null;return((s-cost)/cost*100);}
@@ -2347,7 +2354,9 @@ function exportTaxPDF(){
   const contractors=Object.values(w9Map);
   const manualContractors=(propData._contractors||[]).filter(c=>!w9Map[c.name.toLowerCase()]);
   const allContractors=[...contractors,...manualContractors.map(c=>({vendor:c.name,total:0,ein:c.ein,manual:true}))];
+  const he=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const w=window.open('','_blank');
+  if(!w){alert('Pop-up blocked. Please allow pop-ups for this site and try again.');return;}
   w.document.write(`<html><head><title>Apex Homes Tax Summary ${taxYear}</title><style>
     body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:900px;margin:0 auto}
     h1{font-size:22px;margin-bottom:4px}h2{font-size:13px;color:#777;margin-bottom:24px}
@@ -2392,26 +2401,26 @@ function exportTaxPDF(){
   <h3>Per-Property Breakdown</h3>
   <table>
     <tr><th>Property</th><th>Purchase Price</th><th>Sale Price</th><th>Expenses</th><th>Net</th></tr>
-    ${props.map(p=>{const pr=getProp(p);const exp=eTotal(p,taxYear);const sold=propSold(p,taxYear);const purch=propPurchase(p,taxYear);const net=sold-purch-exp;return`<tr><td>${pr.addr||p}</td><td>$${$(purch)}</td><td>${sold>0?'$'+$(sold):'(active)'}</td><td>$${$(exp)}</td><td class="${net>=0?'green':'red'}">$${$(net)}</td></tr>`;}).join('')}
+    ${props.map(p=>{const pr=getProp(p);const exp=eTotal(p,taxYear);const sold=propSold(p,taxYear);const purch=propPurchase(p,taxYear);const net=sold-purch-exp;return`<tr><td>${he(pr.addr||p)}</td><td>$${$(purch)}</td><td>${sold>0?'$'+$(sold):'(active)'}</td><td>$${$(exp)}</td><td class="${net>=0?'green':'red'}">$${$(net)}</td></tr>`;}).join('')}
   </table>
 
   <h3>Schedule C Expenses by Category</h3>
   <table>
     <tr><th>Category</th><th>Total</th></tr>
-    ${Object.entries(catMap).sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>`<tr><td>${cat}</td><td>$${$(amt)}</td></tr>`).join('')}
+    ${Object.entries(catMap).sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>`<tr><td>${he(cat)}</td><td>$${$(amt)}</td></tr>`).join('')}
   </table>
 
   ${allContractors.length?`<h3>Contractors / 1099-NEC Required</h3>
   <div class="notice">Contractors paid $600+ in a tax year require a 1099-NEC. File by January 31.</div>
   <table>
     <tr><th>Contractor / Vendor</th><th>EIN / SSN</th><th>Total Paid</th><th>Status</th></tr>
-    ${allContractors.map(c=>`<tr><td>${c.vendor}</td><td>${c.ein||'—'}</td><td>${c.total>0?'$'+$(c.total):'(manual entry)'}</td><td>${c.manual?'Manually added':'1099-NEC required'}</td></tr>`).join('')}
+    ${allContractors.map(c=>`<tr><td>${he(c.vendor)}</td><td>${he(c.ein||'—')}</td><td>${c.total>0?'$'+$(c.total):'(manual entry)'}</td><td>${c.manual?'Manually added':'1099-NEC required'}</td></tr>`).join('')}
   </table>`:''}
   ${getAssets().filter(a=>String(a.taxYear)===String(taxYear)).length?`
   <h3>Fixed Assets — Section 179 / Depreciation</h3>
   <table>
     <tr><th>Asset</th><th>Type</th><th>Cost Basis</th><th>Biz Use %</th><th>Election</th><th>Deduction</th></tr>
-    ${getAssets().filter(a=>String(a.taxYear)===String(taxYear)).map(a=>`<tr><td>${a.description||a.type}</td><td>${a.type}</td><td>$${$(a.purchasePrice||0)}</td><td>${a.businessUsePct||100}%</td><td>${a.election==='179'?'Sec 179':a.election==='bonus'?'Bonus Dep':'MACRS'}</td><td class="red">($${$(assetDeduction(a))})</td></tr>`).join('')}
+    ${getAssets().filter(a=>String(a.taxYear)===String(taxYear)).map(a=>`<tr><td>${he(a.description||a.type)}</td><td>${he(a.type)}</td><td>$${$(a.purchasePrice||0)}</td><td>${a.businessUsePct||100}%</td><td>${a.election==='179'?'Sec 179':a.election==='bonus'?'Bonus Dep':'MACRS'}</td><td class="red">($${$(assetDeduction(a))})</td></tr>`).join('')}
   </table>`:''}
 `);
   w.document.write(`</body></html>`);
@@ -2424,12 +2433,17 @@ function ohioAutocomplete(inp){
   const box=document.getElementById('pot-addr-suggestions');
   if(!box)return;
   if(val.length<3){box.style.display='none';return;}
-  const url=`https://nominatim.openstreetmap.org/search?format=json&countrycodes=us&state=Ohio&q=${encodeURIComponent(val+' Ohio')}&limit=5`;
-  fetch(url,{headers:{'Accept-Language':'en'}}).then(r=>r.json()).then(results=>{
-    if(!results.length){box.style.display='none';return;}
-    box.innerHTML=results.map(r=>`<div style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)" onmousedown="document.getElementById('pot-addr').value='${r.display_name.replace(/'/g,"\\'")}';document.getElementById('pot-addr-suggestions').style.display='none'">${esc(r.display_name)}</div>`).join('');
-    box.style.display='block';
-  }).catch(()=>{box.style.display='none';});
+  clearTimeout(window._ohioTimer);
+  window._ohioTimer=setTimeout(async()=>{
+    try{
+      const url=`https://nominatim.openstreetmap.org/search?format=json&countrycodes=us&state=Ohio&q=${encodeURIComponent(val+' Ohio')}&limit=5`;
+      const r=await fetch(url,{headers:{'Accept-Language':'en'}});
+      const results=await r.json();
+      if(!results.length){box.style.display='none';return;}
+      box.innerHTML=results.map(r=>`<div style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)" onmousedown="document.getElementById('pot-addr').value='${r.display_name.replace(/'/g,"\\'")}';document.getElementById('pot-addr-suggestions').style.display='none'">${esc(r.display_name)}</div>`).join('');
+      box.style.display='block';
+    }catch(e){box.style.display='none';}
+  },350);
 }
 
 function exportTaxCSV(){
@@ -3114,6 +3128,7 @@ function _recurDates(startDt,freq){
     else break;
     if(dates.length>500)break; // safety cap
   }
+  if(dates.length===500)console.warn('_recurDates: hit 500-entry cap for recurring expense');
   return dates;
 }
 async function saveExp(){
@@ -3136,6 +3151,7 @@ async function saveExp(){
   if(isRecurring){
     const dates=_recurDates(dt,recurFreq);
     if(!dates.length){document.getElementById("exp-scan-status").innerHTML='<div style="font-size:12px;color:var(--red)">Start date must be today or earlier.</div>';return;}
+    if(dates.length===500){document.getElementById("exp-scan-status").innerHTML='<div style="font-size:12px;color:var(--red)">⚠ Recurring cap hit (500 entries). Choose a more recent start date.</div>';return;}
     if(!await appConfirm(`This will add ${dates.length} ${recurFreq} expense${dates.length>1?'s':''} (${dates[0]} → ${dates[dates.length-1]}). Continue?`,'Add'))return;
     dates.forEach(date=>{
       const expObj={a:amount,d,c,v,dt:date,receipt,recur:recurFreq};
@@ -3825,11 +3841,11 @@ function handleDrop(ev,p){
   const files=ev.dataTransfer?.files;
   if(files&&files.length)handleScanFiles(files,p);
 }
-function renderQ(p){const q=document.getElementById("sq-"+p)||document.getElementById("scan-queue-"+p);if(!q)return;const files=pendingFiles[p]||[];q.innerHTML=files.map((f,i)=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:4px 0"><svg class="ico" style="width:14px;height:14px;color:var(--text2)"><use href="#ico-file"/></svg>${f.name}<button onclick="pendingFiles['${p}'].splice(${i},1);renderQ('${p}')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:16px">×</button></div>`).join("");}
+function renderQ(p){const q=document.getElementById("sq-"+p)||document.getElementById("scan-queue-"+p);if(!q)return;const files=pendingFiles[p]||[];q.innerHTML=files.map((f,i)=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:4px 0"><svg class="ico" style="width:14px;height:14px;color:var(--text2)"><use href="#ico-file"/></svg>${esc(f.name)}<button onclick="pendingFiles['${p}'].splice(${i},1);renderQ('${p}')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:16px">×</button></div>`).join("");}
 async function scanOne(f,p,i){
   try{const processed=await processReceiptImage(f,true);const uncropped=await processReceiptImage(f,false);
     const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:getAuthHeaders(),body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:600,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:uncropped.mime,data:uncropped.b64}},{type:"text",text:"Extract data from this receipt/invoice/order. It may be a photo, screenshot, Amazon order, Zelle payment, bank statement, or any purchase record. Respond ONLY with raw JSON (no markdown).\n\nCategories (pick the BEST match):\n- \"Labor / Contractor\" → any worker, contractor, handyman, labor charges\n- \"Materials & Supplies\" → hardware, tools, fixtures, appliances, Home Depot, Menards, Amazon\n- \"Utilities\" → electric, gas, water, sewer, trash, internet for property\n- \"Painting\" → paint, primer, painting labor\n- \"Plumbing\" → pipes, faucets, toilets, water heater\n- \"Electrical\" → wiring, outlets, panels, lighting\n- \"Closing Costs\" → title fees, agent commissions, deed prep, settlement, transfer tax\n- \"Property Tax\" → county/city tax bills\n- \"Insurance\" → property insurance, home warranty\n- \"HOA Fees\" → homeowner association dues\n- \"Marketing / Advertising\" → listing photos, staging, ads\n- \"Permits & Fees\" → building permits, inspection fees\n- \"Landscaping\" → lawn, trees, mulch, snow removal\n- \"Legal / Accounting\" → attorney, CPA, legal fees\n- \"Software / Subscriptions\" → apps, software, online services\n- \"Meals (50% deductible)\" → business meals, restaurants, food with clients/contractors\n- \"Other\" → anything that does not fit above\n\nIMPORTANT: For orders with multiple items, use the ORDER TOTAL as the amount.\nIMPORTANT: For the date, use ONLY a clear purchase/transaction date printed on the receipt. Do NOT use copyright years, website footer years, or manufacturer dates. If no clear transaction date is visible, return null for date.\n\nRespond ONLY with this JSON:\n{\"amount\":123.45,\"desc\":\"Brief 4-6 word description\",\"vendor\":\"Store name\",\"date\":\"YYYY-MM-DD or null\",\"cat\":\"exact category from list\"}"}]}]})});
-    if(!resp.ok){const errText=await resp.text().catch(()=>"");console.error("Anthropic API error:",resp.status,errText.slice(0,200));return{ok:false,err:resp.status+" "+errText.slice(0,100)};}const data=await resp.json();const parsed=JSON.parse(data.content[0].text.replace(/```json|```/g,"").trim());
+    if(!resp.ok){const errText=await resp.text().catch(()=>"");console.error("Anthropic API error:",resp.status,errText.slice(0,200));return{ok:false,err:resp.status+" "+errText.slice(0,100)};}const data=await resp.json();let rawText=(data.content[0].text||'').trim();const jsonMatch=rawText.match(/\{[\s\S]*\}/);if(!jsonMatch)throw new Error('No JSON in response');const parsed=JSON.parse(jsonMatch[0].replace(/```json|```/g,'').trim());
     return{ok:true,data:parsed,b64:processed.b64,mime:processed.mime};
   }catch(ex){console.error("scan error:",ex?.message||String(ex));return{ok:false,err:ex?.message};}
 }
@@ -3861,7 +3877,7 @@ function saveDocFile(file,p){
       const url=await uploadToStorage(file,path);
       const doc=propData._docs[p].find(d=>d.id===uid);
       if(doc){doc.url=url;save();}
-    }catch(ex){}
+    }catch(ex){doc._pending=true;save();console.warn('Doc upload failed, marked pending',ex);}
   };
   fr.readAsDataURL(file);
 }
@@ -4132,10 +4148,10 @@ function renderMileage(){
 }
 
 // ====== TAXES ======
-var taxYear=2026;
+var taxYear=new Date().getFullYear();
 function renderTaxYearBtns(){
   const c=document.getElementById('tax-year-btns');if(!c)return;
-  const cur=new Date().getFullYear(),start=2026;
+  const cur=new Date().getFullYear(),start=2024;
   let h='';for(let y=start;y<=cur;y++)h+=`<button onclick="setTaxYear(${y})" class="btn btn-sm${y===taxYear?' btn-primary':''}" style="border:none;padding:4px 14px;border-radius:7px;font-size:12.5px" data-yr="${y}">${y}</button>`;
   c.innerHTML=h;
 }
@@ -4244,8 +4260,16 @@ function pinKey(k){pinEntry+=k;updatePinDots();if(pinEntry.length===4)setTimeout
 function pinDel(){pinEntry=pinEntry.slice(0,-1);updatePinDots();}
 function checkPin(){
   try{
+    // First use: no PIN stored yet — redirect to change-PIN flow instead of checking default
+    if(!localStorage.getItem('apex_pin')){
+      const s=document.getElementById('pin-screen');if(s)s.style.display='none';
+      sessionStorage.setItem('apex_unlocked','1');
+      pinEntry='';
+      setTimeout(()=>{alert('Welcome! Please set your PIN in Company settings → Change PIN before using the app.');},300);
+      return;
+    }
     const s=document.getElementById('pin-screen');
-    if(pinEntry===getPin()){if(s)s.style.display='none';sessionStorage.setItem('apex_unlocked','1');}
+    if(pinEntry===getPin()){if(s)s.style.display='none';sessionStorage.setItem('apex_unlocked','1');pinEntry='';}
     else{
       const e=document.getElementById('pin-error');if(e)e.textContent='Incorrect PIN. Try again.';
       pinEntry='';updatePinDots();
@@ -4497,7 +4521,7 @@ function refreshSite(scope){
     setEl(p+"-roi-pct",roi!=null?roi.toFixed(1)+"%":"—");setEl(p+"-ir-sdate",fmtD(pr.sdate)||"—");setEl(p+"-roi-sdate",fmtD(pr.sdate)||"—");
   });
   const otherIncome=otherInc;const totalRevIncome=revenue+otherIncome;const netProfitFull=totalRevIncome-acquisitions-totalExp;
-  setEl("pl-stat-revenue",fmt(totalRevIncome));setEl("pl-stat-expenses",fmt(totalExp));setEl("pl-stat-net",fmt(netProfitFull));
+  setEl("pl-stat-revenue",fmt(totalRevIncome));setEl("pl-stat-expenses",fmt(totalExp));setEl("pl-stat-net",fmt(netProfitFull));/* updated below after plNet computed */
   // P&L rows - dynamic for sold properties
   const soldProps=props.filter(p=>propSold(p,taxYear)>0);
   const plRevEl=document.getElementById('pl-total-rev');
@@ -4523,6 +4547,7 @@ function refreshSite(scope){
   setEl("pl-asset-deduction",assetDed||assetInt?'('+fmt(assetDed+assetInt)+')':'—');
   const plAssetRow=document.getElementById('pl-asset-row');if(plAssetRow)plAssetRow.style.display=(assetDed||assetInt)?'flex':'none';
   const plNet=netProfitFull-mileDeduction-assetDed-assetInt+mealsAll*0.5;
+  setEl("pl-stat-net",fmt(plNet));
   setEl("pl-net-row",fmt(plNet));
   const plNetEl=document.getElementById("pl-net-row");if(plNetEl)plNetEl.style.color=plNet>=0?'var(--green)':'var(--red)';
   
@@ -5017,8 +5042,8 @@ function saveEditDoc(){
   save();renderDocs(p);closeModal('m-edit-doc');
 }
 function downloadDoc(p,uid){
-  const doc=getDocByUid(p,uid);if(!doc||!doc.data)return;
-  const a=document.createElement('a');a.href=doc.data;a.download=doc.name;a.click();
+  const doc=getDocByUid(p,uid);if(!doc||(!doc.data&&!doc.url))return;
+  const a=document.createElement('a');a.href=doc.url||doc.data;a.download=doc.name;a.click();
 }
 function saveDocName(p,uid){
   const inp=document.getElementById("docname-"+uid);if(!inp)return;
@@ -5120,6 +5145,12 @@ async function syncAllReceiptsToCloud(){
   const status=document.getElementById('receipt-sync-status');if(!status)return;
   const toUpload=[];
   [...getPropKeys(),'general'].forEach(p=>{
+    (extra[p]||[]).forEach((e,i)=>{
+      const arr=_receiptArr(e.receipt);
+      arr.forEach((r,ri)=>{
+        if(r&&r.startsWith('data:'))toUpload.push({p,i,r,ri});
+      });
+    });
   });
   if(!toUpload.length){status.innerHTML='<span style="color:var(--green)">✓ All receipts already in cloud.</span>';return;}
   status.innerHTML=`<div style="display:flex;align-items:center;gap:8px"><div class="spin"></div> Uploading ${toUpload.length} receipt${toUpload.length>1?'s':''}...</div>`;
@@ -5317,7 +5348,9 @@ let _syncTimer=null;
 function startAutoSync(){
   if(_syncTimer)clearInterval(_syncTimer);
   _syncTimer=setInterval(autoSyncPull,5000);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)autoSyncPull();});
+  if(window._visHandler)document.removeEventListener('visibilitychange',window._visHandler);
+  window._visHandler=function(){if(!document.hidden)autoSyncPull();};
+  document.addEventListener('visibilitychange',window._visHandler);
 }
 
 // ====== DASH MINI CARDS (Tasks / Potential Properties) ======
@@ -5479,7 +5512,7 @@ function renderContractors(){
     out+=`<div class="card" style="margin-bottom:1rem;padding:1.25rem;border-color:var(--border2)">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
         <div>
-          <div style="font-size:15px;font-weight:700;color:var(--text)">${c.name}</div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">${esc(c.name)}</div>
           <div style="font-size:11px;color:var(--text3);margin-top:2px">Added manually</div>
         </div>
         <div style="display:flex;gap:6px">
@@ -5488,9 +5521,9 @@ function renderContractors(){
         </div>
       </div>
       ${c.ein||c.phone||c.email?`<div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:.75rem;font-size:12px;color:var(--text2)">
-        ${c.ein?`<span><strong>EIN:</strong> ${c.ein}</span>`:''}
-        ${c.phone?`<span><strong>Phone:</strong> ${c.phone}</span>`:''}
-        ${c.email?`<span><strong>Email:</strong> ${c.email}</span>`:''}
+        ${c.ein?`<span><strong>EIN:</strong> ${esc(c.ein)}</span>`:''}
+        ${c.phone?`<span><strong>Phone:</strong> ${esc(c.phone)}</span>`:''}
+        ${c.email?`<span><strong>Email:</strong> ${esc(c.email)}</span>`:''}
       </div>`:''}
     </div>`;
   });
@@ -6010,7 +6043,7 @@ window.addEventListener('unhandledrejection',function(e){console.error('Unhandle
 <input type="file" id="prop-img-inp" accept="image/*" style="display:none" onchange="handlePropImg(this)">
 
 <!-- Custom confirm modal -->
-<div id="m-confirm" class="mo" style="display:none;z-index:9999;align-items:center !important;justify-content:center !important">
+<div id="m-confirm" class="mo" role="dialog" aria-modal="true" style="display:none;z-index:9999;align-items:center !important;justify-content:center !important">
   <div class="mo-box" style="max-width:340px;width:92%;padding:24px 20px 20px">
     <div id="m-confirm-msg" style="font-size:15px;line-height:1.5;color:var(--text);margin-bottom:20px;white-space:pre-wrap"></div>
     <div style="display:flex;gap:10px;justify-content:flex-end">
@@ -6042,6 +6075,8 @@ window.addEventListener('unhandledrejection',function(e){console.error('Unhandle
       function onCancel(){cleanup(false);}
       okBtn.addEventListener('click',onOk);
       cancelBtn.addEventListener('click',onCancel);
+      const keyH=e=>{if(e.key==='Escape'){document.removeEventListener('keydown',keyH);cleanup(false);}};
+      document.addEventListener('keydown',keyH);
     });
   }
   window.appConfirm=appConfirm;
