@@ -3745,8 +3745,8 @@ function _renderExpReceiptPreview(){
   // Collapse the drop zone to a compact bar; show thumbnail inline
   const full=document.getElementById('exp-dz-full');const compact=document.getElementById('exp-dz-compact');
   if(full)full.style.display='none';if(compact)compact.style.display='flex';
-  prev.innerHTML='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">'+expReceiptUrls.map((u,i)=>
-    `<div style="position:relative;display:inline-block"><img src="${u}" style="height:54px;border-radius:6px;border:1px solid var(--border2);cursor:zoom-in" onclick="openLightbox(expReceiptUrls)"><button onclick="removeExpReceiptPage(${i})" style="position:absolute;top:-5px;right:-5px;background:#c0392b;border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button></div>`
+  prev.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">'+expReceiptUrls.map((u,i)=>
+    `<div style="position:relative;display:inline-block"><img src="${u}" style="height:90px;border-radius:6px;border:1px solid var(--border2);cursor:zoom-in;max-width:120px;object-fit:cover" onclick="openLightbox(expReceiptUrls)"><button onclick="removeExpReceiptPage(${i})" style="position:absolute;top:-6px;right:-6px;background:#c0392b;border:none;color:#fff;border-radius:50%;width:18px;height:18px;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button></div>`
   ).join('')+'</div>';
 }
 function _expDzExpand(){
