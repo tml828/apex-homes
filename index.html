@@ -3746,7 +3746,7 @@ function _renderExpReceiptPreview(){
   const full=document.getElementById('exp-dz-full');const compact=document.getElementById('exp-dz-compact');
   if(full)full.style.display='none';if(compact)compact.style.display='flex';
   prev.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">'+expReceiptUrls.map((u,i)=>
-    `<div style="position:relative;display:inline-block"><img src="${u}" style="height:90px;border-radius:6px;border:1px solid var(--border2);cursor:zoom-in;max-width:120px;object-fit:cover" onclick="openLightbox(expReceiptUrls)"><button onclick="removeExpReceiptPage(${i})" style="position:absolute;top:-6px;right:-6px;background:#c0392b;border:none;color:#fff;border-radius:50%;width:18px;height:18px;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button></div>`
+    `<div style="position:relative;display:inline-block"><img src="${u}" style="height:90px;width:auto;border-radius:6px;border:1px solid var(--border2);cursor:zoom-in" onclick="openLightbox(expReceiptUrls)"><button onclick="removeExpReceiptPage(${i})" style="position:absolute;top:-6px;right:-6px;background:#c0392b;border:none;color:#fff;border-radius:50%;width:18px;height:18px;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button></div>`
   ).join('')+'</div>';
 }
 function _expDzExpand(){
@@ -3791,7 +3791,11 @@ async function scanExpReceipt(f,preB64=null,preMime=null){
     const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:getAuthHeaders(),body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:600,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:processed.mime,data:b64}},{type:"text",text:"Extract data from this receipt/invoice/order. It may be a photo, screenshot, Amazon order, Zelle payment, bank statement, or any purchase record. Respond ONLY with raw JSON (no markdown).\n\nCategories (pick the BEST match):\n- \"Labor / Contractor\" → any worker, contractor, handyman, labor charges\n- \"Materials & Supplies\" → hardware, tools, fixtures, appliances, Home Depot, Menards, Amazon\n- \"Utilities\" → electric, gas, water, sewer, trash, internet for property\n- \"Painting\" → paint, primer, painting labor\n- \"Plumbing\" → pipes, faucets, toilets, water heater\n- \"Electrical\" → wiring, outlets, panels, lighting\n- \"Closing Costs\" → title fees, agent commissions, deed prep, settlement, transfer tax\n- \"Property Tax\" → county/city tax bills\n- \"Insurance\" → property insurance, home warranty\n- \"HOA Fees\" → homeowner association dues\n- \"Marketing / Advertising\" → listing photos, staging, ads\n- \"Permits & Fees\" → building permits, inspection fees\n- \"Landscaping\" → lawn, trees, mulch, snow removal\n- \"Legal / Accounting\" → attorney, CPA, legal fees\n- \"Software / Subscriptions\" → apps, software, online services\n- \"Meals (50% deductible)\" → business meals, restaurants, food with clients/contractors\n- \"Other\" → anything that does not fit above\n\nIMPORTANT: For orders with multiple items, use the ORDER TOTAL as the amount.\nIMPORTANT: For the date, use ONLY a clear purchase/transaction date printed on the receipt. Do NOT use copyright years, website footer years, or manufacturer dates. If no clear transaction date is visible, return null for date.\n\nRespond ONLY with this JSON:\n{\"amount\":123.45,\"desc\":\"Brief 4-6 word description\",\"vendor\":\"Store name\",\"date\":\"YYYY-MM-DD or null\",\"cat\":\"exact category from list\"}"}]}]})});
     if(!resp.ok)throw new Error(await resp.text());
     const data=await resp.json();
-    const parsed=JSON.parse(data.content[0].text.replace(/```json|```/g,"").trim());
+    let rawText=(data.content[0].text||'').trim();
+    // Extract JSON even if model wrapped response in explanation text
+    const jsonMatch=rawText.match(/\{[\s\S]*\}/);
+    if(!jsonMatch)throw new Error('No JSON in response');
+    const parsed=JSON.parse(jsonMatch[0].replace(/```json|```/g,'').trim());
     console.log('AI scan result:',JSON.stringify(parsed));
     if(parsed.amount){const amt=String(parsed.amount).replace(/[^0-9.\-]/g,'');document.getElementById("exp-amt").value=amt;}
     if(parsed.desc)document.getElementById("exp-desc").value=parsed.desc;
