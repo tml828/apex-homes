@@ -627,7 +627,8 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <div class="pin-dot" id="pd2"></div>
     <div class="pin-dot" id="pd3"></div>
   </div>
-  <div id="pin-error" style="font-size:13px;color:#7a1a2a;font-weight:700;min-height:18px;margin-bottom:1rem;text-align:center"></div>
+  <div id="pin-error" style="font-size:13px;color:#7a1a2a;font-weight:700;min-height:18px;margin-bottom:.25rem;text-align:center"></div>
+  <div id="pin-hint" style="font-size:11px;color:rgba(10,11,15,0.45);min-height:16px;margin-bottom:.75rem;text-align:center"></div>
   <div style="display:grid;grid-template-columns:repeat(3,72px);gap:12px">
     <button class="pin-key" onclick="pinKey('1')">1</button>
     <button class="pin-key" onclick="pinKey('2')">2</button>
@@ -4260,18 +4261,11 @@ function pinKey(k){pinEntry+=k;updatePinDots();if(pinEntry.length===4)setTimeout
 function pinDel(){pinEntry=pinEntry.slice(0,-1);updatePinDots();}
 function checkPin(){
   try{
-    // First use: no PIN stored yet — redirect to change-PIN flow instead of checking default
-    if(!localStorage.getItem('apex_pin')){
-      const s=document.getElementById('pin-screen');if(s)s.style.display='none';
-      sessionStorage.setItem('apex_unlocked','1');
-      pinEntry='';
-      setTimeout(()=>{alert('Welcome! Please set your PIN in Company settings → Change PIN before using the app.');},300);
-      return;
-    }
     const s=document.getElementById('pin-screen');
-    if(pinEntry===getPin()){if(s)s.style.display='none';sessionStorage.setItem('apex_unlocked','1');pinEntry='';}
+    if(pinEntry===getPin()){if(s)s.style.display='none';sessionStorage.setItem('apex_unlocked','1');pinEntry='';const h=document.getElementById('pin-hint');if(h)h.textContent='';}
     else{
       const e=document.getElementById('pin-error');if(e)e.textContent='Incorrect PIN. Try again.';
+      if(!localStorage.getItem('apex_pin')){const h=document.getElementById('pin-hint');if(h)h.textContent='No PIN saved on this device — try 0828 (default)';}
       pinEntry='';updatePinDots();
       const d=document.getElementById('pin-dots');
       if(d){d.style.animation='shake .35s ease';setTimeout(()=>{if(d)d.style.animation='';},400);}
