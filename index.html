@@ -4255,6 +4255,7 @@ function initPin(){console.log("Apex Homes v2026-06-04-A loaded — padding fix 
   s.style.display='flex';pinEntry='';updatePinDots();
   const n=document.getElementById('nav-logo-img');const p=document.getElementById('pin-logo');
   if(p){p.src=n?n.src:'';}
+  if(!window._pinKeyHandler){window._pinKeyHandler=e=>{if(document.getElementById('pin-screen')?.style.display==='flex'){if(e.key>='0'&&e.key<='9')pinKey(e.key);else if(e.key==='Backspace')pinDel();}};document.addEventListener('keydown',window._pinKeyHandler);}
 }
 function updatePinDots(){const d=document.getElementById('pin-dots');if(!d)return;d.querySelectorAll('.pin-dot').forEach((dot,i)=>{dot.classList.toggle('filled',i<pinEntry.length);});}
 function pinKey(k){pinEntry+=k;updatePinDots();if(pinEntry.length===4)setTimeout(()=>{try{checkPin();}catch(e){}},120);}
