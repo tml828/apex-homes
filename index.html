@@ -3909,7 +3909,7 @@ function renderE(p){
     return `<div class="exp-item" style="display:flex;align-items:center;gap:10px;padding:.7rem 1rem;border-bottom:1px solid var(--border)${e.credit?";background:rgba(34,197,94,0.04)":""}">
       ${receipt}
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${desc}${creditBadge}${recurBadge}${returnBadge}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${desc}</span>${(creditBadge||recurBadge||returnBadge)?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:3px">${creditBadge}${recurBadge}${returnBadge}</div>`:""}</div>
         <div style="font-size:11px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${meta}</div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
@@ -4280,7 +4280,7 @@ function checkPin(){
 }
 function changePin(){
   const curr=document.getElementById('pin-current')?.value;
-  if(curr!==getPin()){alert('Current PIN incorrect');return;}
+  if(localStorage.getItem('apex_pin')&&curr!==getPin()){alert('Current PIN incorrect');return;}
   const n=document.getElementById('pin-new')?.value;
   const c=document.getElementById('pin-confirm')?.value;
   if(n!==c||n.length!==4){alert('PINs must match and be 4 digits');return;}
