@@ -284,6 +284,7 @@ Property keys are always lowercase, no spaces.
 - `pl-stat-net` stat card now updated after `plNet` is computed (fully adjusted for mileage, assets, meals)
 - `taxYear` default changed from hardcoded `2026` to `new Date().getFullYear()`
 - `renderTaxYearBtns` start year changed from 2026 to 2024
+- Financing tab added to every property page: `propData._loans[key]` array stores loan objects (type, lender, amount, rate, startDate, endDate, interestOnly, notes); `getLoans(p)`, `totalActiveLoans()`, `autoGenLoanInterest(p)` helpers added; `openAddLoan/openEditLoan/saveLoan/deleteLoan/renderLoans` manage the shared `#m-loan` modal; auto-generated monthly interest expenses tagged with `_loanId` and `_autoGen:true` (category "Loan Interest") are created/removed alongside each loan; balance sheet Outstanding Loans display now includes `totalActiveLoans()` added to the manual input value, with an "Auto-detected from property loans" note shown below the field
 - `_recurDates` 500-cap: logs `console.warn` when hit; `saveExp` shows user-visible error and blocks save if cap reached
 - `restoreBackup` FileReader wrapped in Promise — async function now properly awaits file reading
 - `checkPin` first-use flow: if no PIN stored in localStorage, auto-unlocks and prompts user to set a PIN; also clears `pinEntry` after successful unlock

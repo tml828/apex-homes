@@ -931,7 +931,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
         <div class="pl-row net"><span>Owner's Equity</span><span id="bs-equity">—</span></div>
         <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)">
           <div style="font-size:11px;color:var(--text2);margin-bottom:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em">Update Balance Sheet</div>
-          <div class="fr"><div class="fg"><label>Cash on Hand ($)</label><input type="number" id="bs-cash-inp" placeholder="0.00" onchange="updateBalanceSheet()"></div><div class="fg"><label>Outstanding Loans ($)</label><input type="number" id="bs-loans-inp" placeholder="0.00" onchange="updateBalanceSheet()"></div></div>
+          <div class="fr"><div class="fg"><label>Cash on Hand ($)</label><input type="number" id="bs-cash-inp" placeholder="0.00" onchange="updateBalanceSheet()"></div><div class="fg"><label>Outstanding Loans ($, manual)</label><input type="number" id="bs-loans-inp" placeholder="0.00" onchange="updateBalanceSheet()"><div id="bs-auto-loans" style="font-size:11px;color:var(--text3);margin-top:3px"></div></div></div>
           <div class="fr"><div class="fg"><label>Accounts Payable ($)</label><input type="number" id="bs-payable-inp" placeholder="0.00" onchange="updateBalanceSheet()"></div></div>
         </div>
       </div></div>
@@ -1372,6 +1372,33 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('m-est')">Cancel</button>
       <button class="btn btn-primary btn-sm" onclick="saveEst()">Save Estimate</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT LOAN MODAL -->
+<div class="mo" id="m-loan" onclick="if(event.target===this)closeModal('m-loan')">
+  <div class="md" style="touch-action:pan-y">
+    <div class="md-title" id="loan-modal-title">Add Loan<button class="md-close" onclick="closeModal('m-loan')"><svg class="ico"><use href="#ico-x"/></svg></button></div>
+    <input type="hidden" id="loan-pid">
+    <input type="hidden" id="loan-idx" value="-1">
+    <div class="fr">
+      <div class="fg"><label>Loan Type</label><select id="loan-type" style="font-size:16px"><option>HELOC</option><option>Mortgage</option><option>Hard Money</option><option>Private</option><option>Other</option></select></div>
+      <div class="fg"><label>Lender</label><input type="text" id="loan-lender" placeholder="Bank or person" style="font-size:16px"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Balance / Amount ($)</label><input type="number" step="0.01" id="loan-amount" placeholder="0.00" style="font-size:16px"></div>
+      <div class="fg"><label>Annual Rate (%)</label><input type="number" step="0.01" id="loan-rate" placeholder="e.g. 7.5" style="font-size:16px"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Start Date</label><input type="date" id="loan-start" style="font-size:16px;width:100%;min-width:0;box-sizing:border-box"></div>
+      <div class="fg"><label>End Date (leave blank if active)</label><input type="date" id="loan-end" style="font-size:16px;width:100%;min-width:0;box-sizing:border-box"></div>
+    </div>
+    <div class="fg" style="margin-top:.5rem"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="loan-interest-only" style="width:auto"> Interest-only loan</label></div>
+    <div class="fg"><label>Notes</label><textarea id="loan-notes" rows="2" placeholder="Terms, details..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:.5rem .75rem;color:var(--text);font-family:inherit;font-size:16px;resize:vertical"></textarea></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('m-loan')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveLoan()">Save Loan</button>
     </div>
   </div>
 </div>
@@ -4003,6 +4030,158 @@ function renderCr(p){
 }
 
 // ====== ESTIMATES ======
+// ====== FINANCING / LOANS ======
+function getLoans(p){return(propData._loans&&propData._loans[p])||[];}
+
+function totalActiveLoans(){
+  let total=0;
+  const today=new Date().toLocaleDateString('en-CA');
+  getPropKeys().forEach(p=>{getLoans(p).forEach(l=>{if(!l.endDate||l.endDate>=today)total+=parseFloat(l.amount||0);});});
+  return total;
+}
+
+function autoGenLoanInterest(p){
+  if(!extra[p])extra[p]=[];
+  getLoans(p).forEach(loan=>{
+    if(!loan.startDate||!loan.rate||!loan.amount)return;
+    const rate=parseFloat(loan.rate)/100;
+    const monthly=(parseFloat(loan.amount)*rate)/12;
+    if(monthly<=0)return;
+    const today=new Date().toLocaleDateString('en-CA');
+    const endStr=loan.endDate||today;
+    const start=new Date(loan.startDate+'T12:00:00');
+    const end=new Date(endStr+'T12:00:00');
+    let cur=new Date(start.getFullYear(),start.getMonth(),1);
+    const endMonth=new Date(end.getFullYear(),end.getMonth(),1);
+    while(cur<=endMonth){
+      const yr=cur.getFullYear();
+      const mo=String(cur.getMonth()+1).padStart(2,'0');
+      const dt=`${yr}-${mo}-01`;
+      const exists=extra[p].some(e=>e._loanId===loan.id&&e.dt===dt);
+      if(!exists){
+        extra[p].push({
+          a:monthly.toFixed(2),
+          d:`${loan.type||'Loan'} Interest${loan.lender?' - '+loan.lender:''}`,
+          c:'Loan Interest',
+          v:loan.lender||'',
+          dt,
+          _loanId:loan.id,
+          _autoGen:true,
+          credit:false
+        });
+      }
+      cur.setMonth(cur.getMonth()+1);
+    }
+  });
+}
+
+function openAddLoan(p){
+  document.getElementById('loan-modal-title').innerHTML='Add Loan<button class="md-close" onclick="closeModal(\'m-loan\')"><svg class="ico"><use href="#ico-x"/></svg></button>';
+  document.getElementById('loan-pid').value=p;
+  document.getElementById('loan-idx').value=-1;
+  document.getElementById('loan-type').value='HELOC';
+  document.getElementById('loan-lender').value='';
+  document.getElementById('loan-amount').value='';
+  document.getElementById('loan-rate').value='';
+  document.getElementById('loan-start').value='';
+  document.getElementById('loan-end').value='';
+  document.getElementById('loan-interest-only').checked=true;
+  document.getElementById('loan-notes').value='';
+  showModal('m-loan');
+}
+
+function openEditLoan(p,idx){
+  const loan=getLoans(p)[idx];if(!loan)return;
+  document.getElementById('loan-modal-title').innerHTML='Edit Loan<button class="md-close" onclick="closeModal(\'m-loan\')"><svg class="ico"><use href="#ico-x"/></svg></button>';
+  document.getElementById('loan-pid').value=p;
+  document.getElementById('loan-idx').value=idx;
+  document.getElementById('loan-type').value=loan.type||'HELOC';
+  document.getElementById('loan-lender').value=loan.lender||'';
+  document.getElementById('loan-amount').value=loan.amount||'';
+  document.getElementById('loan-rate').value=loan.rate||'';
+  document.getElementById('loan-start').value=loan.startDate||'';
+  document.getElementById('loan-end').value=loan.endDate||'';
+  document.getElementById('loan-interest-only').checked=!!loan.interestOnly;
+  document.getElementById('loan-notes').value=loan.notes||'';
+  showModal('m-loan');
+}
+
+async function saveLoan(){
+  const p=document.getElementById('loan-pid').value;
+  const idx=parseInt(document.getElementById('loan-idx').value);
+  const amount=parseFloat(document.getElementById('loan-amount').value);
+  const rate=parseFloat(document.getElementById('loan-rate').value);
+  if(!amount||amount<=0){alert('Please enter a valid loan amount.');return;}
+  if(!rate||rate<=0){alert('Please enter a valid interest rate.');return;}
+  const loan={
+    id:(idx>=0&&getLoans(p)[idx]?.id)||('loan_'+Date.now().toString(36)),
+    type:document.getElementById('loan-type').value,
+    lender:document.getElementById('loan-lender').value.trim(),
+    amount,
+    rate,
+    startDate:document.getElementById('loan-start').value,
+    endDate:document.getElementById('loan-end').value,
+    interestOnly:document.getElementById('loan-interest-only').checked,
+    notes:document.getElementById('loan-notes').value.trim()
+  };
+  if(!propData._loans)propData._loans={};
+  if(!propData._loans[p])propData._loans[p]=[];
+  if(idx>=0)propData._loans[p][idx]=loan;
+  else propData._loans[p].push(loan);
+  // Remove old auto-gen entries for this loan then regenerate
+  if(extra[p])extra[p]=extra[p].filter(e=>e._loanId!==loan.id);
+  autoGenLoanInterest(p);
+  save();renderLoans(p);renderE(p);refreshSite('stats');closeModal('m-loan');
+}
+
+async function deleteLoan(p,idx){
+  const loan=getLoans(p)[idx];if(!loan)return;
+  if(!await appConfirm(`Delete this ${loan.type||'loan'} from ${loan.lender||'lender'}? Auto-generated interest expenses will also be removed.`,'Delete'))return;
+  propData._loans[p].splice(idx,1);
+  if(extra[p])extra[p]=extra[p].filter(e=>e._loanId!==loan.id);
+  save();renderLoans(p);renderE(p);refreshSite('stats');
+}
+
+function renderLoans(p){
+  const el=document.getElementById(p+'-loans-list');if(!el)return;
+  const loans=getLoans(p);
+  const today=new Date().toLocaleDateString('en-CA');
+  const activeLoans=loans.filter(l=>!l.endDate||l.endDate>=today);
+  const totalBal=activeLoans.reduce((s,l)=>s+parseFloat(l.amount||0),0);
+  const totalMonthly=activeLoans.reduce((s,l)=>{
+    const r=parseFloat(l.rate||0)/100;
+    return s+(parseFloat(l.amount||0)*r/12);
+  },0);
+  if(!loans.length){
+    el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text3);font-size:13px">No loans added yet. Click + Add Loan to track financing.</div>';
+    return;
+  }
+  const summary=activeLoans.length?`<div style="font-size:12.5px;color:var(--text2);margin-bottom:1rem;padding:.6rem .8rem;background:var(--bg3);border-radius:8px;border:1px solid var(--border2)">${activeLoans.length} active loan${activeLoans.length!==1?'s':''} &nbsp;·&nbsp; Total balance: <strong>${fmt(totalBal)}</strong> &nbsp;·&nbsp; Est. monthly interest: <strong>${fmt(totalMonthly)}</strong></div>`:'';
+  el.innerHTML=summary+loans.map((l,i)=>{
+    const isActive=!l.endDate||l.endDate>=today;
+    const monthly=(parseFloat(l.amount||0)*parseFloat(l.rate||0)/100)/12;
+    const badge=isActive?'<span style="background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:6px">ACTIVE</span>':'<span style="background:var(--text3);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:6px">CLOSED</span>';
+    return `<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:.85rem 1rem;margin-bottom:.6rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem">
+        <div style="font-weight:700;font-size:14px;color:var(--text)">${esc(l.type||'Loan')}${badge}${l.interestOnly?' <span style="font-size:11px;color:var(--gold2);font-weight:600">Interest-only</span>':''}</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" style="font-size:12px;padding:3px 10px" onclick="openEditLoan('${esc(p)}',${i})">Edit</button>
+          <button class="btn btn-sm" style="font-size:12px;padding:3px 10px;background:#c0392b;border-color:#c0392b;color:#fff" onclick="deleteLoan('${esc(p)}',${i})">Delete</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.4rem .8rem;font-size:12.5px">
+        ${l.lender?`<div><span style="color:var(--text3)">Lender</span><br><strong>${esc(l.lender)}</strong></div>`:''}
+        <div><span style="color:var(--text3)">Balance</span><br><strong>${fmt(l.amount)}</strong></div>
+        <div><span style="color:var(--text3)">Rate</span><br><strong>${l.rate}%</strong></div>
+        <div><span style="color:var(--text3)">Monthly Interest</span><br><strong style="color:var(--red)">${fmt(monthly)}</strong></div>
+        ${l.startDate?`<div><span style="color:var(--text3)">Start</span><br><strong>${l.startDate}</strong></div>`:''}
+        ${l.endDate?`<div><span style="color:var(--text3)">End</span><br><strong>${l.endDate}</strong></div>`:''}
+      </div>
+      ${l.notes?`<div style="margin-top:.5rem;font-size:12px;color:var(--text2);border-top:1px solid var(--border2);padding-top:.4rem">${esc(l.notes)}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
 function getEstimates(p){return(propData._estimates&&propData._estimates[p])||[];}
 function openAddEst(p){
   document.getElementById('est-pid').value=p;
@@ -4214,11 +4393,15 @@ function updateBalanceSheet(){
   const bsRows=document.getElementById('bs-prop-rows');
   if(bsRows)bsRows.innerHTML=activeProps.map(p=>`<div class="pl-row"><span>${getProp(p).addr||p} (${propStatus(p)} — at cost)</span><span id="bs-prop-val-${p}">${fmt(propAllin(p))}</span></div>`).join('');
   const cash=parseFloat(document.getElementById('bs-cash-inp')?.value)||0;
-  const loans=parseFloat(document.getElementById('bs-loans-inp')?.value)||0;
+  const manualLoans=parseFloat(document.getElementById('bs-loans-inp')?.value)||0;
   const payable=parseFloat(document.getElementById('bs-payable-inp')?.value)||0;
+  const autoLoans=totalActiveLoans();
+  const loans=manualLoans+autoLoans;
   const totalAssets=activeAllin+cash;
   const totalLiab=loans+payable;
   setEl("bs-cash",fmt(cash));setEl("bs-loans",fmt(loans));setEl("bs-payable",fmt(payable));
+  const autoEl=document.getElementById('bs-auto-loans');
+  if(autoEl)autoEl.textContent=autoLoans>0?`Auto-detected from property loans: ${fmt(autoLoans)}`:'';
   setEl("bs-total-assets",fmt(totalAssets));setEl("bs-total-liab",fmt(totalLiab));setEl("bs-equity",fmt(totalAssets-totalLiab));
   setEl("bs-fy-year",taxYear);
 }
@@ -4390,6 +4573,7 @@ function buildPropPage(key, force){
           <button class="tb" onclick="stab(this,'tb-${key}docs')">Docs</button>
           <button class="tb" onclick="stab(this,'tb-${key}roi')">ROI</button>
           <button class="tb" onclick="stab(this,'tb-${key}est');renderEstimates('${key}')">Estimates</button>
+          <button class="tb" onclick="stab(this,'tb-${key}financing');renderLoans('${key}')">Financing</button>
           <button class="tb" onclick="stab(this,'tb-${key}analysis');renderAnalysis('${key}')">Analysis</button>
         </div>
         <div class="tab-pane active" id="tb-${key}ex">
@@ -4458,6 +4642,15 @@ function buildPropPage(key, force){
             <button class="btn btn-sm" style="background:#c0392b;border-color:#c0392b;color:#fff;font-weight:700" onclick="openAddEst('${key}')"><svg class="ico"><use href="#ico-plus"/></svg> Add Estimate</button>
           </div>
           <div id="${key}-est-list"></div>
+        </div>
+        <div class="tab-pane" id="tb-${key}financing">
+          <div style="padding:1rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+              <div style="font-size:13px;font-weight:700;color:var(--text)">Loans &amp; Financing</div>
+              <button class="btn btn-primary btn-sm" onclick="openAddLoan('${key}')"><svg class="ico"><use href="#ico-plus"/></svg> Add Loan</button>
+            </div>
+            <div id="${key}-loans-list"></div>
+          </div>
         </div>
         <div class="tab-pane" id="tb-${key}analysis">
           <div id="analysis-${key}"></div>
