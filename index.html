@@ -1612,8 +1612,9 @@ async function sbRefreshAuth(force){
       const j=await r.json().catch(()=>({}));
       if(r.ok&&j.access_token){_saveAuthSession(j);return true;}
       if((r.status===400||r.status===401)&&(j.error==='invalid_grant'||j.error_code==='refresh_token_not_found')){_saveAuthSession(null);return false;}
-      return true;
-    }catch(e){return true;}
+      return true; // server error — keep existing session, retry next interval
+    }catch(e){return true; // network error — keep existing session, retry next interval
+    }
     finally{_refreshInFlight=null;}
   })();
   return _refreshInFlight;
@@ -4259,6 +4260,11 @@ function initAuth(){
   if(_authSession()){ls.style.display='none';sbRefreshAuth().catch(()=>{});updateAuthStatus();return;}
   if(localStorage.getItem('apex_login_skipped')==='1'){ls.style.display='none';updateAuthStatus();return;}
   ls.style.display='flex';
+  // Pre-fill email from last known session so re-login only needs the password
+  const lastEmail=localStorage.getItem('apex_last_email')||(_authSession()||{}).email||'';
+  const emailEl=document.getElementById('login-email');
+  const pwEl=document.getElementById('login-pw');
+  if(lastEmail&&emailEl){emailEl.value=lastEmail;setTimeout(()=>{if(pwEl)pwEl.focus();},200);}
 }
 async function doLogin(){
   const em=(document.getElementById('login-email')?.value||'').trim();
@@ -4269,6 +4275,7 @@ async function doLogin(){
   try{
     await sbLogin(em,pw);
     localStorage.removeItem('apex_login_skipped');
+    localStorage.setItem('apex_last_email',em);
     location.reload(); // reload so data loads with the authed session
   }catch(e){
     if(err)err.textContent=e.message||'Login failed';
