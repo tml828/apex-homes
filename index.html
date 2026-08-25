@@ -3058,35 +3058,40 @@ function _initLbPinch(){
   window._lbPinchInit=true;
   const el=document.getElementById("m-lbox");
   const img=document.getElementById("lbox-img");
-  let _p0=null,_p1=null,_startDist=0,_startScale=1,_startTx=0,_startTy=0,_midX=0,_midY=0,_tapT=0;
+  let _startDist=0,_startScale=1,_startTx=0,_startTy=0,_midX=0,_midY=0,_focalX=0,_focalY=0,_imgCX=0,_imgCY=0,_tapT=0;
   function dist(a,b){return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);}
   function applyTransform(){img.style.transform=`translate(${window._lbTx}px,${window._lbTy}px) scale(${window._lbScale})`;}
   el.addEventListener('touchstart',e=>{
     if(e.touches.length===1){
-      // double-tap to reset
       const now=Date.now();
       if(now-_tapT<280&&window._lbScale!==1){window._lbScale=1;window._lbTx=0;window._lbTy=0;applyTransform();}
       _tapT=now;
     }
     if(e.touches.length===2){
       e.preventDefault();
-      _p0=e.touches[0];_p1=e.touches[1];
-      _startDist=dist(_p0,_p1);
+      const r=img.getBoundingClientRect();
+      _imgCX=r.left+r.width/2;_imgCY=r.top+r.height/2;
+      _startDist=dist(e.touches[0],e.touches[1]);
       _startScale=window._lbScale;_startTx=window._lbTx;_startTy=window._lbTy;
-      _midX=(_p0.clientX+_p1.clientX)/2;_midY=(_p0.clientY+_p1.clientY)/2;
+      _midX=(e.touches[0].clientX+e.touches[1].clientX)/2;
+      _midY=(e.touches[0].clientY+e.touches[1].clientY)/2;
+      // focal point in image-local space (relative to image center, before transform)
+      _focalX=(_midX-_imgCX-_startTx)/_startScale;
+      _focalY=(_midY-_imgCY-_startTy)/_startScale;
     }
   },{passive:false});
   el.addEventListener('touchmove',e=>{
     if(e.touches.length===2){
       e.preventDefault();
       const d=dist(e.touches[0],e.touches[1]);
-      const ratio=d/_startDist;
-      window._lbScale=Math.min(8,Math.max(1,_startScale*ratio));
+      window._lbScale=Math.min(8,Math.max(1,_startScale*(d/_startDist)));
+      // shift tx/ty so the focal point stays under the fingers
+      window._lbTx=_midX-_imgCX-_focalX*window._lbScale;
+      window._lbTy=_midY-_imgCY-_focalY*window._lbScale;
       applyTransform();
     }
   },{passive:false});
   el.addEventListener('touchend',e=>{
-    if(e.touches.length<2){_p0=null;_p1=null;}
     if(window._lbScale<=1){window._lbScale=1;window._lbTx=0;window._lbTy=0;applyTransform();}
   },{passive:true});
 }
