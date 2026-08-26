@@ -284,7 +284,15 @@ Property keys are always lowercase, no spaces.
 - `pl-stat-net` stat card now updated after `plNet` is computed (fully adjusted for mileage, assets, meals)
 - `taxYear` default changed from hardcoded `2026` to `new Date().getFullYear()`
 - `renderTaxYearBtns` start year changed from 2026 to 2024
-- Financing tab added to every property page: `propData._loans[key]` array stores loan objects (type, lender, amount, rate, startDate, endDate, interestOnly, notes); `getLoans(p)`, `totalActiveLoans()`, `autoGenLoanInterest(p)` helpers added; `openAddLoan/openEditLoan/saveLoan/deleteLoan/renderLoans` manage the shared `#m-loan` modal; auto-generated monthly interest expenses tagged with `_loanId` and `_autoGen:true` (category "Loan Interest") are created/removed alongside each loan; balance sheet Outstanding Loans display now includes `totalActiveLoans()` added to the manual input value, with an "Auto-detected from property loans" note shown below the field
+- Financing tab added to every property page: `propData._loans[key]` array stores loan objects (type, lender, amount, rate %, startDate, endDate, interestOnly, notes); `getLoans(p)`, `totalActiveLoans()` helpers; `openAddLoan/openEditLoan/saveLoan/deleteLoan/renderLoans/logLoanPayment` manage the shared `#m-loan` modal; each active loan card shows a green **+ Log Payment** button (`logLoanPayment`) that opens the Add Expense modal pre-filled with today's date, calculated monthly interest, and category "Financing / Interest" (Schedule C Line 16) — user adjusts actual amount before saving; balance sheet auto-detects total from `totalActiveLoans()`
+- Return badges (RETURNED/PARTIAL RETURN) clipped on mobile — description text now in its own `<span>` with ellipsis; badges render in a wrapping flex row below so they're always visible on narrow screens
+- `changePin()` skips current-PIN check when no PIN stored in localStorage (first device setup)
+- PIN screen: keyboard input on desktop — `keydown` listener feeds 0–9 and Backspace into `pinKey`/`pinDel`; registered once via `window._pinKeyHandler` guard
+- PIN screen: `touch-action:manipulation` on screen container and `.pin-key` buttons prevents double-tap zoom on mobile
+- Forced PIN-change prompt removed — first-use auto-unlock path deleted; `getPin()` falls back to default `'0828'`; wrong guess when no PIN saved shows hint "No PIN saved on this device — try 0828 (default)"
+- Lightbox close button uses `env(safe-area-inset-top/right)` so it clears the notch/Dynamic Island on iPhone
+- Lightbox pinch-to-zoom: `_initLbPinch()` adds touch handlers for pinch scale (1–8×) zooming toward the finger midpoint (focal point computed at touchstart); double-tap resets; zoom resets on page nav
+- Auth re-login UX: `apex_last_email` saved on successful login; `initAuth` pre-fills email and auto-focuses password field on re-login; network errors during token refresh no longer clear the session
 - `_recurDates` 500-cap: logs `console.warn` when hit; `saveExp` shows user-visible error and blocks save if cap reached
 - `restoreBackup` FileReader wrapped in Promise — async function now properly awaits file reading
 - `checkPin` first-use flow: if no PIN stored in localStorage, auto-unlocks and prompts user to set a PIN; also clears `pinEntry` after successful unlock
