@@ -2633,7 +2633,8 @@ async function uploadToStorage(file,path){
   return _uploadBlob(blob,path,contentType);
 }
 async function _uploadBlob(blob,path,contentType){
-  const resp=await fetch(SB_STORAGE_UPLOAD+path,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':contentType||'image/jpeg','x-upsert':'true'},body:blob});
+  // Use sbFetch so a 401 (expired token) triggers an automatic token refresh + retry.
+  const resp=await sbFetch('/storage/v1/object/apex-media/'+path,{method:'POST',headers:{'Content-Type':contentType||'image/jpeg','x-upsert':'true'},body:blob});
   if(!resp.ok)throw new Error('Upload failed: '+resp.status);
   return SB_STORAGE_URL+path;
 }
@@ -3067,7 +3068,7 @@ async function handleEPPhoto(inp){
   const w=document.getElementById("ep-photo-wrap");
   if(w)w.innerHTML='<div style="padding:1.5rem;text-align:center;color:var(--text2)"><div class="spin"></div> Uploading...</div>';
   try{const url=await uploadToStorage(file,'props/'+p+'.jpg');propImgs[p]=url;save();renderEPPhoto(url);applyPropImg(p);}
-  catch(ex){const r=new FileReader();r.onload=ev=>{propImgs[p]=ev.target.result;save();renderEPPhoto(ev.target.result);applyPropImg(p);};r.readAsDataURL(file);}
+  catch(ex){console.error('Photo upload failed:',ex);if(w)w.innerHTML='';alert('Photo upload failed. Check your connection and try again.');}
 }
 
 // ====== PROPERTY PHOTOS ======
@@ -3080,9 +3081,9 @@ async function handlePropImg(inp){
     const url=await uploadToStorage(file,'props/'+curPropImg+'.jpg');
     propImgs[curPropImg]=url;save();applyPropImg(curPropImg);
   }catch(ex){
-    const r=new FileReader();
-    r.onload=ev=>{propImgs[curPropImg]=ev.target.result;save();applyPropImg(curPropImg);};
-    r.readAsDataURL(file);
+    console.error('Photo upload failed:',ex);
+    if(hw)hw.innerHTML=`<div class="prop-hero-empty" onclick="triggerPropImg('${curPropImg}')"><svg class="ico"><use href="#ico-camera"/></svg><span style="color:var(--red)">Upload failed — tap to retry</span></div>`;
+    alert('Photo upload failed. Check your connection and try again.');
   }
 }
 function applyPropImg(p){
@@ -5457,7 +5458,7 @@ async function syncAllReceiptsToCloud(){
     try{
       const resp=await fetch(e.receipt);const blob=await resp.blob();const mime=e.receipt.split(';')[0].split(':')[1]||'image/jpeg';const ext=mime.includes('png')?'png':'jpg';
       const path=`receipts/${p}-${Date.now()}-${Math.random().toString(36).slice(2,6)}.${ext}`;
-      const up=await fetch(SB_URL+'/storage/v1/object/apex-media/'+path,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':mime,'x-upsert':'true'},body:blob});
+      const up=await sbFetch('/storage/v1/object/apex-media/'+path,{method:'POST',headers:{'Content-Type':mime,'x-upsert':'true'},body:blob});
       if(up.ok){e.receipt=SB_STORAGE_URL+path;uploaded++;status.innerHTML=`<div style="display:flex;align-items:center;gap:8px"><div class="spin"></div> Uploaded ${uploaded}/${toUpload.length}...</div>`;}
       else failed++;
     }catch(err){failed++;}
