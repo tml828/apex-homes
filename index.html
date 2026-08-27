@@ -513,9 +513,9 @@ nav.open .mob-menu{display:block}
   .tab-bar{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .tb{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-  /* ── Property page tabs: 4×2 grid, fills full width ── */
-  .prop-tab-bar{display:grid;grid-template-columns:repeat(4,1fr);overflow-x:visible;border-bottom:none;gap:4px;padding-bottom:4px}
-  .prop-tab-bar .tb{border-radius:8px;border-bottom:1px solid var(--border2);justify-content:center;font-size:11px;padding:7px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:1;min-width:0}
+  /* ── Property page tabs: 4×2 grid (2 cols, 4 rows), fills full width ── */
+  .prop-tab-bar{display:grid;grid-template-columns:repeat(2,1fr);overflow-x:visible;border-bottom:none;gap:4px;padding-bottom:4px}
+  .prop-tab-bar .tb{border-radius:8px;border-bottom:1px solid var(--border2);justify-content:center;font-size:12px;padding:9px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:1;min-width:0}
   .prop-tab-bar .tb.active{border-color:var(--gold2)}
 
   /* ── Expense toolbar ── */
