@@ -3985,7 +3985,7 @@ async function runScan(p){
     if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div> Scanning...';}
     const files=pendingFiles[p]||[];if(!files.length)return;const results=[];for(let i=0;i<files.length;i++)results.push(await scanOne(files[i],p,i));
     const ok=results.filter(r=>r.ok&&r.data?.amount);const fail=results.length-ok.length;
-    ok.forEach(r=>{if(!extra[p])extra[p]=[];extra[p].unshift({a:r.data.amount,d:r.data.desc||"Receipt",c:r.data.cat||"Other",v:r.data.vendor||"",dt:r.data.date||new Date().toLocaleDateString('en-CA'),receipt:`data:${r.mime};base64,${r.b64}`});});
+    ok.forEach(r=>{if(!extra[p])extra[p]=[];extra[p].unshift({a:r.data.amount,d:r.data.desc||"Receipt",c:r.data.cat||"Other",v:r.data.vendor||"",dt:(r.data.date&&r.data.date!=='null')?r.data.date:new Date().toLocaleDateString('en-CA'),receipt:`data:${r.mime};base64,${r.b64}`});});
     save();renderE(p);refreshSite('stats');
     const sr=document.getElementById("sr-"+p);if(sr)sr.innerHTML=ok.length?`<div class="scan-result-msg srm-ok"><svg class="ico"><use href="#ico-circle-check"/></svg> ${ok.length} receipt${ok.length>1?"s":""} added${fail?" ("+fail+" failed)":""}</div>`:`<div class="scan-result-msg srm-fail"><svg class="ico"><use href="#ico-alert-circle"/></svg> Could not read receipts — check API key in Company settings</div>`;
     if(btn){btn.innerHTML='<svg class="ico"><use href="#ico-sparkles"/></svg> Scan More';btn.disabled=false;}pendingFiles[p]=[];renderQ(p);
