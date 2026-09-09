@@ -301,6 +301,11 @@ Property keys are always lowercase, no spaces.
 - `appConfirm` keyboard-accessible: Escape key cancels; `#m-confirm` element has `role="dialog" aria-modal="true"`
 - `renderQ` and `handleIncomeScanFiles`: `f.name` wrapped with `esc()` in innerHTML
 - Duplicate `expReceiptMime` declaration removed (kept the one in expenses section at line ~3084, removed from top-of-script var declarations)
+- Frequent re-login on phone fixed: `sbRefreshAuth` no longer wipes session on `invalid_grant`; instead shows a password-only re-auth overlay (`#m-reauth`) so app state is preserved and user re-enters password without a full page reload; `_reauthPending` flag blocks further refresh attempts while modal is open; `doReauth()` calls `sbLogin` then hides modal and kicks `autoSyncPull`
+- Property photo upload fixed: `_uploadBlob()` now routes through `sbFetch()` (auto-retries on 401) instead of raw `fetch()`; base64 silent fallback removed; upload failures now show a visible red error with retry prompt
+- Property page tabs (mobile): 8 tabs display as a 4-column × 2-row CSS Grid on mobile via `.prop-tab-bar` class; `buildPropPage()` adds the class to the tab bar div; CSS in `@media(max-width:…)` block: `grid-template-columns:repeat(4,1fr)`
+- Batch receipt scan date default fixed: `runScan` path now checks `r.data.date && r.data.date !== 'null'` before using AI date (was using plain `||` which treated string `"null"` as truthy, skipping today fallback)
+- Doc open on mobile fixed: Supabase-hosted PDFs now render as a direct `<a href target="_blank">` anchor instead of a JS-simulated `.click()` — eliminates iOS Safari throttling delay; non-PDF non-image Supabase docs also get an open button (previously had none)
 
 ---
 
