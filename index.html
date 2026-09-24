@@ -3083,7 +3083,10 @@ async function handlePropImg(inp){
   if(!inp.files[0])return;const file=inp.files[0];inp.value="";
   const hw=document.getElementById("hero-"+curPropImg);if(hw)hw.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text2)"><div class="spin"></div></div>';
   try{
-    const url=await uploadToStorage(file,'props/'+curPropImg+'.jpg');
+    // Process image without receipt-crop (crop=false) — property photos are not receipts
+    const processed=await processReceiptImage(file,false);
+    const blob=await fetch('data:'+processed.mime+';base64,'+processed.b64).then(r=>r.blob());
+    const url=await _uploadBlob(blob,'props/'+curPropImg+'.jpg',processed.mime||'image/jpeg');
     propImgs[curPropImg]=url;save();applyPropImg(curPropImg);
   }catch(ex){
     console.error('Photo upload failed:',ex);
