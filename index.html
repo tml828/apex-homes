@@ -5653,11 +5653,25 @@ _dateObserver.observe(document.body||document.documentElement,{childList:true,su
 
 
 let _syncTimer=null;
+function _syncInterval(){
+  // Use longer interval on slow cellular to reduce background network contention
+  const conn=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
+  const slow=conn&&(conn.effectiveType==='2g'||conn.effectiveType==='slow-2g'||conn.effectiveType==='3g');
+  return slow?15000:5000;
+}
 function startAutoSync(){
   if(_syncTimer)clearInterval(_syncTimer);
-  _syncTimer=setInterval(autoSyncPull,5000);
+  _syncTimer=setInterval(autoSyncPull,_syncInterval());
   if(window._visHandler)document.removeEventListener('visibilitychange',window._visHandler);
-  window._visHandler=function(){if(!document.hidden)autoSyncPull();};
+  window._visHandler=function(){
+    if(!document.hidden){
+      // Delay sync 2s on visibility restore so UI repaints first
+      setTimeout(()=>{ if(!document.hidden)autoSyncPull(); },2000);
+      // Re-evaluate interval in case connection type changed
+      if(_syncTimer)clearInterval(_syncTimer);
+      _syncTimer=setInterval(autoSyncPull,_syncInterval());
+    }
+  };
   document.addEventListener('visibilitychange',window._visHandler);
 }
 
