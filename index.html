@@ -5418,18 +5418,18 @@ async function exportWarrantyPDF(p){
   document.body.appendChild(wrap);
   // Render to PDF
   try{
-    const canvas=await html2canvas(wrap,{scale:2,useCORS:true,backgroundColor:'#ffffff'});
+    const canvas=await html2canvas(wrap,{scale:1.5,useCORS:true,backgroundColor:'#ffffff'});
+    const imgData=canvas.toDataURL('image/jpeg',0.75);
     const {jsPDF}=window.jspdf;
     const pdf=new jsPDF({orientation:'portrait',unit:'pt',format:'letter'});
     const pageW=pdf.internal.pageSize.getWidth();
     const pageH=pdf.internal.pageSize.getHeight();
-    const imgW=canvas.width;const imgH=canvas.height;
-    const ratio=pageW/imgW;
-    const scaledH=imgH*ratio;
+    const ratio=pageW/canvas.width;
+    const scaledH=canvas.height*ratio;
     let y=0;
     while(y<scaledH){
       if(y>0)pdf.addPage();
-      pdf.addImage(canvas,'PNG',0,-y,pageW,scaledH);
+      pdf.addImage(imgData,'JPEG',0,-y,pageW,scaledH);
       y+=pageH;
     }
     pdf.save(fname);
