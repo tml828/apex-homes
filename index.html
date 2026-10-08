@@ -1275,6 +1275,14 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
       </label>
       <div style="font-size:11px;color:var(--text3);margin-top:4px">Check if this vendor needs to be reported on a 1099 — typically contractors paid $600+</div>
     </div>
+    <!-- Warranty receipt toggle -->
+    <div style="background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:.65rem .85rem;margin-top:6px">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;color:#38bdf8">
+        <input type="checkbox" id="exp-warranty" style="width:16px;height:16px;accent-color:#38bdf8">
+        Warranty Receipt
+      </label>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Include this receipt in the buyer warranty packet</div>
+    </div>
     <div class="md-ft"><button class="btn btn-primary" onclick="saveExp()"><svg class="ico"><use href="#ico-check"/></svg> Save Expense</button><button class="btn btn-ghost" onclick="closeModal('m-exp')">Cancel</button></div>
   </div>
 </div>
@@ -1293,6 +1301,14 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
         W-9 Required for this vendor?
       </label>
       <div style="font-size:11px;color:var(--text3);margin-top:4px">Check if this vendor needs to be reported on a 1099 — typically contractors paid $600+</div>
+    </div>
+    <!-- Warranty receipt toggle -->
+    <div style="background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:.65rem .85rem;margin:.5rem 0">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;color:#38bdf8">
+        <input type="checkbox" id="eeexp-warranty" style="width:16px;height:16px;accent-color:#38bdf8">
+        Warranty Receipt
+      </label>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Include this receipt in the buyer warranty packet</div>
     </div>
     <div id="eeexp-receipt-thumb" style="margin-bottom:.75rem"></div>
     <label class="btn btn-ghost btn-sm" style="cursor:pointer;margin-bottom:.75rem;display:inline-flex"><svg class="ico"><use href="#ico-upload"/></svg> Add / Replace Receipt<input type="file" accept="image/*,application/pdf" style="display:none" onchange="handleEditExpReceipt(this)"></label>
@@ -3238,7 +3254,7 @@ function openAddExp(p){
   const _rc=document.getElementById("exp-recurring");if(_rc){_rc.checked=false;}
   const _rr=document.getElementById("exp-recur-row");if(_rr)_rr.style.display="none";
   const _rf=document.getElementById("exp-recur-freq");if(_rf)_rf.value="monthly";
-  showModal("m-exp");const _w9r=document.getElementById("exp-w9-row");if(_w9r)_w9r.style.display="none";const _w9c=document.getElementById("exp-w9");if(_w9c)_w9c.checked=false;
+  showModal("m-exp");const _w9r=document.getElementById("exp-w9-row");if(_w9r)_w9r.style.display="none";const _w9c=document.getElementById("exp-w9");if(_w9c)_w9c.checked=false;const _wc=document.getElementById("exp-warranty");if(_wc)_wc.checked=false;
   document.addEventListener('paste',handleExpPaste);
 }
 function toggleRecurring(){
@@ -3279,6 +3295,7 @@ async function saveExp(){
   const _rArr=expReceiptUrls.length?expReceiptUrls:(expReceiptB64?[`data:${expReceiptMime||'image/jpeg'};base64,${expReceiptB64}`]:[]);
   const receipt=_rArr.length>1?_rArr:(_rArr.length===1?_rArr[0]:'');
   const w9=document.getElementById('exp-w9')?.checked&&c==='Labor / Contractor'&&amount>=600;
+  const warranty=document.getElementById('exp-warranty')?.checked||false;
   saveVendor(v);
   if(isRecurring){
     const dates=_recurDates(dt,recurFreq);
@@ -3287,14 +3304,14 @@ async function saveExp(){
     if(!await appConfirm(`This will add ${dates.length} ${recurFreq} expense${dates.length>1?'s':''} (${dates[0]} → ${dates[dates.length-1]}). Continue?`,'Add'))return;
     dates.forEach(date=>{
       const expObj={a:amount,d,c,v,dt:date,receipt,recur:recurFreq};
-      if(w9)expObj.w9=true;
+      if(w9)expObj.w9=true;if(warranty)expObj.warranty=true;
       extra[p].unshift(expObj);
     });
   }else{
     // Duplicate check for single expenses only
     const dupCheck=allE(p).find(x=>!x.credit&&parseFloat(x.a||x.amount)===amount&&x.dt===dt);
     if(dupCheck&&!await appConfirm(`An expense for ${fmt(amount)} on ${dt} already exists ("${dupCheck.d||dupCheck.desc||'Expense'}"). Add again?`,'Add Again'))return;
-    const expObj={a:amount,d,c,v,dt,receipt};if(w9)expObj.w9=true;extra[p].unshift(expObj);
+    const expObj={a:amount,d,c,v,dt,receipt};if(w9)expObj.w9=true;if(warranty)expObj.warranty=true;extra[p].unshift(expObj);
   }
   expReceiptUrls=[];expReceiptB64="";expReceiptMime="";
   const prev=document.getElementById("exp-receipt-preview");if(prev)prev.innerHTML="";
@@ -3377,7 +3394,7 @@ function openEditExpByIndex(p,origIdx){
   const all=allE(p);const e=all[origIdx];if(!e)return;
   document.getElementById("eeexp-pid").value=p;document.getElementById("eeexp-origidx").value=origIdx;
   document.getElementById("eeexp-amt").value=e.a||e.amount||"";document.getElementById("eeexp-desc").value=e.d||e.desc||"";
-  document.getElementById("eeexp-date").value=e.dt||e.date||"";document.getElementById("eeexp-vendor").value=e.v||e.vendor||"";const _ew9el=document.getElementById("eeexp-w9");if(_ew9el)_ew9el.checked=!!(e.w9);setTimeout(()=>checkW9Visibility("eeexp"),50);
+  document.getElementById("eeexp-date").value=e.dt||e.date||"";document.getElementById("eeexp-vendor").value=e.v||e.vendor||"";const _ew9el=document.getElementById("eeexp-w9");if(_ew9el)_ew9el.checked=!!(e.w9);const _ewarel=document.getElementById("eeexp-warranty");if(_ewarel)_ewarel.checked=!!(e.warranty);setTimeout(()=>checkW9Visibility("eeexp"),50);
   const sel=document.getElementById("eeexp-cat");const cat=e.c||e.cat||"";
   const customInp=document.getElementById("eeexp-custom-cat");
   let matched=false;for(let j=0;j<sel.options.length;j++){if(sel.options[j].value===cat){sel.selectedIndex=j;matched=true;break;}}
@@ -3461,10 +3478,12 @@ function saveEditExp(){
   const all=allE(p);const e=all[origIdx];if(!e)return;
   const _ev=document.getElementById('eeexp-vendor').value.trim();saveVendor(_ev);
   const _ew9=document.getElementById('eeexp-w9')?.checked;
+  const _ewarranty=document.getElementById('eeexp-warranty')?.checked||false;
   const _eamt=parseFloat(document.getElementById('eeexp-amt').value);
   const _ecat=getExpCat('eeexp-cat','eeexp-custom-cat');
   const newData={a:_eamt,d:document.getElementById('eeexp-desc').value.trim(),dt:document.getElementById('eeexp-date').value,c:_ecat,v:_ev};
   if(_ew9&&_ecat==='Labor / Contractor'&&_eamt>=600)newData.w9=true;else newData.w9=false;
+  newData.warranty=_ewarranty;
   if(editExpReceiptUrl==='__deleted__')newData.receipt='';
   else if(editExpReceiptUrl)newData.receipt=editExpReceiptUrl;
   if(extra[p]&&extra[p][origIdx])Object.assign(extra[p][origIdx],newData);
@@ -4032,6 +4051,7 @@ function renderE(p){
     const receipt=_receiptThumb(e.receipt);
     const creditBadge=e.credit?`<span style="font-size:10px;font-weight:700;background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3);border-radius:4px;padding:1px 5px;margin-left:4px">CREDIT</span>`:"";
     const recurBadge=e.recur?`<span style="font-size:10px;font-weight:700;background:rgba(139,92,246,0.15);color:#a78bfa;border:1px solid rgba(139,92,246,0.3);border-radius:4px;padding:1px 5px;margin-left:4px">↻ ${e.recur}</span>`:"";
+    const warrantyBadge=e.warranty?`<span style="font-size:10px;font-weight:700;background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);border-radius:4px;padding:1px 5px;margin-left:4px">WARRANTY</span>`:"";
     let returnBadge="";
     if(e._rid){const returnedAmt=_allCredits.filter(c=>c._rid===e._rid).reduce((s,c)=>s+parseFloat(c.a||c.amount||0),0);if(returnedAmt>0){const origAmt=parseFloat(e.a||e.amount||0);const full=returnedAmt>=origAmt;returnBadge=`<span style="font-size:10px;font-weight:700;background:${full?'rgba(239,68,68,0.15)':'rgba(251,191,36,0.15)'};color:${full?'var(--red)':'var(--amber)'};border:1px solid ${full?'rgba(239,68,68,0.3)':'rgba(251,191,36,0.3)'};border-radius:4px;padding:1px 5px;margin-left:4px">${full?'RETURNED':'PARTIAL RETURN'}</span>`;}}
     const editFn=e.credit?`openEditCrByIndex('${p}',${e._origIdx})`:`openEditExpByIndex('${p}',${e._origIdx})`;
@@ -4041,7 +4061,7 @@ function renderE(p){
     return `<div class="exp-item" style="display:flex;align-items:center;gap:10px;padding:.7rem 1rem;border-bottom:1px solid var(--border)${e.credit?";background:rgba(34,197,94,0.04)":""}">
       ${receipt}
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;color:var(--text)"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${desc}</span>${(creditBadge||recurBadge||returnBadge)?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:3px">${creditBadge}${recurBadge}${returnBadge}</div>`:""}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${desc}</span>${(creditBadge||recurBadge||returnBadge||warrantyBadge)?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:3px">${creditBadge}${recurBadge}${returnBadge}${warrantyBadge}</div>`:""}</div>
         <div style="font-size:11px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${meta}</div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
@@ -5297,7 +5317,7 @@ function renderDocs(p){
   const el=document.getElementById('docs-'+p);if(!el)return;
   const docs=(propData._docs&&propData._docs[p])||[];
   const addBtn='<div style="margin-bottom:1rem"><label class="btn btn-primary btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px"><svg class="ico" style="width:13px;height:13px"><use href="#ico-plus"/></svg> Add Document<input type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" style="display:none" onchange="handleDocFiles(event,\''+p+'\')"></label></div>';
-  if(!docs.length){el.innerHTML=addBtn+'<div class="empty"><svg class="ico"><use href="#ico-file-x"/></svg>No documents yet</div>';return;}
+  if(!docs.length){el.innerHTML=addBtn+'<div class="empty"><svg class="ico"><use href="#ico-file-x"/></svg>No documents yet</div>';renderWarrantySection(p,el);return;}
   el.innerHTML=addBtn+docs.map(d=>{
     const src=(d._pending?'':(d.url||d.data||''));
     const isPdf=(d.type||'').includes('pdf')||(d.name||'').toLowerCase().endsWith('.pdf');
@@ -5318,6 +5338,65 @@ function renderDocs(p){
       +'<button class="btn btn-danger btn-sm btn-icon" onclick="deleteDoc(\''+p+'\',\''+d.id+'\')"><svg class="ico" style="width:13px;height:13px"><use href="#ico-trash"/></svg></button>'
       +'</div></div>';
   }).join('');
+  renderWarrantySection(p,el);
+}
+function renderWarrantySection(p,el){
+  const warExp=(allE(p)||[]).filter(e=>e.warranty&&!e.credit);
+  const div=document.createElement('div');
+  div.style.cssText='margin-top:1.5rem;border-top:1px solid var(--border);padding-top:1rem';
+  if(!warExp.length){div.innerHTML='<div style="font-size:12px;color:var(--text3);margin-bottom:.5rem;font-weight:600;letter-spacing:.04em">WARRANTY RECEIPTS</div><div style="font-size:12px;color:var(--text3)">No warranty receipts yet. Check "Warranty Receipt" when adding an expense.</div>';el.appendChild(div);return;}
+  const pr=getProp(p);const addr=esc(pr.addr||p);
+  div.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">'
+    +'<div style="font-size:12px;color:#38bdf8;font-weight:700;letter-spacing:.04em">WARRANTY RECEIPTS ('+warExp.length+')</div>'
+    +'<button class="btn btn-sm" style="background:#38bdf8;border-color:#38bdf8;color:#000;font-weight:700;font-size:11px;padding:4px 12px" onclick="exportWarrantyPDF(\''+p+'\')">Export for Buyer</button>'
+    +'</div>'
+    +warExp.map(e=>{
+      const receipt=e.receipt;
+      const receipts=Array.isArray(receipt)?receipt:(receipt?[receipt]:[]);
+      const hasReceipt=receipts.length>0&&receipts[0];
+      return '<div style="display:flex;align-items:center;gap:10px;padding:.6rem .75rem;background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.2);border-radius:8px;margin-bottom:6px">'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(e.d||e.desc||'Repair')+'</div>'
+        +'<div style="font-size:11px;color:var(--text3)">'+esc(e.v||'')+(e.dt?' · '+fmtD(e.dt):'')+'</div>'
+        +'</div>'
+        +'<div style="font-size:13px;font-weight:700;color:#38bdf8;flex-shrink:0">'+fmt(parseFloat(e.a||0))+'</div>'
+        +(hasReceipt&&receipts[0].startsWith('https://')?'<a class="btn btn-ghost btn-sm btn-icon" href="'+receipts[0]+'" target="_blank" rel="noopener noreferrer" title="View Receipt" style="display:inline-flex;align-items:center;justify-content:center;flex-shrink:0"><svg class="ico" style="width:13px;height:13px"><use href="#ico-eye"/></svg></a>':'')
+        +'</div>';
+    }).join('');
+  el.appendChild(div);
+}
+function exportWarrantyPDF(p){
+  const warExp=(allE(p)||[]).filter(e=>e.warranty&&!e.credit);
+  const pr=getProp(p);const addr=pr.addr||p;
+  const win=window.open('','_blank');
+  if(!win){alert('Pop-up blocked. Allow pop-ups for this site to export.');return;}
+  const rows=warExp.map(e=>{
+    const receipts=Array.isArray(e.receipt)?e.receipt:(e.receipt?[e.receipt]:[]);
+    const receiptLinks=receipts.filter(r=>r&&r.startsWith('https://')).map((r,i)=>`<a href="${r}" target="_blank">Receipt${receipts.length>1?' '+(i+1):''}</a>`).join(' ');
+    return `<tr><td>${e.dt?fmtD(e.dt):''}</td><td>${(e.d||e.desc||'').replace(/</g,'&lt;')}</td><td>${(e.v||'').replace(/</g,'&lt;')}</td><td>${(e.c||'').replace(/</g,'&lt;')}</td><td style="text-align:right;font-weight:600">${fmt(parseFloat(e.a||0))}</td><td>${receiptLinks}</td></tr>`;
+  }).join('');
+  const total=warExp.reduce((s,e)=>s+parseFloat(e.a||0),0);
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Warranty Receipts – ${addr}</title><style>
+    body{font-family:Arial,sans-serif;max-width:900px;margin:40px auto;padding:0 20px;color:#111}
+    h1{font-size:22px;margin-bottom:4px}h2{font-size:14px;font-weight:400;color:#555;margin:0 0 24px}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th{background:#0ea5e9;color:#fff;padding:8px 10px;text-align:left;font-weight:600}
+    td{padding:8px 10px;border-bottom:1px solid #e5e7eb}tr:nth-child(even){background:#f8fafc}
+    .total{font-size:14px;font-weight:700;text-align:right;margin-top:12px}
+    a{color:#0ea5e9}
+    .footer{font-size:11px;color:#888;margin-top:32px;border-top:1px solid #e5e7eb;padding-top:12px}
+    @media print{button{display:none}}
+  </style></head><body>
+    <h1>Warranty Receipts</h1>
+    <h2>${addr.replace(/</g,'&lt;')} &nbsp;·&nbsp; Prepared ${new Date().toLocaleDateString()}</h2>
+    <p style="font-size:13px;color:#555;margin-bottom:20px">The following repairs were completed and include warranty coverage. Receipts are attached or linked below for your records.</p>
+    <table><thead><tr><th>Date</th><th>Description</th><th>Vendor</th><th>Category</th><th>Amount</th><th>Receipt</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <div class="total">Total Warranty Work: ${fmt(total)}</div>
+    <div class="footer">Generated by Apex Homes LLC &nbsp;·&nbsp; ${new Date().toLocaleDateString()}</div>
+    <br><button onclick="window.print()" style="padding:8px 20px;background:#0ea5e9;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;margin-top:8px">Print / Save as PDF</button>
+  </body></html>`);
+  win.document.close();
 }
 async function deleteDoc(p,uid){
   if(!await appConfirm("Delete this document?","Delete"))return;
