@@ -5365,36 +5365,60 @@ function renderWarrantySection(p,el){
     }).join('');
   el.appendChild(div);
 }
-function exportWarrantyPDF(p){
+async function exportWarrantyPDF(p){
   const warExp=(allE(p)||[]).filter(e=>e.warranty&&!e.credit);
   const pr=getProp(p);const addr=pr.addr||p;
   const win=window.open('','_blank');
   if(!win){alert('Pop-up blocked. Allow pop-ups for this site to export.');return;}
-  const rows=warExp.map(e=>{
-    const receipts=Array.isArray(e.receipt)?e.receipt:(e.receipt?[e.receipt]:[]);
-    const receiptLinks=receipts.filter(r=>r&&r.startsWith('https://')).map((r,i)=>`<a href="${r}" target="_blank">Receipt${receipts.length>1?' '+(i+1):''}</a>`).join(' ');
-    return `<tr><td>${e.dt?fmtD(e.dt):''}</td><td>${(e.d||e.desc||'').replace(/</g,'&lt;')}</td><td>${(e.v||'').replace(/</g,'&lt;')}</td><td>${(e.c||'').replace(/</g,'&lt;')}</td><td style="text-align:right;font-weight:600">${fmt(parseFloat(e.a||0))}</td><td>${receiptLinks}</td></tr>`;
-  }).join('');
+  // Show loading state while fetching images
+  win.document.write('<html><body style="font-family:Arial;padding:40px;color:#555">Loading receipts…</body></html>');
+  // Fetch all receipt images and convert to base64 so they embed in the PDF
+  async function toDataUrl(url){
+    try{const r=await fetch(url);const b=await r.blob();return await new Promise(res=>{const fr=new FileReader();fr.onload=e=>res(e.target.result);fr.readAsDataURL(b);});}catch(e){return null;}
+  }
+  const rows=await Promise.all(warExp.map(async e=>{
+    const receipts=(Array.isArray(e.receipt)?e.receipt:(e.receipt?[e.receipt]:[])).filter(Boolean);
+    const imgHtmlParts=await Promise.all(receipts.map(async(r,i)=>{
+      if(r.startsWith('data:')){
+        const isPdf=r.startsWith('data:application/pdf');
+        return isPdf?`<div style="font-size:11px;color:#888">PDF receipt ${receipts.length>1?i+1:''}</div>`:`<img src="${r}" style="max-width:100%;max-height:300px;border:1px solid #e5e7eb;border-radius:4px;margin-top:6px;display:block">`;
+      }
+      if(r.startsWith('https://')){
+        const isPdf=r.toLowerCase().includes('.pdf')||r.includes('application%2Fpdf');
+        if(isPdf)return `<a href="${r}" target="_blank" style="font-size:12px;color:#0ea5e9">Open PDF Receipt${receipts.length>1?' '+(i+1):''}</a>`;
+        const b64=await toDataUrl(r);
+        return b64?`<img src="${b64}" style="max-width:100%;max-height:300px;border:1px solid #e5e7eb;border-radius:4px;margin-top:6px;display:block">`:`<a href="${r}" target="_blank" style="font-size:12px;color:#0ea5e9">Receipt${receipts.length>1?' '+(i+1):''}</a>`;
+      }
+      return '';
+    }));
+    const imgHtml=imgHtmlParts.join('');
+    return `<div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:20px;page-break-inside:avoid">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div style="font-size:15px;font-weight:700;color:#111">${(e.d||e.desc||'Repair').replace(/</g,'&lt;')}</div>
+          <div style="font-size:12px;color:#555;margin-top:2px">${(e.v||'').replace(/</g,'&lt;')}${e.dt?' &nbsp;·&nbsp; '+fmtD(e.dt):''} &nbsp;·&nbsp; ${(e.c||'').replace(/</g,'&lt;')}</div>
+        </div>
+        <div style="font-size:16px;font-weight:700;color:#0ea5e9;white-space:nowrap;margin-left:16px">${fmt(parseFloat(e.a||0))}</div>
+      </div>
+      ${imgHtml}
+    </div>`;
+  }));
   const total=warExp.reduce((s,e)=>s+parseFloat(e.a||0),0);
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Warranty Receipts – ${addr}</title><style>
-    body{font-family:Arial,sans-serif;max-width:900px;margin:40px auto;padding:0 20px;color:#111}
-    h1{font-size:22px;margin-bottom:4px}h2{font-size:14px;font-weight:400;color:#555;margin:0 0 24px}
-    table{width:100%;border-collapse:collapse;font-size:13px}
-    th{background:#0ea5e9;color:#fff;padding:8px 10px;text-align:left;font-weight:600}
-    td{padding:8px 10px;border-bottom:1px solid #e5e7eb}tr:nth-child(even){background:#f8fafc}
-    .total{font-size:14px;font-weight:700;text-align:right;margin-top:12px}
-    a{color:#0ea5e9}
+  win.document.open();
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Warranty Receipts – ${addr.replace(/</g,'&lt;')}</title><style>
+    body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#111}
+    h1{font-size:22px;margin-bottom:4px}h2{font-size:14px;font-weight:400;color:#555;margin:0 0 8px}
+    .total{font-size:15px;font-weight:700;text-align:right;margin-top:4px;color:#111}
     .footer{font-size:11px;color:#888;margin-top:32px;border-top:1px solid #e5e7eb;padding-top:12px}
-    @media print{button{display:none}}
+    @media print{.no-print{display:none}}
   </style></head><body>
     <h1>Warranty Receipts</h1>
     <h2>${addr.replace(/</g,'&lt;')} &nbsp;·&nbsp; Prepared ${new Date().toLocaleDateString()}</h2>
-    <p style="font-size:13px;color:#555;margin-bottom:20px">The following repairs were completed and include warranty coverage. Receipts are attached or linked below for your records.</p>
-    <table><thead><tr><th>Date</th><th>Description</th><th>Vendor</th><th>Category</th><th>Amount</th><th>Receipt</th></tr></thead>
-    <tbody>${rows}</tbody></table>
+    <p style="font-size:13px;color:#555;margin-bottom:20px">The following repairs were completed and include warranty coverage. Receipts are embedded below for your records.</p>
+    ${rows.join('')}
     <div class="total">Total Warranty Work: ${fmt(total)}</div>
     <div class="footer">Generated by Apex Homes LLC &nbsp;·&nbsp; ${new Date().toLocaleDateString()}</div>
-    <br><button onclick="window.print()" style="padding:8px 20px;background:#0ea5e9;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;margin-top:8px">Print / Save as PDF</button>
+    <br><button class="no-print" onclick="window.print()" style="padding:8px 20px;background:#0ea5e9;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;margin-top:8px">Print / Save as PDF</button>
   </body></html>`);
   win.document.close();
 }
