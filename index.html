@@ -5367,57 +5367,75 @@ function renderWarrantySection(p,el){
 }
 async function exportWarrantyPDF(p){
   const warExp=(allE(p)||[]).filter(e=>e.warranty&&!e.credit);
+  if(!warExp.length){alert('No warranty receipts marked for this property.');return;}
   const pr=getProp(p);const addr=pr.addr||p;
-  const fname='Warranty-Receipts-'+(addr.replace(/[^a-z0-9]/gi,'-'))+'.html';
+  const fname='Warranty-Receipts-'+(addr.replace(/[^a-z0-9]/gi,'-'))+'.pdf';
+  // Load libs
+  async function loadScript(src){return new Promise((res,rej)=>{if(document.querySelector('script[src="'+src+'"]')){res();return;}const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+  try{
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+  }catch(e){alert('Failed to load PDF library. Check your connection.');return;}
+  // Fetch remote images as base64
   async function toDataUrl(url){
-    try{const r=await fetch(url);const b=await r.blob();return await new Promise(res=>{const fr=new FileReader();fr.onload=e=>res(e.target.result);fr.readAsDataURL(b);});}catch(e){return null;}
+    try{const r=await fetch(url);const b=await r.blob();return await new Promise(res=>{const fr=new FileReader();fr.onload=ev=>res(ev.target.result);fr.readAsDataURL(b);});}catch(e){return null;}
   }
-  const rows=await Promise.all(warExp.map(async e=>{
+  // Build hidden render div
+  const wrap=document.createElement('div');
+  wrap.style.cssText='position:fixed;left:-9999px;top:0;width:800px;background:#fff;color:#111;font-family:Arial,sans-serif;padding:40px;box-sizing:border-box';
+  // Header
+  wrap.innerHTML=`<h1 style="font-size:22px;margin:0 0 4px">Warranty Receipts</h1>
+    <div style="font-size:14px;color:#555;margin-bottom:6px">${(addr).replace(/</g,'&lt;')} &nbsp;·&nbsp; Prepared ${new Date().toLocaleDateString()}</div>
+    <p style="font-size:13px;color:#555;margin:0 0 20px">The following repairs include warranty coverage.</p>`;
+  const total=warExp.reduce((s,e)=>s+parseFloat(e.a||0),0);
+  for(const e of warExp){
     const receipts=(Array.isArray(e.receipt)?e.receipt:(e.receipt?[e.receipt]:[])).filter(Boolean);
-    const imgHtmlParts=await Promise.all(receipts.map(async(r,i)=>{
-      if(r.startsWith('data:')){
-        const isPdf=r.startsWith('data:application/pdf');
-        return isPdf?`<div style="font-size:11px;color:#888">PDF receipt ${receipts.length>1?i+1:''}</div>`:`<img src="${r}">`;
-      }
+    const card=document.createElement('div');
+    card.style.cssText='border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:20px';
+    card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+      <div>
+        <div style="font-size:15px;font-weight:700">${(e.d||'Repair').replace(/</g,'&lt;')}</div>
+        <div style="font-size:12px;color:#555;margin-top:2px">${(e.v||'').replace(/</g,'&lt;')}${e.dt?' · '+fmtD(e.dt):''} · ${(e.c||'').replace(/</g,'&lt;')}</div>
+      </div>
+      <div style="font-size:16px;font-weight:700;color:#0ea5e9;white-space:nowrap;margin-left:16px">${fmt(parseFloat(e.a||0))}</div>
+    </div>`;
+    for(let i=0;i<receipts.length;i++){
+      const r=receipts[i];
+      let src=r;
       if(r.startsWith('https://')){
         const isPdf=r.toLowerCase().includes('.pdf')||r.includes('application%2Fpdf');
-        if(isPdf)return `<a href="${r}" target="_blank" style="font-size:12px;color:#0ea5e9">Open PDF Receipt${receipts.length>1?' '+(i+1):''}</a>`;
-        const b64=await toDataUrl(r);
-        return b64?`<img src="${b64}">`:`<a href="${r}" target="_blank" style="font-size:12px;color:#0ea5e9">Receipt${receipts.length>1?' '+(i+1):''}</a>`;
+        if(isPdf){const note=document.createElement('div');note.style.cssText='font-size:11px;color:#888;margin-top:6px';note.textContent='PDF receipt '+(receipts.length>1?i+1:'');card.appendChild(note);continue;}
+        src=await toDataUrl(r)||r;
       }
-      return '';
-    }));
-    return `<div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:20px;page-break-inside:avoid">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-        <div>
-          <div style="font-size:15px;font-weight:700;color:#111">${(e.d||e.desc||'Repair').replace(/</g,'&lt;')}</div>
-          <div style="font-size:12px;color:#555;margin-top:2px">${(e.v||'').replace(/</g,'&lt;')}${e.dt?' &nbsp;·&nbsp; '+fmtD(e.dt):''} &nbsp;·&nbsp; ${(e.c||'').replace(/</g,'&lt;')}</div>
-        </div>
-        <div style="font-size:16px;font-weight:700;color:#0ea5e9;white-space:nowrap;margin-left:16px">${fmt(parseFloat(e.a||0))}</div>
-      </div>
-      ${imgHtmlParts.join('')}
-    </div>`;
-  }));
-  const total=warExp.reduce((s,e)=>s+parseFloat(e.a||0),0);
-  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Warranty Receipts – ${addr.replace(/</g,'&lt;')}</title><style>
-    body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#111}
-    h1{font-size:22px;margin-bottom:4px}h2{font-size:14px;font-weight:400;color:#555;margin:0 0 8px}
-    .total{font-size:15px;font-weight:700;text-align:right;margin-top:4px;color:#111}
-    .footer{font-size:11px;color:#888;margin-top:32px;border-top:1px solid #e5e7eb;padding-top:12px}
-    img{max-width:100%;height:auto;display:block;border:1px solid #e5e7eb;border-radius:6px;margin-top:10px}
-    @media print{body{margin:0}}
-  </style></head><body>
-    <h1>Warranty Receipts</h1>
-    <h2>${addr.replace(/</g,'&lt;')} &nbsp;·&nbsp; Prepared ${new Date().toLocaleDateString()}</h2>
-    <p style="font-size:13px;color:#555;margin-bottom:20px">The following repairs were completed and include warranty coverage. Receipts are embedded below for your records.</p>
-    ${rows.join('')}
-    <div class="total">Total Warranty Work: ${fmt(total)}</div>
-    <div class="footer">Generated by Apex Homes LLC &nbsp;·&nbsp; ${new Date().toLocaleDateString()}</div>
-  </body></html>`;
-  const win=window.open('','_blank');
-  if(!win){alert('Allow pop-ups for this site to export.');return;}
-  win.document.write(html);win.document.close();
-  win.onload=()=>win.print();
+      if(src&&src.startsWith('data:image')){const img=document.createElement('img');img.src=src;img.style.cssText='max-width:100%;height:auto;display:block;border:1px solid #e5e7eb;border-radius:6px;margin-top:10px';card.appendChild(img);}
+    }
+    wrap.appendChild(card);
+  }
+  const footer=document.createElement('div');
+  footer.style.cssText='font-size:11px;color:#888;border-top:1px solid #e5e7eb;padding-top:12px;margin-top:4px';
+  footer.innerHTML=`<strong>Total Warranty Work: ${fmt(total)}</strong><br>Generated by Apex Homes LLC · ${new Date().toLocaleDateString()}`;
+  wrap.appendChild(footer);
+  document.body.appendChild(wrap);
+  // Render to PDF
+  try{
+    const canvas=await html2canvas(wrap,{scale:2,useCORS:true,backgroundColor:'#ffffff'});
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'portrait',unit:'pt',format:'letter'});
+    const pageW=pdf.internal.pageSize.getWidth();
+    const pageH=pdf.internal.pageSize.getHeight();
+    const imgW=canvas.width;const imgH=canvas.height;
+    const ratio=pageW/imgW;
+    const scaledH=imgH*ratio;
+    let y=0;
+    while(y<scaledH){
+      if(y>0)pdf.addPage();
+      pdf.addImage(canvas,'PNG',0,-y,pageW,scaledH);
+      y+=pageH;
+    }
+    pdf.save(fname);
+  }finally{
+    document.body.removeChild(wrap);
+  }
 }
 async function deleteDoc(p,uid){
   if(!await appConfirm("Delete this document?","Delete"))return;
