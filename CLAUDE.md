@@ -306,6 +306,10 @@ Property keys are always lowercase, no spaces.
 - Property page tabs (mobile): 8 tabs display as a 4-column × 2-row CSS Grid on mobile via `.prop-tab-bar` class; `buildPropPage()` adds the class to the tab bar div; CSS in `@media(max-width:…)` block: `grid-template-columns:repeat(4,1fr)`
 - Batch receipt scan date default fixed: `runScan` path now checks `r.data.date && r.data.date !== 'null'` before using AI date (was using plain `||` which treated string `"null"` as truthy, skipping today fallback)
 - Doc open on mobile fixed: Supabase-hosted PDFs now render as a direct `<a href target="_blank">` anchor instead of a JS-simulated `.click()` — eliminates iOS Safari throttling delay; non-PDF non-image Supabase docs also get an open button (previously had none)
+- Equipment / Truck Rental expense category added to all 4 category dropdowns (exp-cat, eeexp-cat, cr-cat, eecr-cat) and AI suggestion string
+- Cellular sync optimization: `_syncInterval()` returns 15000ms on 2G/3G/slow-2g (via `navigator.connection.effectiveType`), 5000ms otherwise; `startAutoSync` and visibility handler use `_syncInterval()`
+- Property photo upload fixed (again): `handlePropImg` now uses `processReceiptImage(file, false)` — no receipt auto-crop on house photos; uploads via `_uploadBlob` directly
+- Warranty Receipt feature: checkbox on Add/Edit Expense modals (`exp-warranty`, `eeexp-warranty`); stored as `e.warranty=true`; WARRANTY badge shown in expense list; `renderWarrantySection(p,el)` renders buyer warranty packet in Docs tab; `exportWarrantyPDF(p)` fetches all receipt images as base64 data URLs, embeds in self-contained HTML, provides Download button (saves as `Warranty-Receipts-{addr}.html`); images display full-width via global CSS `img{max-width:100%;height:auto}`
 
 ---
 
