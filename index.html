@@ -1743,6 +1743,10 @@ async function saveHourlyBackup(manual){
         await Promise.all(toDelete.map(row=>sbFetch('/rest/v1/apex_data?id=eq.'+row.id,{method:'DELETE'})));
       }
     }
+    // Record timestamp so the 55-min throttle works on next call
+    if(!propData._backups)propData._backups=[];
+    propData._backups.push({ts});
+    if(propData._backups.length>MAX_SNAPSHOTS)propData._backups=propData._backups.slice(-MAX_SNAPSHOTS);
     if(manual){const st=document.getElementById('backup-status');if(st){st.innerHTML='<span style="color:var(--green)">✓ Snapshot saved</span>';setTimeout(()=>st.innerHTML='',3000);}}
     renderCloudBackups();
   }catch(e){if(manual){const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--red)">✗ Snapshot failed: '+e.message+'</span>';}}
@@ -4834,7 +4838,9 @@ function refreshSite(scope){
   const soldProps2=props.filter(p=>propSold(p,taxYear)>0);
   const soldPropExp=soldProps2.reduce((s,p)=>s+eTotal(p,taxYear),0);
   const generalExp=eTotal('general',taxYear);
-  const netP=(revenue+otherInc)-acquisitions-soldPropExp-generalExp-mileDeduction-assetDed-assetInt+mealsAll*0.5;
+  // Only add back meals from sold props + general (those are the only ones subtracted in netP)
+  const soldMeals=[...soldProps2,'general'].flatMap(p=>allE(p)).filter(e=>(e.dt||e.date||'').startsWith(String(taxYear))&&(e.c||e.cat||'')==='Meals (50% deductible)'&&!e.credit).reduce((s,e)=>s+(parseFloat(e.a||e.amount)||0),0);
+  const netP=(revenue+otherInc)-acquisitions-soldPropExp-generalExp-mileDeduction-assetDed-assetInt+soldMeals*0.5;
   const soldWithROI=props.filter(p=>propSold(p,taxYear)>0&&propROI(p)!=null);
   const avgROI=soldWithROI.length?soldWithROI.reduce((s,p)=>s+propROI(p),0)/soldWithROI.length:null;
   setEl("stat-net-profit",(netP>=0?'+':'')+fmt(netP));
