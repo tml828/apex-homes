@@ -5481,6 +5481,48 @@ function getDocData(p,uid){const d=getDocByUid(p,uid);return d?d.data:null;}
 
 // ====== TRASH / RECENTLY DELETED ======
 function getTrash(){if(!propData._trash)propData._trash=[];return propData._trash;}
+function extendRecurringExpenses(){
+  const allKeys=[...getPropKeys(),'general'];
+  let totalAdded=0;
+  allKeys.forEach(p=>{
+    const exps=(allE(p)||[]).filter(e=>e.recur&&!e.credit);
+    if(!exps.length)return;
+    const groups={};
+    exps.forEach(e=>{
+      const key=`${e.a}|${e.d}|${e.c}|${e.v}|${e.recur}`;
+      if(!groups[key])groups[key]={freq:e.recur,tmpl:e,dates:[]};
+      if(e.dt)groups[key].dates.push(e.dt);
+    });
+    Object.values(groups).forEach(g=>{
+      const maxDate=g.dates.sort().pop();
+      if(!maxDate)return;
+      const freq=g.freq;
+      const cur=new Date(maxDate+'T00:00:00');
+      if(isNaN(cur.getTime()))return;
+      const y=cur.getFullYear(),m=cur.getMonth(),day=cur.getDate();
+      let next;
+      if(freq==='weekly')next=new Date(y,m,day+7);
+      else if(freq==='monthly'){next=new Date(y,m+1,Math.min(day,new Date(y,m+2,0).getDate()));}
+      else if(freq==='quarterly'){next=new Date(y,m+3,Math.min(day,new Date(y,m+4,0).getDate()));}
+      else if(freq==='yearly'){next=new Date(y+1,m,Math.min(day,new Date(y+1,m+1,0).getDate()));}
+      else return;
+      const today=new Date();today.setHours(0,0,0,0);
+      if(next>today)return;
+      const nextStr=next.toLocaleDateString('en-CA');
+      const newDates=_recurDates(nextStr,freq);
+      if(!newDates.length)return;
+      if(!extra[p])extra[p]=[];
+      const t=g.tmpl;
+      newDates.forEach(date=>{
+        const obj={a:t.a,d:t.d,c:t.c,v:t.v,dt:date,recur:freq};
+        if(t.w9)obj.w9=true;if(t.warranty)obj.warranty=true;
+        extra[p].push(obj);
+      });
+      totalAdded+=newDates.length;
+    });
+  });
+  if(totalAdded>0){console.log('extendRecurringExpenses: added',totalAdded,'entries');save();}
+}
 function purgeOldTrash(){
   const cutoff=Date.now()-30*24*60*60*1000;
   const t=getTrash();
@@ -5661,6 +5703,7 @@ loadData().then(()=>{
     refreshSite();
     renderDashTasks();
     purgeOldTrash();
+    extendRecurringExpenses();
     autoUploadPendingDocs();
     recoverPhotosFromStorage();
     saveHourlyBackup(false);
