@@ -1843,7 +1843,7 @@ async function retryFailedReceiptUploads(){
   }
 }
 
-async function restoreBackup(file){if(!file)return;const st=document.getElementById('backup-status');if(!await appConfirm('This will REPLACE all current data with the backup. Continue?','Replace'))return;try{const text=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsText(file);});const backup=JSON.parse(text);if(!backup.propData)throw new Error('Invalid backup file');Object.keys(propData).forEach(k=>delete propData[k]);Object.assign(propData,backup.propData);if(backup.extra&&typeof extra!=='undefined'){Object.keys(extra).forEach(k=>delete extra[k]);Object.assign(extra,backup.extra);}if(backup.tasks){tasks.length=0;backup.tasks.forEach(t=>tasks.push(t));}if(backup.mileage){window._mileage=backup.mileage;localStorage.setItem('apex_mileage',JSON.stringify(window._mileage));}save();refreshSite();if(st)st.innerHTML='<span style="color:var(--green)">✓ Restored</span>';setTimeout(()=>{alert('Backup restored! Reloading.');location.reload();},500);}catch(err){if(st)st.innerHTML='<span style="color:var(--red)">✗ '+err.message+'</span>';}}
+async function restoreBackup(file){if(!file)return;const st=document.getElementById('backup-status');if(!await appConfirm('This will REPLACE all current data with the backup. Continue?','Replace'))return;try{const text=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsText(file);});const backup=JSON.parse(text);if(!backup.propData)throw new Error('Invalid backup file');Object.keys(propData).forEach(k=>delete propData[k]);Object.assign(propData,backup.propData);if(backup.extra&&typeof extra!=='undefined'){Object.keys(extra).forEach(k=>delete extra[k]);Object.assign(extra,backup.extra);}if(backup.tasks){tasks.length=0;backup.tasks.forEach(t=>tasks.push(t));}if(backup.mileage){window._mileage=backup.mileage;localStorage.setItem('apex_mileage',JSON.stringify(window._mileage));}if(backup.propImgs){Object.keys(propImgs).forEach(k=>delete propImgs[k]);Object.assign(propImgs,backup.propImgs);}save();refreshSite();if(st)st.innerHTML='<span style="color:var(--green)">✓ Restored</span>';setTimeout(()=>{alert('Backup restored! Reloading.');location.reload();},500);}catch(err){if(st)st.innerHTML='<span style="color:var(--red)">✗ '+err.message+'</span>';}}
 
 // On mobile, move status dot under logo
 (function(){
@@ -2953,12 +2953,9 @@ function showModal(id){
   const m=document.getElementById(id);if(!m)return;
   // Populate task property dropdown dynamically
   if(id==='m-task'||id==='m-edit-task'){
-    const sel=m.querySelector('#task-prop, #edit-task-prop');
-    if(sel){
-      const cur=sel.value;
-      sel.innerHTML='<option value="General">General</option>'+getPropKeys().map(k=>`<option value="${k}">${getProp(k).addr||k}</option>`).join('');
-      if(cur)sel.value=cur;
-    }
+    const selId=id==='m-task'?'task-prop':'edit-task-prop';
+    const sel=document.getElementById(selId);
+    if(sel){const cur=sel.value;populateTaskPropDropdown(selId,cur||undefined);}
   }
   m.classList.add("open");const sy=window.scrollY;document.body.dataset.sy=sy;document.body.style.overflow="hidden";if(_moOpen===0)document.addEventListener('touchmove',_tmHandler,{passive:false});_moOpen++;if(id==='m-exp'||id==='m-edit-exp'){hookW9Listeners();setTimeout(()=>{if(id==='m-exp')checkW9Visibility('exp');else checkW9Visibility('eeexp');},50);}if(id==='tax-contractors'||m.closest('#tax-contractors'))renderContractors();
 }
