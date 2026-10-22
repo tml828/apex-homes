@@ -1,7 +1,7 @@
 # Apex Homes LLC — Developer Reference
 
 ## What This App Is
-Single-file (`index.html`) property management web app for a house-flipping business. No build toolchain — all HTML, CSS, and JavaScript are inline. Deployed on GitHub Pages, syncs data to Supabase every 5 seconds. ~5900+ lines.
+Single-file (`index.html`) property management web app for a house-flipping business. No build toolchain — all HTML, CSS, and JavaScript are inline. Deployed on GitHub Pages, syncs data to Supabase every 5 seconds. ~6500+ lines.
 
 ## Deployment
 - **Live site:** tml828.github.io/apex-homes
@@ -118,7 +118,8 @@ Property keys are always lowercase, no spaces.
 - `exportTaxCSV()` — full Schedule C CSV with per-property breakdown, categories, contractors
 - `exportTaxPDF()` — full printable PDF with same data
 - `updateBalanceSheet()` — reads cash/loans/payable inputs, calculates equity = assets - liabilities
-- Net profit formula: `revenue - acquisitions - totalExp - mileageDeduction`
+- Dashboard net profit formula (realized): `(soldRevenue + otherInc) - soldAcquisitions - soldPropExp - generalExp - mileDeduction - assetDed - assetInt + soldMeals*0.5` — only sold properties' costs count; unsold property renovation expenses excluded
+- Tax page net profit formula (Schedule C): `(revenue + otherInc) - acquisitions - totalExp(all props) - mileDeduction - assetDed - assetInt + mealsAll*0.5` — all expenses deducted when incurred regardless of sale status
 
 ### W-9 / Contractors
 - W-9 checkbox shows ONLY when category = "Labor / Contractor" AND amount >= $600
@@ -309,7 +310,17 @@ Property keys are always lowercase, no spaces.
 - Equipment / Truck Rental expense category added to all 4 category dropdowns (exp-cat, eeexp-cat, cr-cat, eecr-cat) and AI suggestion string
 - Cellular sync optimization: `_syncInterval()` returns 15000ms on 2G/3G/slow-2g (via `navigator.connection.effectiveType`), 5000ms otherwise; `startAutoSync` and visibility handler use `_syncInterval()`
 - Property photo upload fixed (again): `handlePropImg` now uses `processReceiptImage(file, false)` — no receipt auto-crop on house photos; uploads via `_uploadBlob` directly
-- Warranty Receipt feature: checkbox on Add/Edit Expense modals (`exp-warranty`, `eeexp-warranty`); stored as `e.warranty=true`; WARRANTY badge shown in expense list; `renderWarrantySection(p,el)` renders buyer warranty packet in Docs tab; `exportWarrantyPDF(p)` fetches all receipt images as base64 data URLs, embeds in self-contained HTML, provides Download button (saves as `Warranty-Receipts-{addr}.html`); images display full-width via global CSS `img{max-width:100%;height:auto}`
+- Warranty Receipt feature: checkbox on Add/Edit Expense modals (`exp-warranty`, `eeexp-warranty`); stored as `e.warranty=true`; WARRANTY badge shown in expense list; `renderWarrantySection(p,el)` renders buyer warranty packet in Docs tab; `exportWarrantyPDF(p)` uses jsPDF + html2canvas to generate a real PDF (letter size, JPEG compressed at 0.75 quality, scale 1.5); downloads as `Warranty-Receipts-{addr}.pdf`; iOS uses Web Share API (`navigator.share({files})`) for native share sheet
+- Credits tab re-renders on open: Credits tab button onclick calls `renderCr('${key}')` directly so credits always show when tab is tapped
+- `saveEditProp` blank page fix: calls `showProp(p)` after `buildPropPage(p,true)` so rebuilt page gets `.active` class restored
+- `propPurchase` COGS fix: checks `pr.sdate` (sale date) for year filter — acquisition cost deducted in year of sale, not year of purchase; a prior "fix" in history had it wrong (reversed back to correct behavior)
+- Dashboard net profit formula changed to realized profit: only sold properties' revenue/expenses count; active property renovation costs excluded (they haven't generated revenue yet); Tax page keeps full Schedule C math unchanged
+- Dashboard meals correction: `soldMeals` used (sold props + general only) instead of all-property meals, so meals add-back matches what was actually subtracted in sold property expenses
+- Hourly backup throttle fixed: `saveHourlyBackup` now records timestamp to `propData._backups` after each snapshot; previously nothing was written so a new snapshot was created on every page load
+- Recurring expenses auto-extend: `extendRecurringExpenses()` runs on startup; scans all expenses with `recur` field, finds latest date per group (matched by amount+description+category+vendor+frequency), generates any missing periods from there through today, saves silently
+- Mileage trip edit fix: `openEditMileage` no longer calls `populateTaskPropDropdown` (which destroyed the key-based `mi-prop` dropdown); now just sets `.value` directly on the pre-populated dropdown
+- Restore Backup now restores `propImgs`: `restoreBackup` was not restoring property photos even though `exportBackup` included them
+- Edit Task property dropdown fix: task modal now consistently uses `populateTaskPropDropdown` (address-valued options) in both add and edit paths; was previously mixing keys and addresses causing wrong property to show on edit
 
 ---
 
@@ -320,15 +331,15 @@ Property keys are always lowercase, no spaces.
 
 ---
 
-## Audit Scores (last assessed 2026-07-11)
+## Audit Scores (last assessed 2026-10-22)
 | Area | Score | Main remaining gap |
 |---|---|---|
 | Security | 52/100 | Anthropic API key in public git history — rotate at console.anthropic.com |
 | Performance | 74/100 | `refreshSite()` still rebuilds full DOM on tab switches and year changes |
-| Reliability | 76/100 | — |
-| Data Integrity | 82/100 | — |
-| Maintainability | 36/100 | Single 5800-line file, no module system |
-| **Overall** | **68/100** | |
+| Reliability | 84/100 | Full button audit passed; all add/edit/delete paths verified working |
+| Data Integrity | 88/100 | Net profit formula corrected; COGS year filter fixed; recurring expenses auto-extend |
+| Maintainability | 36/100 | Single ~6500-line file, no module system |
+| **Overall** | **71/100** | |
 
 ---
 
