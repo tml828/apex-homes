@@ -4829,7 +4829,12 @@ function refreshSite(scope){
   const mileDeduction=_totalMiles*_mileRate;
   const assetDed=totalAssetDeductions(taxYear);
   const assetInt=totalAssetInterest(taxYear);
-  const netP=(revenue+otherInc)-acquisitions-totalExp-mileDeduction-assetDed-assetInt+mealsAll*0.5;
+  // Dashboard net profit = realized profit on SOLD properties only + other income - general expenses - mileage
+  // (unsold property renovation expenses excluded — they haven't generated revenue yet)
+  const soldProps2=props.filter(p=>propSold(p,taxYear)>0);
+  const soldPropExp=soldProps2.reduce((s,p)=>s+eTotal(p,taxYear),0);
+  const generalExp=eTotal('general',taxYear);
+  const netP=(revenue+otherInc)-acquisitions-soldPropExp-generalExp-mileDeduction-assetDed-assetInt+mealsAll*0.5;
   const soldWithROI=props.filter(p=>propSold(p,taxYear)>0&&propROI(p)!=null);
   const avgROI=soldWithROI.length?soldWithROI.reduce((s,p)=>s+propROI(p),0)/soldWithROI.length:null;
   setEl("stat-net-profit",(netP>=0?'+':'')+fmt(netP));
