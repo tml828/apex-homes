@@ -4652,7 +4652,7 @@ function buildPropPage(key, force){
       <div class="card" style="padding:1.25rem">
         <div class="tab-bar prop-tab-bar">
           <button class="tb active" onclick="stab(this,'tb-${key}ex')">Expenses</button>
-          <button class="tb" onclick="stab(this,'tb-${key}cr')">Credits</button>
+          <button class="tb" onclick="stab(this,'tb-${key}cr');renderCr('${key}')">Credits</button>
           <button class="tb" onclick="stab(this,'tb-${key}closing')">Closing</button>
           <button class="tb" onclick="stab(this,'tb-${key}docs')">Docs</button>
           <button class="tb" onclick="stab(this,'tb-${key}roi')">ROI</button>
