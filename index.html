@@ -4435,8 +4435,8 @@ function openEditMileage(id){
   document.getElementById('mi-date-end').value=t.dateEnd||t.date||'';
   document.getElementById('mi-miles').value=t.miles||'';
   document.getElementById('mi-purpose').value=t.purpose||'';
-  populateTaskPropDropdown('mi-prop',t.prop);
-  document.getElementById('mi-prop').value=t.prop||'General Business';
+  const miPropSel=document.getElementById('mi-prop');
+  if(miPropSel)miPropSel.value=t.prop||'General Business';
   window._editMileageId=String(id);
   const lbl=document.getElementById('mi-log-btn-label');if(lbl)lbl.textContent='Update Trip';
   const cb=document.getElementById('mi-cancel-edit-btn');if(cb)cb.style.display='inline-flex';
