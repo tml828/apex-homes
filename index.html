@@ -3064,6 +3064,7 @@ function saveEditProp(){
   save();renderPropCards();closeModal("m-edit-prop");
   // Rebuild property page so address/city header reflects changes, then restore state
   buildPropPage(p, true);
+  showProp(p);
   renderE(p);renderDocs(p);restorePropImg(p);refreshSite();
 }
 async function deleteProp(p){
