@@ -2404,7 +2404,7 @@ function saveMileage(){localStorage.setItem('apex_mileage',JSON.stringify(window
 
 // ====== LIVE DATA HELPERS ======
 function getProp(p){return{...(propDefaults[p]||{}),...(propData[p]||{})};}
-function propPurchase(p,yr){const pr=getProp(p);const v=parseFloat(pr.purchase||0);if(!v)return 0;if(!yr)return v;const sd=pr.pdate||"";if(!sd)return 0;return sd.startsWith(String(yr))?v:0;}
+function propPurchase(p,yr){const pr=getProp(p);const v=parseFloat(pr.purchase||0);if(!v)return 0;if(!yr)return v;const sd=pr.sdate||"";if(!sd)return 0;return sd.startsWith(String(yr))?v:0;}
 function propSold(p,yr){const pr=getProp(p);const v=parseFloat(pr.sold||0);if(!v)return 0;if(!yr)return v;const sd=pr.sdate||"";if(!sd)return 0;return sd.startsWith(String(yr))?v:0;}
 function propNetProfit(p){const s=propSold(p);if(!s)return null;const meals=allE(p).filter(e=>!e.credit&&(e.c||e.cat||'')==='Meals (50% deductible)').reduce((t,e)=>t+(parseFloat(e.a||e.amount)||0),0);return s-propPurchase(p)-eTotal(p)+meals*0.5;}
 function propROI(p){const cost=propPurchase(p)+eTotal(p);const s=propSold(p);if(!s||!cost)return null;return((s-cost)/cost*100);}
