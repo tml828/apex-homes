@@ -5207,7 +5207,7 @@ async function scanClosingStatement(b64, mime){
 }
 For category use one of: Closing Costs, Property Tax, Marketing / Advertising, Insurance, Legal / Accounting, HOA Fees, Other.
 BUYER statement: debits=ALL charges to buyer including earnest money deposit (even if marked POC/paid outside closing — it is still a real out-of-pocket cost). credits=prorations in buyer favor, seller-paid credits. Do NOT include purchase price in debits. Do NOT put earnest deposit in credits.
-SELLER statement: debits=charges to seller (commissions, fees, payoffs), credits=amounts seller receives (sale price, prorations in seller favor). Do NOT include sale price in debits.
+SELLER statement: debits=charges to seller (commissions, fees, payoffs, taxes), credits=small prorations/adjustments in seller favor ONLY (e.g. rent prorations, HOA credits). NEVER put the Sale Price of Property in the credits array — it goes in transactionPrice only. Do NOT include sale price in debits or credits.
 netAmount = total amount buyer actually paid out of pocket (sum of all debits including POC items, minus credits).`}
       ]}]
     })
@@ -5313,7 +5313,10 @@ async function importClosingStatement(key){
   (data.debits||[]).forEach(d=>{
     extra[key].unshift({a:parseFloat(d.amount).toFixed(2),d:d.description,c:d.category||'Closing Costs',v:d.vendor||'',dt,credit:false});
   });
+  const txPrice = parseFloat(data.transactionPrice||0);
   (data.credits||[]).forEach(c=>{
+    // Never import the sale/purchase price itself as a credit — it's already set on the property
+    if(txPrice && Math.abs(parseFloat(c.amount) - txPrice) < 1) return;
     extra[key].unshift({a:parseFloat(c.amount).toFixed(2),d:c.description,c:c.category||'Closing Costs',v:'',dt,credit:true});
   });
 
