@@ -5657,12 +5657,12 @@ async function syncAllReceiptsToCloud(){
   if(!toUpload.length){status.innerHTML='<span style="color:var(--green)">✓ All receipts already in cloud.</span>';return;}
   status.innerHTML=`<div style="display:flex;align-items:center;gap:8px"><div class="spin"></div> Uploading ${toUpload.length} receipt${toUpload.length>1?'s':''}...</div>`;
   let uploaded=0,failed=0;
-  for(const {p,i,e} of toUpload){
+  for(const {p,i,r} of toUpload){
     try{
-      const resp=await fetch(e.receipt);const blob=await resp.blob();const mime=e.receipt.split(';')[0].split(':')[1]||'image/jpeg';const ext=mime.includes('png')?'png':'jpg';
+      const resp=await fetch(r);const blob=await resp.blob();const mime=r.split(';')[0].split(':')[1]||'image/jpeg';const ext=mime.includes('png')?'png':'jpg';
       const path=`receipts/${p}-${Date.now()}-${Math.random().toString(36).slice(2,6)}.${ext}`;
       const up=await sbFetch('/storage/v1/object/apex-media/'+path,{method:'POST',headers:{'Content-Type':mime,'x-upsert':'true'},body:blob});
-      if(up.ok){e.receipt=SB_STORAGE_URL+path;uploaded++;status.innerHTML=`<div style="display:flex;align-items:center;gap:8px"><div class="spin"></div> Uploaded ${uploaded}/${toUpload.length}...</div>`;}
+      if(up.ok){const arr=_receiptArr(extra[p][i].receipt);extra[p][i].receipt=arr.length>1?arr.map(u=>u===r?SB_STORAGE_URL+path:u):SB_STORAGE_URL+path;uploaded++;status.innerHTML=`<div style="display:flex;align-items:center;gap:8px"><div class="spin"></div> Uploaded ${uploaded}/${toUpload.length}...</div>`;}
       else failed++;
     }catch(err){failed++;}
   }
