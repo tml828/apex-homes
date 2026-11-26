@@ -4752,8 +4752,8 @@ function renderPropCards(){
   const grid = document.getElementById('prop-grid');
   if(!grid) return;
   const keys = getPropKeys().sort((a,b)=>{
-    const da = (propData[a]&&propData[a].pdate)||'';
-    const db = (propData[b]&&propData[b].pdate)||'';
+    const da = (propData[a]&&propData[a].pdate)||'9999';
+    const db = (propData[b]&&propData[b].pdate)||'9999';
     return db.localeCompare(da);
   });
   const search = (grid._search||'').toLowerCase();
