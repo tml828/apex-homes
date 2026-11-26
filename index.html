@@ -73,7 +73,7 @@ DATA BACKUP REMINDER:
     Company tab → Export Backup → save JSON file weekly to iCloud/Google Drive.
     Restore: Company tab → Restore Backup → select the JSON file.
 -->
-<!-- APEX v2026-06-04-A -->
+<!-- APEX v2026-11-26-A -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -4571,7 +4571,7 @@ function updateAuthStatus(){
   }
 }
 
-function initPin(){console.log("Apex Homes v2026-06-04-A loaded — padding fix active");
+function initPin(){console.log("Apex Homes v2026-11-26-A loaded");
   initAuth();
   const s=document.getElementById('pin-screen');if(!s)return;
   if(sessionStorage.getItem('apex_unlocked')==='1'){s.style.display='none';return;}
