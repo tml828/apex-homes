@@ -73,7 +73,7 @@ DATA BACKUP REMINDER:
     Company tab → Export Backup → save JSON file weekly to iCloud/Google Drive.
     Restore: Company tab → Restore Backup → select the JSON file.
 -->
-<!-- APEX v2026-06-04-A -->
+<!-- APEX v2026-11-26-A -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1350,7 +1350,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <!-- MANUAL FIELDS -->
     <div class="fr"><div class="fg"><label>Amount ($)</label><input type="number" step="0.01" placeholder="0.00" id="cr-amt"></div><div class="fg"><label>Date</label><input type="date" id="cr-date"></div></div>
     <div class="fr"><div class="fg" style="flex:2"><label>Description</label><input type="text" placeholder="What is this refund/credit for?" id="cr-desc" oninput="onExpDescInput(this.value,'cr-cat','cr-cat-suggest')"><div id="cr-cat-suggest" style="min-height:16px;margin-top:4px;font-size:12px;color:var(--text2)"></div></div></div>
-    <div class="fr"><div class="fg"><label>Category</label><select id="cr-cat" onchange="toggleCustomCat('cr-custom-cat',this)"><option>Insurance Refund</option><option>Material Return</option><option>Overpayment Refund</option><option>Labor / Contractor</option><option>Materials &amp; Supplies</option><option>Utilities</option><option>HOA Fees</option><option>Painting</option><option>Plumbing</option><option>Electrical</option><option>Closing Costs</option><option>Property Tax</option><option>Insurance</option><option>Marketing / Advertising</option><option>Permits &amp; Fees</option><option>Landscaping</option><option>Equipment / Truck Rental</option><option>Legal / Accounting</option><option>Meals (50% deductible)</option><option>Other</option><option value="__custom__">+ Custom category...</option></select><input type="text" id="cr-custom-cat" placeholder="Type custom category" style="display:none;margin-top:6px"></div><div class="fg" style="position:relative"><label>Vendor / Source</label><input type="text" placeholder="Who issued the refund?" id="cr-vendor" autocomplete="off" oninput="showVendorSuggest('cr-vendor','cr-vendor-dd')" onblur="setTimeout(()=>hideVendorSuggest('cr-vendor-dd'),200)"><div id="cr-vendor-dd" class="vendor-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;z-index:999;max-height:160px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.3)"></div></div></div>
+    <div class="fr"><div class="fg"><label>Category</label><select id="cr-cat" onchange="toggleCustomCat('cr-custom-cat',this)"><option>Insurance Refund</option><option>Material Return</option><option>Overpayment Refund</option><option>Labor / Contractor</option><option>Materials &amp; Supplies</option><option>Utilities</option><option>HOA Fees</option><option>Painting</option><option>Plumbing</option><option>Electrical</option><option>Closing Costs</option><option>Property Tax</option><option>Insurance</option><option>Marketing / Advertising</option><option>Permits &amp; Fees</option><option>Landscaping</option><option>Equipment / Truck Rental</option><option>Legal / Accounting</option><option>Software / Subscriptions</option><option>Meals (50% deductible)</option><option>Other</option><option value="__custom__">+ Custom category...</option></select><input type="text" id="cr-custom-cat" placeholder="Type custom category" style="display:none;margin-top:6px"></div><div class="fg" style="position:relative"><label>Vendor / Source</label><input type="text" placeholder="Who issued the refund?" id="cr-vendor" autocomplete="off" oninput="showVendorSuggest('cr-vendor','cr-vendor-dd')" onblur="setTimeout(()=>hideVendorSuggest('cr-vendor-dd'),200)"><div id="cr-vendor-dd" class="vendor-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;z-index:999;max-height:160px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.3)"></div></div></div>
     <div class="md-ft"><button class="btn btn-sm" style="background:var(--green);border-color:var(--green);color:#000;font-weight:700" onclick="saveCr()"><svg class="ico"><use href="#ico-check"/></svg> Save Credit</button><button class="btn btn-ghost" onclick="closeModal('m-credit')">Cancel</button></div>
   </div>
 </div>
@@ -1362,7 +1362,7 @@ input[type="date"],input[type="time"],input[type="datetime-local"]{color:#fff !i
     <input type="hidden" id="eecr-pid"><input type="hidden" id="eecr-origidx">
     <div class="fr"><div class="fg"><label>Amount ($)</label><input type="number" step="0.01" id="eecr-amt"></div><div class="fg"><label>Date</label><input type="date" id="eecr-date"></div></div>
     <div class="fr"><div class="fg" style="flex:2"><label>Description</label><input type="text" id="eecr-desc"></div></div>
-    <div class="fr"><div class="fg"><label>Category</label><select id="eecr-cat" onchange="toggleCustomCat('eecr-custom-cat',this)"><option>Insurance Refund</option><option>Material Return</option><option>Overpayment Refund</option><option>Labor / Contractor</option><option>Materials &amp; Supplies</option><option>Utilities</option><option>HOA Fees</option><option>Painting</option><option>Plumbing</option><option>Electrical</option><option>Closing Costs</option><option>Property Tax</option><option>Insurance</option><option>Marketing / Advertising</option><option>Permits &amp; Fees</option><option>Landscaping</option><option>Equipment / Truck Rental</option><option>Legal / Accounting</option><option>Meals (50% deductible)</option><option>Other</option><option value="__custom__">+ Custom category...</option></select><input type="text" id="eecr-custom-cat" placeholder="Type custom category" style="display:none;margin-top:6px"></div><div class="fg" style="position:relative"><label>Vendor / Source</label><input type="text" id="eecr-vendor" autocomplete="off" oninput="showVendorSuggest('eecr-vendor','eecr-vendor-dd')" onblur="setTimeout(()=>hideVendorSuggest('eecr-vendor-dd'),200)"><div id="eecr-vendor-dd" class="vendor-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;z-index:999;max-height:160px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.3)"></div></div></div>
+    <div class="fr"><div class="fg"><label>Category</label><select id="eecr-cat" onchange="toggleCustomCat('eecr-custom-cat',this)"><option>Insurance Refund</option><option>Material Return</option><option>Overpayment Refund</option><option>Labor / Contractor</option><option>Materials &amp; Supplies</option><option>Utilities</option><option>HOA Fees</option><option>Painting</option><option>Plumbing</option><option>Electrical</option><option>Closing Costs</option><option>Property Tax</option><option>Insurance</option><option>Marketing / Advertising</option><option>Permits &amp; Fees</option><option>Landscaping</option><option>Equipment / Truck Rental</option><option>Legal / Accounting</option><option>Software / Subscriptions</option><option>Meals (50% deductible)</option><option>Other</option><option value="__custom__">+ Custom category...</option></select><input type="text" id="eecr-custom-cat" placeholder="Type custom category" style="display:none;margin-top:6px"></div><div class="fg" style="position:relative"><label>Vendor / Source</label><input type="text" id="eecr-vendor" autocomplete="off" oninput="showVendorSuggest('eecr-vendor','eecr-vendor-dd')" onblur="setTimeout(()=>hideVendorSuggest('eecr-vendor-dd'),200)"><div id="eecr-vendor-dd" class="vendor-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;z-index:999;max-height:160px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.3)"></div></div></div>
     <div id="eecr-receipt-thumb" style="margin-bottom:.75rem"></div>
     <label class="btn btn-ghost btn-sm" style="cursor:pointer;margin-bottom:.75rem;display:inline-flex"><svg class="ico"><use href="#ico-upload"/></svg> Add / Replace Receipt<input type="file" accept="image/*,application/pdf" style="display:none" onchange="handleEditCrReceipt(this)"></label>
     <div id="eecr-receipt-status" style="margin-bottom:.5rem"></div>
@@ -1723,6 +1723,10 @@ let syncTimer=null,syncStatus='idle',syncEnabled=true;
 function exportBackup(){try{const backup={version:1,exportDate:new Date().toISOString(),propData:propData,extra:(typeof extra!=='undefined')?extra:{},tasks:tasks,mileage:window._mileage||[],propImgs:propImgs||{}};const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;const _d=new Date();const _ds=_d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');a.download='apex-homes-backup-'+_ds+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{a.remove();URL.revokeObjectURL(url);},100);const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--green)">✓ Backup downloaded</span>';}catch(err){const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--red)">✗ '+err.message+'</span>';}}
 // ====== HOURLY CLOUD SNAPSHOTS ======
 const MAX_SNAPSHOTS=7;
+// IRS rates — update each January
+const IRS_SE_TAX_RATE=0.1413;        // 0.9235 × 0.153 (self-employment tax net factor)
+const IRS_CAP_PASSENGER_CAR=12200;   // Section 179 / bonus dep cap for passenger cars (GVWR ≤ 6000 lbs)
+const IRS_CAP_HEAVY_SUV=28900;       // Section 179 cap for heavy SUVs (6001–14000 lbs)
 async function saveHourlyBackup(manual){
   if(!syncEnabled)return;
   // Never snapshot empty data — would rotate out good backups with bad ones
@@ -1743,10 +1747,6 @@ async function saveHourlyBackup(manual){
         await Promise.all(toDelete.map(row=>sbFetch('/rest/v1/apex_data?id=eq.'+row.id,{method:'DELETE'})));
       }
     }
-    // Record timestamp so the 55-min throttle works on next call
-    if(!propData._backups)propData._backups=[];
-    propData._backups.push({ts});
-    if(propData._backups.length>MAX_SNAPSHOTS)propData._backups=propData._backups.slice(-MAX_SNAPSHOTS);
     if(manual){const st=document.getElementById('backup-status');if(st){st.innerHTML='<span style="color:var(--green)">✓ Snapshot saved</span>';setTimeout(()=>st.innerHTML='',3000);}}
     renderCloudBackups();
   }catch(e){if(manual){const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--red)">✗ Snapshot failed: '+e.message+'</span>';}}
@@ -1843,7 +1843,7 @@ async function retryFailedReceiptUploads(){
   }
 }
 
-async function restoreBackup(file){if(!file)return;const st=document.getElementById('backup-status');if(!await appConfirm('This will REPLACE all current data with the backup. Continue?','Replace'))return;try{const text=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsText(file);});const backup=JSON.parse(text);if(!backup.propData)throw new Error('Invalid backup file');Object.keys(propData).forEach(k=>delete propData[k]);Object.assign(propData,backup.propData);if(backup.extra&&typeof extra!=='undefined'){Object.keys(extra).forEach(k=>delete extra[k]);Object.assign(extra,backup.extra);}if(backup.tasks){tasks.length=0;backup.tasks.forEach(t=>tasks.push(t));}if(backup.mileage){window._mileage=backup.mileage;localStorage.setItem('apex_mileage',JSON.stringify(window._mileage));}if(backup.propImgs){Object.keys(propImgs).forEach(k=>delete propImgs[k]);Object.assign(propImgs,backup.propImgs);}save();refreshSite();if(st)st.innerHTML='<span style="color:var(--green)">✓ Restored</span>';setTimeout(()=>{alert('Backup restored! Reloading.');location.reload();},500);}catch(err){if(st)st.innerHTML='<span style="color:var(--red)">✗ '+err.message+'</span>';}}
+async function restoreBackup(file){if(!file)return;const st=document.getElementById('backup-status');if(!await appConfirm('This will REPLACE all current data with the backup. Continue?','Replace'))return;try{const text=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsText(file);});const backup=JSON.parse(text);if(!backup.propData)throw new Error('Invalid backup file');Object.keys(propData).forEach(k=>delete propData[k]);Object.assign(propData,backup.propData);if(backup.extra&&typeof extra!=='undefined'){Object.keys(extra).forEach(k=>delete extra[k]);Object.assign(extra,backup.extra);}if(backup.tasks){tasks.length=0;backup.tasks.forEach(t=>tasks.push(t));}if(backup.mileage){window._mileage=backup.mileage;localStorage.setItem('apex_mileage',JSON.stringify(window._mileage));}save();refreshSite();if(st)st.innerHTML='<span style="color:var(--green)">✓ Restored</span>';setTimeout(()=>{alert('Backup restored! Reloading.');location.reload();},500);}catch(err){if(st)st.innerHTML='<span style="color:var(--red)">✗ '+err.message+'</span>';}}
 
 // On mobile, move status dot under logo
 (function(){
@@ -2446,7 +2446,7 @@ function exportTaxPDF(){
   const assetDedPDF=totalAssetDeductions(taxYear);
   const assetIntPDF=totalAssetInterest(taxYear);
   const netProfit=totalRevenuePDF-acquisitions-totalExp-mileDeduction-assetDedPDF-assetIntPDF+mealsGross*0.5;
-  const seTax=Math.max(0,netProfit*0.1413);
+  const seTax=Math.max(0,netProfit*IRS_SE_TAX_RATE);
   const seHalf=seTax/2;
   // Contractor / 1099 data
   const w9Map={};
@@ -2566,7 +2566,7 @@ function exportTaxCSV(){
   const assetDedCSV=totalAssetDeductions(taxYear);
   const assetIntCSV=totalAssetInterest(taxYear);
   const netProfit=totalRevenueCSV-acquisitions-totalExp-mileDeduction-assetDedCSV-assetIntCSV+mealsGross*0.5;
-  const seTax=Math.max(0,netProfit*0.1413);
+  const seTax=Math.max(0,netProfit*IRS_SE_TAX_RATE);
   const seHalf=seTax/2;
 
   // Per-property breakdown
@@ -2953,9 +2953,12 @@ function showModal(id){
   const m=document.getElementById(id);if(!m)return;
   // Populate task property dropdown dynamically
   if(id==='m-task'||id==='m-edit-task'){
-    const selId=id==='m-task'?'task-prop':'edit-task-prop';
-    const sel=document.getElementById(selId);
-    if(sel){const cur=sel.value;populateTaskPropDropdown(selId,cur||undefined);}
+    const sel=m.querySelector('#task-prop, #edit-task-prop');
+    if(sel){
+      const cur=sel.value;
+      sel.innerHTML='<option value="General">General</option>'+getPropKeys().map(k=>`<option value="${k}">${getProp(k).addr||k}</option>`).join('');
+      if(cur)sel.value=cur;
+    }
   }
   m.classList.add("open");const sy=window.scrollY;document.body.dataset.sy=sy;document.body.style.overflow="hidden";if(_moOpen===0)document.addEventListener('touchmove',_tmHandler,{passive:false});_moOpen++;if(id==='m-exp'||id==='m-edit-exp'){hookW9Listeners();setTimeout(()=>{if(id==='m-exp')checkW9Visibility('exp');else checkW9Visibility('eeexp');},50);}if(id==='tax-contractors'||m.closest('#tax-contractors'))renderContractors();
 }
@@ -4572,7 +4575,7 @@ function updateAuthStatus(){
   }
 }
 
-function initPin(){console.log("Apex Homes v2026-06-04-A loaded — padding fix active");
+function initPin(){console.log("Apex Homes v2026-11-26-A loaded");
   initAuth();
   const s=document.getElementById('pin-screen');if(!s)return;
   if(sessionStorage.getItem('apex_unlocked')==='1'){s.style.display='none';return;}
@@ -4697,6 +4700,7 @@ function buildPropPage(key, force){
               <div style="font-weight:700;font-size:15px;color:var(--gold2)">Closing Statement</div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-sm" onclick="document.getElementById('closing-inp-${key}').click()"><svg class="ico"><use href="#ico-upload"/></svg> Upload PDF / Image</button>
+                <button class="btn btn-sm" id="closing-clear-btn-${key}" style="display:none;background:#888;border-color:#888;color:#fff" onclick="clearClosingUpload('${key}')">✕ Clear</button>
                 <button class="btn btn-sm" id="closing-import-btn-${key}" style="display:none;background:#1a7a4a;border-color:#1a7a4a;color:#fff;font-weight:700" onclick="importClosingStatement('${key}')">Import to Property</button>
               </div>
               <input type="file" id="closing-inp-${key}" accept="image/*,.pdf,application/pdf" style="display:none" onchange="handleClosingFile(this.files[0],'${key}')">
@@ -4751,7 +4755,11 @@ function buildPropPage(key, force){
 function renderPropCards(){
   const grid = document.getElementById('prop-grid');
   if(!grid) return;
-  const keys = getPropKeys();
+  const keys = getPropKeys().sort((a,b)=>{
+    const da = (propData[a]&&propData[a].pdate)||'9999';
+    const db = (propData[b]&&propData[b].pdate)||'9999';
+    return db.localeCompare(da);
+  });
   const search = (grid._search||'').toLowerCase();
   grid.innerHTML = keys.filter(k=>{
     if(!search) return true;
@@ -4821,7 +4829,11 @@ function refreshSite(scope){
   const revenue=props.reduce((s,p)=>s+propSold(p,taxYear),0);
   const totalExp=[...props,"general"].reduce((s,p)=>s+eTotal(p,taxYear),0);
   const acquisitions=props.filter(p=>propSold(p,taxYear)>0).reduce((s,p)=>s+propPurchase(p,taxYear),0);
+  const soldProps2=props.filter(p=>propSold(p,taxYear)>0);
+  const soldPropExp=soldProps2.reduce((s,p)=>s+eTotal(p,taxYear),0);
+  const generalExp=eTotal('general',taxYear);
   const mealsAll=[...props,"general"].flatMap(p=>allE(p)).filter(e=>(e.dt||e.date||'').startsWith(String(taxYear))&&(e.c||e.cat||'')==='Meals (50% deductible)'&&!e.credit).reduce((s,e)=>s+(parseFloat(e.a||e.amount)||0),0);
+  const soldMeals=[...soldProps2,"general"].flatMap(p=>allE(p)).filter(e=>(e.dt||e.date||'').startsWith(String(taxYear))&&(e.c||e.cat||'')==='Meals (50% deductible)'&&!e.credit).reduce((s,e)=>s+(parseFloat(e.a||e.amount)||0),0);
   const activeAllin=props.filter(p=>{const st=propStatus(p);return st!=='Sold'&&st!=='Inactive'&&st!=='Closed';}).reduce((s,p)=>s+propAllin(p),0);
   const activeCount=props.filter(p=>{const st=propStatus(p);return st!=='Sold'&&st!=='Inactive'&&st!=='Closed';}).length;
   const otherInc=incomeTotal(taxYear);
@@ -4830,13 +4842,6 @@ function refreshSite(scope){
   const mileDeduction=_totalMiles*_mileRate;
   const assetDed=totalAssetDeductions(taxYear);
   const assetInt=totalAssetInterest(taxYear);
-  // Dashboard net profit = realized profit on SOLD properties only + other income - general expenses - mileage
-  // (unsold property renovation expenses excluded — they haven't generated revenue yet)
-  const soldProps2=props.filter(p=>propSold(p,taxYear)>0);
-  const soldPropExp=soldProps2.reduce((s,p)=>s+eTotal(p,taxYear),0);
-  const generalExp=eTotal('general',taxYear);
-  // Only add back meals from sold props + general (those are the only ones subtracted in netP)
-  const soldMeals=[...soldProps2,'general'].flatMap(p=>allE(p)).filter(e=>(e.dt||e.date||'').startsWith(String(taxYear))&&(e.c||e.cat||'')==='Meals (50% deductible)'&&!e.credit).reduce((s,e)=>s+(parseFloat(e.a||e.amount)||0),0);
   const netP=(revenue+otherInc)-acquisitions-soldPropExp-generalExp-mileDeduction-assetDed-assetInt+soldMeals*0.5;
   const soldWithROI=props.filter(p=>propSold(p,taxYear)>0&&propROI(p)!=null);
   const avgROI=soldWithROI.length?soldWithROI.reduce((s,p)=>s+propROI(p),0)/soldWithROI.length:null;
@@ -4898,7 +4903,7 @@ function refreshSite(scope){
   setEl('tax-active-allin',fmt(activeAllin));
   // Mileage deduction (Line 9) + meals addback (50% non-deductible half) + asset deductions
   const netProfitAfterMileage=netProfitFull-mileDeduction-assetDed-assetInt+mealsAll*0.5;
-  const seTaxAmt=Math.max(0,netProfitAfterMileage*0.1413);
+  const seTaxAmt=Math.max(0,netProfitAfterMileage*IRS_SE_TAX_RATE);
   setEl("tax-revenue",fmt(totalRevIncome));setEl("tax-acquisitions",fmt(acquisitions));setEl("tax-total-exp",fmt(totalExp));
   setEl("tax-mileage-deduction",fmt(mileDeduction));
   setEl("tax-asset-deduction",fmt(assetDed));
@@ -5153,9 +5158,11 @@ async function handleClosingFile(file, key){
   const status = document.getElementById('closing-scan-status-'+key);
   const preview = document.getElementById('closing-preview-'+key);
   const importBtn = document.getElementById('closing-import-btn-'+key);
+  const clearBtn = document.getElementById('closing-clear-btn-'+key);
   if(status) status.innerHTML = '<div style="display:flex;align-items:center;gap:8px"><div class="spin"></div> Scanning closing statement...</div>';
   if(preview) preview.innerHTML = '';
   if(importBtn) importBtn.style.display = 'none';
+  if(clearBtn) clearBtn.style.display = 'inline-flex';
   try{
     if(status) status.innerHTML = '<div style="display:flex;align-items:center;gap:8px"><div class="spin"></div> Converting file...</div>';
     const processed = await processReceiptImage(file, false);
@@ -5169,6 +5176,20 @@ async function handleClosingFile(file, key){
     console.error('Closing scan error:', e);
     if(status) status.innerHTML = '<span style="color:var(--red)">✗ '+( e.message||'Unknown error')+' — check browser console for details</span>';
   }
+}
+
+function clearClosingUpload(key){
+  const status = document.getElementById('closing-scan-status-'+key);
+  const preview = document.getElementById('closing-preview-'+key);
+  const importBtn = document.getElementById('closing-import-btn-'+key);
+  const clearBtn = document.getElementById('closing-clear-btn-'+key);
+  const inp = document.getElementById('closing-inp-'+key);
+  if(status) status.innerHTML = '';
+  if(preview) preview.innerHTML = '';
+  if(importBtn) importBtn.style.display = 'none';
+  if(clearBtn) clearBtn.style.display = 'none';
+  if(inp) inp.value = '';
+  delete window._closingData[key];
 }
 
 async function scanClosingStatement(b64, mime){
@@ -5198,7 +5219,7 @@ async function scanClosingStatement(b64, mime){
 }
 For category use one of: Closing Costs, Property Tax, Marketing / Advertising, Insurance, Legal / Accounting, HOA Fees, Other.
 BUYER statement: debits=ALL charges to buyer including earnest money deposit (even if marked POC/paid outside closing — it is still a real out-of-pocket cost). credits=prorations in buyer favor, seller-paid credits. Do NOT include purchase price in debits. Do NOT put earnest deposit in credits.
-SELLER statement: debits=charges to seller (commissions, fees, payoffs), credits=amounts seller receives (sale price, prorations in seller favor). Do NOT include sale price in debits.
+SELLER statement: debits=charges to seller (commissions, fees, payoffs, taxes), credits=small prorations/adjustments in seller favor ONLY (e.g. rent prorations, HOA credits). NEVER put the Sale Price of Property in the credits array — it goes in transactionPrice only. Do NOT include sale price in debits or credits.
 netAmount = total amount buyer actually paid out of pocket (sum of all debits including POC items, minus credits).`}
       ]}]
     })
@@ -5304,7 +5325,10 @@ async function importClosingStatement(key){
   (data.debits||[]).forEach(d=>{
     extra[key].unshift({a:parseFloat(d.amount).toFixed(2),d:d.description,c:d.category||'Closing Costs',v:d.vendor||'',dt,credit:false});
   });
+  const txPrice = parseFloat(data.transactionPrice||0);
   (data.credits||[]).forEach(c=>{
+    // Never import the sale/purchase price itself as a credit — it's already set on the property
+    if(txPrice && Math.abs(parseFloat(c.amount) - txPrice) < 1) return;
     extra[key].unshift({a:parseFloat(c.amount).toFixed(2),d:c.description,c:c.category||'Closing Costs',v:'',dt,credit:true});
   });
 
@@ -5531,6 +5555,7 @@ function extendRecurringExpenses(){
   });
   if(totalAdded>0){console.log('extendRecurringExpenses: added',totalAdded,'entries');save();}
 }
+
 function purgeOldTrash(){
   const cutoff=Date.now()-30*24*60*60*1000;
   const t=getTrash();
@@ -6127,14 +6152,14 @@ function assetDeduction(a){
     let cap=Infinity;
     if(a.type==='vehicle'){
       const gvwr=parseFloat(a.gvwr)||0;
-      if(gvwr>0&&gvwr<=6000)cap=12200;
-      else if(gvwr>6000&&gvwr<=14000)cap=28900;
+      if(gvwr>0&&gvwr<=6000)cap=IRS_CAP_PASSENGER_CAR;
+      else if(gvwr>6000&&gvwr<=14000)cap=IRS_CAP_HEAVY_SUV;
     }
     const raw=parseFloat(a.section179Amt)||bizBasis;
     return Math.min(raw,Math.min(bizBasis,cap));
   }
   if(a.election==='bonus'){
-    const pct=(parseFloat(a.bonusPct)||60)/100;
+    const pct=(parseFloat(a.bonusPct)||20)/100;
     return bizBasis*pct;
   }
   // MACRS 5-year half-year: 20% year 1
@@ -6216,15 +6241,16 @@ function calcAssetDeductionPreview(){
     let capNote='';
     if(type==='vehicle'){
       if(gvwr<=0){capNote=' (enter GVWR to confirm cap)';}
-      else if(gvwr<=6000){cap=12200;capNote=' (passenger car cap: $12,200)';}
-      else if(gvwr<=14000){cap=28900;capNote=' (heavy SUV cap: $28,900)';}
+      else if(gvwr<=6000){cap=IRS_CAP_PASSENGER_CAR;capNote=` (passenger car cap: $${IRS_CAP_PASSENGER_CAR.toLocaleString()})`;}
+      else if(gvwr<=14000){cap=IRS_CAP_HEAVY_SUV;capNote=` (heavy SUV cap: $${IRS_CAP_HEAVY_SUV.toLocaleString()})`;}
+
       else{capNote=' (no cap — heavy truck/van)';}
     }
     const raw=parseFloat(document.getElementById('asset-179-amt')?.value)||bizBasis;
     ded=Math.min(raw,cap);
     note=`Section 179: ${fmt(ded)}${capNote}`;
   } else if(election==='bonus'){
-    const pct=(parseFloat(document.getElementById('asset-bonus-pct')?.value)||60)/100;
+    const pct=(parseFloat(document.getElementById('asset-bonus-pct')?.value)||20)/100;
     ded=bizBasis*pct;
     note=`Bonus Depreciation (${Math.round(pct*100)}%): ${fmt(ded)}`;
   } else {
@@ -6278,7 +6304,7 @@ function openAddAsset(){
   document.getElementById('asset-biz-miles').value='';
   document.getElementById('asset-election').value='179';
   document.getElementById('asset-179-amt').value='';
-  document.getElementById('asset-bonus-pct').value='60';
+  document.getElementById('asset-bonus-pct').value='20';
   document.getElementById('asset-loan-amt').value='';
   document.getElementById('asset-loan-interest').value='';
   document.getElementById('asset-notes').value='';
@@ -6308,7 +6334,7 @@ function openEditAsset(i){
   document.getElementById('asset-biz-miles').value=a.businessMilesYear||'';
   document.getElementById('asset-election').value=a.election||'179';
   document.getElementById('asset-179-amt').value=a.section179Amt||'';
-  document.getElementById('asset-bonus-pct').value=a.bonusPct||60;
+  document.getElementById('asset-bonus-pct').value=a.bonusPct||20;
   document.getElementById('asset-loan-amt').value=a.loanAmount||'';
   document.getElementById('asset-loan-interest').value=a.loanInterestPaid||'';
   document.getElementById('asset-notes').value=a.notes||'';
@@ -6339,7 +6365,7 @@ function saveAsset(){
     businessMilesYear:parseFloat(document.getElementById('asset-biz-miles').value)||0,
     election,
     section179Amt:parseFloat(document.getElementById('asset-179-amt').value)||0,
-    bonusPct:parseFloat(document.getElementById('asset-bonus-pct').value)||60,
+    bonusPct:parseFloat(document.getElementById('asset-bonus-pct').value)||20,
     loanAmount:parseFloat(document.getElementById('asset-loan-amt').value)||0,
     loanInterestPaid:parseFloat(document.getElementById('asset-loan-interest').value)||0,
     notes:document.getElementById('asset-notes').value.trim(),
@@ -6626,7 +6652,7 @@ window.addEventListener('unhandledrejection',function(e){console.error('Unhandle
     </div><div class="fg"><label>Depreciation Election</label>
       <select id="asset-election" onchange="toggleAssetElectionFields()">
         <option value="179">Section 179 (deduct full cost year 1)</option>
-        <option value="bonus">Bonus Depreciation (60% in 2024, 40% in 2025)</option>
+        <option value="bonus">Bonus Depreciation (40% in 2025, 20% in 2026)</option>
         <option value="macrs">Standard MACRS (5-year, 20% year 1)</option>
       </select>
     </div></div>
@@ -6637,7 +6663,7 @@ window.addEventListener('unhandledrejection',function(e){console.error('Unhandle
     </div></div>
 
     <div id="asset-bonus-row" class="fr" style="display:none"><div class="fg"><label>Bonus Depreciation % (federal)</label>
-      <input type="number" id="asset-bonus-pct" placeholder="60" oninput="updateAssetCalc()" style="font-size:16px">
+      <input type="number" id="asset-bonus-pct" placeholder="20" oninput="updateAssetCalc()" style="font-size:16px">
       <div style="font-size:11px;color:var(--text3);margin-top:3px">60% for 2024, 40% for 2025, 20% for 2026</div>
     </div></div>
 
