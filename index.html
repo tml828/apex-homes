@@ -4751,7 +4751,11 @@ function buildPropPage(key, force){
 function renderPropCards(){
   const grid = document.getElementById('prop-grid');
   if(!grid) return;
-  const keys = getPropKeys();
+  const keys = getPropKeys().sort((a,b)=>{
+    const da = (propData[a]&&propData[a].pdate)||'';
+    const db = (propData[b]&&propData[b].pdate)||'';
+    return db.localeCompare(da);
+  });
   const search = (grid._search||'').toLowerCase();
   grid.innerHTML = keys.filter(k=>{
     if(!search) return true;
