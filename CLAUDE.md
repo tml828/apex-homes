@@ -321,6 +321,14 @@ Property keys are always lowercase, no spaces.
 - Mileage trip edit fix: `openEditMileage` no longer calls `populateTaskPropDropdown` (which destroyed the key-based `mi-prop` dropdown); now just sets `.value` directly on the pre-populated dropdown
 - Restore Backup now restores `propImgs`: `restoreBackup` was not restoring property photos even though `exportBackup` included them
 - Edit Task property dropdown fix: task modal now consistently uses `populateTaskPropDropdown` (address-valued options) in both add and edit paths; was previously mixing keys and addresses causing wrong property to show on edit
+- Closing Statement tab: **Clear / Cancel button** added (`clearClosingUpload(key)`) — grey ✕ Clear button appears as soon as a file is picked; resets status, preview, file input, and `window._closingData[key]`; hidden until a file is uploaded
+- Closing statement import: sale/purchase price no longer imported as a credit expense — AI prompt strengthened to exclude Sale Price from credits array; safety filter in `importClosingStatement` skips any credit entry whose amount matches `transactionPrice` (within $1)
+- Dashboard property cards sorted by purchase date descending (newest first); properties with no `pdate` sort to top (treated as most recent); `renderPropCards` applies sort before filter
+- Version string bumped to `v2026-11-26-A` in HTML comment and `initPin` console log to bust browser cache
+- **IRS rate constants extracted**: `IRS_SE_TAX_RATE = 0.1413`, `IRS_CAP_PASSENGER_CAR = 12200`, `IRS_CAP_HEAVY_SUV = 28900` — defined near top of script; all 3 uses of `0.1413` and both asset cap magic numbers replaced with constants; update each January
+- Bonus depreciation label corrected: was "60% in 2024, 40% in 2025" (stale); now "40% in 2025, 20% in 2026"; default bonus % changed from 60 → 20 in `openAddAsset`, `openEditAsset`, `saveAsset`, `assetDeduction`, and `updateAssetCalc`
+- **Software / Subscriptions** added to credit dropdowns (`cr-cat`, `eecr-cat`) — was in expense dropdowns but missing from credit dropdowns, blocking software refund recording
+- Branch/main divergence fixed: all session fixes merged into `main` (feature branch was ahead by 7 commits; GitHub Pages was serving old code)
 
 ---
 
