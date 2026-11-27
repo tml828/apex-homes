@@ -1,7 +1,7 @@
 # Apex Homes LLC — Developer Reference
 
 ## What This App Is
-Single-file (`index.html`) property management web app for a house-flipping business. No build toolchain — all HTML, CSS, and JavaScript are inline. Deployed on GitHub Pages, syncs data to Supabase every 5 seconds. ~6600 lines.
+Single-file (`index.html`) property management web app for a house-flipping business. No build toolchain — all HTML, CSS, and JavaScript are inline. Deployed on GitHub Pages, syncs data to Supabase every 5 seconds. ~6700 lines.
 
 ## Deployment
 - **Live site:** tml828.github.io/apex-homes
@@ -369,7 +369,7 @@ Property keys are always lowercase, no spaces.
 | Performance | 74/100 | `refreshSite()` still rebuilds full DOM on tab switches and year changes |
 | Reliability | 86/100 | Offline-start then edit can still push a stale local copy over newer cloud data (needs a merge strategy) |
 | Data Integrity | 90/100 | Whole-document last-write-wins sync: two devices editing within ~5s can drop each other's change |
-| Maintainability | 36/100 | Single ~6600-line file, no module system |
+| Maintainability | 36/100 | Single ~6700-line file, no module system |
 | Testing | — | `tests.html` tests its own copies of the functions, not index.html — gives no real coverage |
 | **Overall** | **72/100** | |
 
