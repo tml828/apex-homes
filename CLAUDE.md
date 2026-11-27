@@ -1,7 +1,7 @@
 # Apex Homes LLC — Developer Reference
 
 ## What This App Is
-Single-file (`index.html`) property management web app for a house-flipping business. No build toolchain — all HTML, CSS, and JavaScript are inline. Deployed on GitHub Pages, syncs data to Supabase every 5 seconds. ~6500+ lines.
+Single-file (`index.html`) property management web app for a house-flipping business. No build toolchain — all HTML, CSS, and JavaScript are inline. Deployed on GitHub Pages, syncs data to Supabase every 5 seconds. ~6600 lines.
 
 ## Deployment
 - **Live site:** tml828.github.io/apex-homes
@@ -104,12 +104,13 @@ Property keys are always lowercase, no spaces.
 - `delExpByIndex(p, idx)` — delete expense
 - `triggerCSVImport(pid)` / `importExpCSV(event, pid)` — bulk import from CSV file
   - CSV columns (header optional, auto-detected): `amount`, `date`, `description`, `category`, `vendor`
-  - Rows missing a valid amount are skipped; reports added vs skipped count
+  - Amounts taken as absolute value; `MM/DD/YYYY` / `MM-DD-YY` dates normalized to `YYYY-MM-DD`
+  - Rows missing a valid amount or readable date, or duplicating an existing amount+date, are skipped; reports added vs skipped count
   - `parseCSVLine(line)` — handles quoted fields and commas inside quotes
 
 ### Mileage
 - `addMileage()` — logs a trip to `window._mileage`
-- `renderMileage()` — displays trips filtered by `taxYear`
+- `renderMileage()` — displays trips filtered by `taxYear` (a trip belongs to the year of its START date)
 - `saveMileage()` — persists to localStorage and propData
 - Rate stored in `propData._mileageRate` (default 0.725 IRS 2026)
 
@@ -132,7 +133,8 @@ Property keys are always lowercase, no spaces.
 - `autoSyncPull()` — every 5s, hash-checked before applying, blocked by `_pushPending` flag while a save is in flight
 - `_mergeReceipts(cloudExtra)` — re-attaches local base64 receipt images stripped by cloud copy; called in `loadData` and `autoSyncPull`
 - `saveHourlyBackup()` — saves a timestamped cloud snapshot (id=`backup-{ts}`), keeps only 7 most recent; guards against empty propData
-- `restoreCloudBackup(id)` — synchronous POST to Supabase then reload; restores propImgs too
+- `restoreCloudBackup(id)` / `restoreBackup(file)` — both POST to Supabase synchronously, then reload (never rely on debounced `save()` before a reload); both restore propImgs
+- `extendRecurringExpenses()` — startup; groups recurring entries by `recurId` (fallback `description|category|freq`), extends each series from its latest entry through today
 
 ### Receipt Scanning
 - `handleExpReceipt(file)` — processes receipt for new expense modal
@@ -151,12 +153,13 @@ Property keys are always lowercase, no spaces.
 ### Expense object
 ```js
 { a: "150.00", d: "Paint supplies", c: "Materials & Supplies", v: "Home Depot",
-  dt: "2026-04-15", receipt: "https://...", w9: false, credit: false }
+  dt: "2026-04-15", receipt: "https://...", w9: false, credit: false,
+  recur: "monthly", recurId: "r…" }   // recur/recurId only on recurring entries
 ```
 
 ### Mileage trip
 ```js
-{ id: 1234567890, miles: 12.5, purpose: "Site visit", date: "2026-04-10", prop: "bradford" }
+{ id: 1234567890, miles: 12.5, purpose: "Site visit", date: "2026-04-10", dateEnd: "2026-06-01", prop: "bradford" }
 ```
 
 ### Property data (propData[key])
@@ -253,7 +256,7 @@ Property keys are always lowercase, no spaces.
 - Return Item feature in Edit Expense modal: hidden form (`id="eeexp-return-form"`) revealed by `toggleReturnForm()`; `saveReturnCredit()` stamps `_rid` on both original expense and new credit; `renderE()` shows RETURNED (red) / PARTIAL RETURN (amber) badges based on linked `_rid` credits
 - `#m-confirm` dialog: `align-items:center !important; justify-content:center !important` — stays centered on screen instead of top
 - Mileage form redesigned: property first (auto-fills start date from `pdate||offer`, end date from `sdate||today`, purpose from address); `onMilePropChange()` handles auto-fill; `window._editMileageId` flag for stable edit mode; `openEditMileage(id)`, `cancelMileageEdit()`, `_resetMileageBtn()` added; no bulk-add button
-- Mileage year filter: checks both `t.date` (start) and `t.dateEnd` — fixed in `refreshSite`, `exportTaxPDF`, `exportTaxCSV`, `renderMileage`
+- Mileage year filter: checks both `t.date` (start) and `t.dateEnd` — fixed in `refreshSite`, `exportTaxPDF`, `exportTaxCSV`, `renderMileage` (superseded 2026-11-27: start date only, to stop double-counting)
 - Tax calculation audit (first pass): `refreshSite` now passes `taxYear` to `propSold`, `eTotal`, `propPurchase`; `mealsAll` filter includes `taxYear`; `soldProps` filter uses `propSold(p,taxYear)>0`; P&L rows use year-filtered values; `netProfitAfterMileage = netProfitFull - mileDeduction + mealsAll*0.5`; `tax-revenue` uses `totalRevIncome` (includes other income); PDF/CSV export both include `otherIncome` in total revenue; `propSold(p,yr)` returns 0 when `sdate` empty and `yr` specified
 - Tax calculation audit (second pass — deep logic): fixed 9 bugs:
   1. `setEl("bs-prop-val")` removed — no such element exists (was silent no-op)
@@ -325,7 +328,7 @@ Property keys are always lowercase, no spaces.
 - Closing Statement tab: **Clear / Cancel button** added (`clearClosingUpload(key)`) — grey ✕ Clear button appears as soon as a file is picked; resets status, preview, file input, and `window._closingData[key]`; hidden until a file is uploaded
 - Closing statement import: sale/purchase price no longer imported as a credit expense — AI prompt strengthened to exclude Sale Price from credits array; safety filter in `importClosingStatement` skips any credit entry whose amount matches `transactionPrice` (within $1)
 - Dashboard property cards sorted by purchase date descending (newest first); properties with no `pdate` sort to top (treated as most recent); `renderPropCards` applies sort before filter
-- Version string bumped to `v2026-11-26-A` in HTML comment and `initPin` console log to bust browser cache
+- Version string bumped to `v2026-11-26-A` (now `v2026-11-27-A`) in HTML comment and `initPin` console log to bust browser cache
 - **IRS rate constants extracted**: `IRS_SE_TAX_RATE = 0.1413`, `IRS_CAP_PASSENGER_CAR = 12200`, `IRS_CAP_HEAVY_SUV = 28900` — defined near top of script; all 3 uses of `0.1413` and both asset cap magic numbers replaced with constants; update each January
 - Bonus depreciation label corrected: was "60% in 2024, 40% in 2025" (stale); now "40% in 2025, 20% in 2026"; default bonus % changed from 60 → 20 in `openAddAsset`, `openEditAsset`, `saveAsset`, `assetDeduction`, and `updateAssetCalc`
 - **Software / Subscriptions** added to credit dropdowns (`cr-cat`, `eecr-cat`) — was in expense dropdowns but missing from credit dropdowns, blocking software refund recording
@@ -366,7 +369,7 @@ Property keys are always lowercase, no spaces.
 | Performance | 74/100 | `refreshSite()` still rebuilds full DOM on tab switches and year changes |
 | Reliability | 86/100 | Offline-start then edit can still push a stale local copy over newer cloud data (needs a merge strategy) |
 | Data Integrity | 90/100 | Whole-document last-write-wins sync: two devices editing within ~5s can drop each other's change |
-| Maintainability | 36/100 | Single ~6500-line file, no module system |
+| Maintainability | 36/100 | Single ~6600-line file, no module system |
 | Testing | — | `tests.html` tests its own copies of the functions, not index.html — gives no real coverage |
 | **Overall** | **72/100** | |
 
