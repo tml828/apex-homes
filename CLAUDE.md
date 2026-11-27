@@ -118,7 +118,7 @@ Property keys are always lowercase, no spaces.
 - `exportTaxCSV()` — full Schedule C CSV with per-property breakdown, categories, contractors
 - `exportTaxPDF()` — full printable PDF with same data
 - `updateBalanceSheet()` — reads cash/loans/payable inputs, calculates equity = assets - liabilities
-- Dashboard net profit formula (realized): `(soldRevenue + otherInc) - soldAcquisitions - soldPropExp - generalExp - mileDeduction - assetDed - assetInt + soldMeals*0.5` — only sold properties' costs count; unsold property renovation expenses excluded
+- Dashboard net profit formula (realized): `(soldRevenue + otherInc) - soldAcquisitions - soldPropExp(ALL years for each sold property) - generalExp(tax year) - mileDeduction - assetDed - assetInt + soldMeals*0.5` — only sold properties' costs count; unsold property renovation expenses excluded
 - Tax page net profit formula (Schedule C): `(revenue + otherInc) - acquisitions - totalExp(all props) - mileDeduction - assetDed - assetInt + mealsAll*0.5` — all expenses deducted when incurred regardless of sale status
 
 ### W-9 / Contractors
@@ -329,7 +329,26 @@ Property keys are always lowercase, no spaces.
 - **IRS rate constants extracted**: `IRS_SE_TAX_RATE = 0.1413`, `IRS_CAP_PASSENGER_CAR = 12200`, `IRS_CAP_HEAVY_SUV = 28900` — defined near top of script; all 3 uses of `0.1413` and both asset cap magic numbers replaced with constants; update each January
 - Bonus depreciation label corrected: was "60% in 2024, 40% in 2025" (stale); now "40% in 2025, 20% in 2026"; default bonus % changed from 60 → 20 in `openAddAsset`, `openEditAsset`, `saveAsset`, `assetDeduction`, and `updateAssetCalc`
 - **Software / Subscriptions** added to credit dropdowns (`cr-cat`, `eecr-cat`) — was in expense dropdowns but missing from credit dropdowns, blocking software refund recording
-- Branch/main divergence fixed: all session fixes merged into `main` (feature branch was ahead by 7 commits; GitHub Pages was serving old code)
+- Branch/main divergence fixed: all session fixes merged into `main` (feature branch was ahead by 7 commits; GitHub Pages was serving old code). **That merge (2a4f3c2) overwrote main's index.html and silently dropped 3 fixes** (backup throttle, restoreBackup photos, task dropdown) — all re-applied in the 2026-11-27 audit. Lesson: never resolve a merge by checking out one side's whole file.
+- **2026-11-27 multi-pass audit** (sync, financial math, security, UI, performance) — fixes:
+  - Re-applied the 3 fixes lost in the bad merge (above)
+  - `restoreBackup` now pushes to Supabase synchronously before reloading (debounced `save()` was cancelled by the reload, so restores were silently undone) and restores `propImgs`/`propData._mileage`
+  - `autoSyncPull`: re-checks `_pushPending` after the fetch resolves (edit made mid-fetch was reverted); refreshes `window._mileage` from cloud; strips base64 before writing localStorage
+  - Startup mileage: cloud `propData._mileage` always wins when non-empty (stale second device used to overwrite other device's trips)
+  - Mileage year filter now uses the trip START date only (`date`, falling back to `dateEnd` if no start) — trips spanning two years were deducted in both
+  - 1099 contractor totals in PDF/CSV now filtered by `taxYear` (were all-years)
+  - Dashboard realized profit: sold properties' expenses counted across ALL years (`eTotal(p)`), not just the tax year; sold-property meals add-back likewise; general expenses stay year-filtered
+  - P&L: mileage row no longer shows ($0.00) when only meals exist; meals add-back shown as `+$X`
+  - Input validation: amount must be > 0 and date required in `saveExp`, `saveEditExp`, `saveCr`, `saveEditCr`; `addMileage` requires miles > 0, purpose, start date (shows alert instead of silently returning)
+  - CSV import: amounts taken as absolute value (bank exports show debits negative / in parentheses); `MM/DD/YYYY` and `MM-DD-YY` dates normalized to `YYYY-MM-DD`; rows with unreadable dates skipped and counted
+  - Closing statement import skips line items with non-numeric/zero amounts (was storing "NaN"); settlement date and error text escaped
+  - Recurring series identity: new series get `recurId`; `extendRecurringExpenses` groups by `recurId` (fallback `description|category|freq` for old data) and extends from the latest entry's amount/vendor — editing one month no longer forks a duplicate series
+  - `pdfToImage`/`pdfToImages`: `pdf.destroy()` + `revokeObjectURL` in `finally` (PDF.js memory leak)
+  - `scanEstImage`/`scanCrReceipt`/income scan: extract `{...}` with regex before `JSON.parse` (stray AI text caused raw "Unexpected token" errors)
+  - `checkPin` catch no longer hides the PIN screen on error — shows "PIN check failed"
+  - XSS: `esc()` on backup/snapshot error messages, task-dropdown addresses, balance-sheet and P&L property addresses
+  - Hourly backup failures logged to console; localStorage-full fallback logged instead of swallowed
+  - Verified: both script blocks parse; headless Chromium load has no script errors; dashboard net profit, mileage year filter, card sort, and recurring extend checked against hand-calculated values
 
 ---
 
@@ -340,15 +359,16 @@ Property keys are always lowercase, no spaces.
 
 ---
 
-## Audit Scores (last assessed 2026-10-22)
+## Audit Scores (last assessed 2026-11-27)
 | Area | Score | Main remaining gap |
 |---|---|---|
 | Security | 52/100 | Anthropic API key in public git history — rotate at console.anthropic.com |
 | Performance | 74/100 | `refreshSite()` still rebuilds full DOM on tab switches and year changes |
-| Reliability | 84/100 | Full button audit passed; all add/edit/delete paths verified working |
-| Data Integrity | 88/100 | Net profit formula corrected; COGS year filter fixed; recurring expenses auto-extend |
+| Reliability | 86/100 | Offline-start then edit can still push a stale local copy over newer cloud data (needs a merge strategy) |
+| Data Integrity | 90/100 | Whole-document last-write-wins sync: two devices editing within ~5s can drop each other's change |
 | Maintainability | 36/100 | Single ~6500-line file, no module system |
-| **Overall** | **71/100** | |
+| Testing | — | `tests.html` tests its own copies of the functions, not index.html — gives no real coverage |
+| **Overall** | **72/100** | |
 
 ---
 

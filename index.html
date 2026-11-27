@@ -73,7 +73,7 @@ DATA BACKUP REMINDER:
     Company tab → Export Backup → save JSON file weekly to iCloud/Google Drive.
     Restore: Company tab → Restore Backup → select the JSON file.
 -->
-<!-- APEX v2026-11-26-A -->
+<!-- APEX v2026-11-27-A -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1720,7 +1720,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 let syncTimer=null,syncStatus='idle',syncEnabled=true;
 
 
-function exportBackup(){try{const backup={version:1,exportDate:new Date().toISOString(),propData:propData,extra:(typeof extra!=='undefined')?extra:{},tasks:tasks,mileage:window._mileage||[],propImgs:propImgs||{}};const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;const _d=new Date();const _ds=_d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');a.download='apex-homes-backup-'+_ds+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{a.remove();URL.revokeObjectURL(url);},100);const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--green)">✓ Backup downloaded</span>';}catch(err){const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--red)">✗ '+err.message+'</span>';}}
+function exportBackup(){try{const backup={version:1,exportDate:new Date().toISOString(),propData:propData,extra:(typeof extra!=='undefined')?extra:{},tasks:tasks,mileage:window._mileage||[],propImgs:propImgs||{}};const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;const _d=new Date();const _ds=_d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');a.download='apex-homes-backup-'+_ds+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{a.remove();URL.revokeObjectURL(url);},100);const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--green)">✓ Backup downloaded</span>';}catch(err){const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--red)">✗ '+esc(err.message)+'</span>';}}
 // ====== HOURLY CLOUD SNAPSHOTS ======
 const MAX_SNAPSHOTS=7;
 // IRS rates — update each January
@@ -1748,8 +1748,12 @@ async function saveHourlyBackup(manual){
       }
     }
     if(manual){const st=document.getElementById('backup-status');if(st){st.innerHTML='<span style="color:var(--green)">✓ Snapshot saved</span>';setTimeout(()=>st.innerHTML='',3000);}}
+    if(!propData._backups)propData._backups=[];
+    propData._backups.push({ts});
+    propData._backups=propData._backups.slice(-MAX_SNAPSHOTS);
+    save();
     renderCloudBackups();
-  }catch(e){if(manual){const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--red)">✗ Snapshot failed: '+e.message+'</span>';}}
+  }catch(e){if(manual){const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--red)">✗ Snapshot failed: '+esc(e.message)+'</span>';}else console.warn('hourly backup failed',e);}
 }
 async function renderCloudBackups(){
   const el=document.getElementById('cloud-backups-list');if(!el)return;
@@ -1764,7 +1768,7 @@ async function renderCloudBackups(){
       const label=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' at '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
       return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border2)"><span style="color:var(--text)">'+label+'</span><button class="btn btn-sm" style="font-size:11px;padding:3px 10px" data-id="'+row.id+'" onclick="restoreCloudBackup(this.dataset.id)">Restore</button></div>';
     }).join('');
-  }catch(e){el.innerHTML='<span style="color:var(--text2)">'+e.message+'</span>';}
+  }catch(e){el.innerHTML='<span style="color:var(--text2)">'+esc(e.message)+'</span>';}
 }
 async function restoreCloudBackup(id){
   if(!await appConfirm('Restore this snapshot? Current data will be replaced.','Restore'))return;
@@ -1789,7 +1793,7 @@ async function restoreCloudBackup(id){
     refreshSite();
     const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--green)">✓ Restored</span>';
     setTimeout(()=>{alert('Snapshot restored! Reloading.');location.reload();},500);
-  }catch(e){const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--red)">✗ '+e.message+'</span>';}
+  }catch(e){const st=document.getElementById('backup-status');if(st)st.innerHTML='<span style="color:var(--red)">✗ '+esc(e.message)+'</span>';}
 }
 setInterval(()=>saveHourlyBackup(false),60*60*1000);
 
@@ -1843,7 +1847,15 @@ async function retryFailedReceiptUploads(){
   }
 }
 
-async function restoreBackup(file){if(!file)return;const st=document.getElementById('backup-status');if(!await appConfirm('This will REPLACE all current data with the backup. Continue?','Replace'))return;try{const text=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsText(file);});const backup=JSON.parse(text);if(!backup.propData)throw new Error('Invalid backup file');Object.keys(propData).forEach(k=>delete propData[k]);Object.assign(propData,backup.propData);if(backup.extra&&typeof extra!=='undefined'){Object.keys(extra).forEach(k=>delete extra[k]);Object.assign(extra,backup.extra);}if(backup.tasks){tasks.length=0;backup.tasks.forEach(t=>tasks.push(t));}if(backup.mileage){window._mileage=backup.mileage;localStorage.setItem('apex_mileage',JSON.stringify(window._mileage));}save();refreshSite();if(st)st.innerHTML='<span style="color:var(--green)">✓ Restored</span>';setTimeout(()=>{alert('Backup restored! Reloading.');location.reload();},500);}catch(err){if(st)st.innerHTML='<span style="color:var(--red)">✗ '+err.message+'</span>';}}
+async function restoreBackup(file){if(!file)return;const st=document.getElementById('backup-status');if(!await appConfirm('This will REPLACE all current data with the backup. Continue?','Replace'))return;try{const text=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsText(file);});const backup=JSON.parse(text);if(!backup.propData)throw new Error('Invalid backup file');Object.keys(propData).forEach(k=>delete propData[k]);Object.assign(propData,backup.propData);if(backup.extra&&typeof extra!=='undefined'){Object.keys(extra).forEach(k=>delete extra[k]);Object.assign(extra,backup.extra);}if(backup.tasks){tasks.length=0;backup.tasks.forEach(t=>tasks.push(t));}if(backup.mileage){window._mileage=backup.mileage;propData._mileage=backup.mileage;localStorage.setItem('apex_mileage',JSON.stringify(window._mileage));}if(backup.propImgs){Object.keys(propImgs).forEach(k=>delete propImgs[k]);Object.assign(propImgs,backup.propImgs);}
+  // Push before reloading: save() is debounced and the reload would cancel it, then loadData would re-pull the old cloud copy
+  clearTimeout(syncTimer);_pushPending=false;
+  const cloudImgs={};Object.entries(propImgs).forEach(([k,v])=>{if(v&&String(v).startsWith('http'))cloudImgs[k]=v;});
+  const payload={extra:_stripB64Receipts(extra),tasks,propImgs:cloudImgs,propData};
+  try{localStorage.setItem('apex_v8',JSON.stringify(payload));}catch(e){}
+  const push=await sbFetch('/rest/v1/apex_data',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({id:'main',data:payload,updated_at:new Date().toISOString()})});
+  if(!push.ok)throw new Error('Restored locally but cloud save failed — check connection and try again');
+  refreshSite();if(st)st.innerHTML='<span style="color:var(--green)">✓ Restored</span>';setTimeout(()=>{alert('Backup restored! Reloading.');location.reload();},300);}catch(err){if(st)st.innerHTML='<span style="color:var(--red)">✗ '+esc(err.message)+'</span>';}}
 
 // On mobile, move status dot under logo
 (function(){
@@ -1977,7 +1989,7 @@ async function runIncomeScan(){if(!_incomeScanFiles.length)return;const btn=docu
 try{
 for(const file of _incomeScanFiles){
   if(!file.type.startsWith('image/')){setEl('income-scan-status',`Skipped ${esc(file.name)}: not an image`);continue;}
-  try{const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=ev=>res(ev.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:getAuthHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:file.type,data:b64}},{type:'text',text:'Extract from this payment/check: amount, date (YYYY-MM-DD), payer name, description. JSON only: {"amount":0,"date":"","payer":"","desc":""}'}]}]})});const data=await resp.json();const parsed=JSON.parse((data.content?.[0]?.text||'{}').replace(/```json|```/g,'').trim());let receiptUrl='';try{const path='receipts/income-'+Date.now()+'-'+file.name.replace(/[^a-z0-9.]/gi,'-');receiptUrl=await uploadToStorage(file,path);}catch(upErr){console.warn('Income receipt upload failed, skipping receipt attachment:',upErr);}const inc={id:'inc-'+Date.now().toString(36),amount:parseFloat(parsed.amount)||0,date:parsed.date||new Date().toLocaleDateString('en-CA'),payer:parsed.payer||'',desc:parsed.desc||file.name,cat:'Check'};if(receiptUrl)inc.receipt=receiptUrl;if(!propData._income)propData._income=[];propData._income.push(inc);}catch(err){console.error(err);}
+  try{const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=ev=>res(ev.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:getAuthHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:file.type,data:b64}},{type:'text',text:'Extract from this payment/check: amount, date (YYYY-MM-DD), payer name, description. JSON only: {"amount":0,"date":"","payer":"","desc":""}'}]}]})});const data=await resp.json();const _im=(data.content?.[0]?.text||'').match(/\{[\s\S]*\}/);const parsed=_im?JSON.parse(_im[0]):{};let receiptUrl='';try{const path='receipts/income-'+Date.now()+'-'+file.name.replace(/[^a-z0-9.]/gi,'-');receiptUrl=await uploadToStorage(file,path);}catch(upErr){console.warn('Income receipt upload failed, skipping receipt attachment:',upErr);}const inc={id:'inc-'+Date.now().toString(36),amount:parseFloat(parsed.amount)||0,date:parsed.date||new Date().toLocaleDateString('en-CA'),payer:parsed.payer||'',desc:parsed.desc||file.name,cat:'Check'};if(receiptUrl)inc.receipt=receiptUrl;if(!propData._income)propData._income=[];propData._income.push(inc);}catch(err){console.error(err);}
 }
 _incomeScanFiles=[];const q=document.getElementById('income-scan-queue');if(q)q.innerHTML='';save();renderIncome();
 }finally{if(btn){btn.disabled=false;btn.innerHTML='<svg class="ico"><use href="#ico-sparkles"/></svg> Scan All & Add';btn.style.display='none';}}}
@@ -2340,7 +2352,7 @@ function save(){
   const lsExtra=_stripB64Receipts(extra);
   const fullPayload={extra:lsExtra,tasks,propImgs,propData};
   try{localStorage.setItem('apex_v8',JSON.stringify(fullPayload));}catch(e){
-    try{localStorage.setItem('apex_v8',JSON.stringify({extra:lsExtra,tasks,propData}));}catch(e2){}
+    try{localStorage.setItem('apex_v8',JSON.stringify({extra:lsExtra,tasks,propData}));}catch(e2){console.warn("localStorage full — local copy not saved",e2);}
   }
   if(!syncEnabled){showSyncStatus('error');return;}
   clearTimeout(syncTimer);
@@ -2433,7 +2445,7 @@ function exportTaxPDF(){
   const acquisitions=props.filter(p=>propSold(p,taxYear)>0).reduce((s,p)=>s+propPurchase(p,taxYear),0);
   const totalExp=[...props,'general'].reduce((s,p)=>s+eTotal(p,taxYear),0);
   setEl('pl-fy-year',taxYear);setEl('sc-fy-year',taxYear);
-  const totalMiles=(window._mileage||[]).filter(t=>{const yr=String(taxYear);const d=String(t.date||t.dt||'');const de=String(t.dateEnd||'');return d.startsWith(yr)||de.startsWith(yr);}).reduce((s,t)=>s+t.miles,0);
+  const totalMiles=(window._mileage||[]).filter(t=>{const yr=String(taxYear);const d=String(t.date||t.dt||'');const de=String(t.dateEnd||'');return d.startsWith(yr)||(!d&&de.startsWith(yr));}).reduce((s,t)=>s+t.miles,0);
   const mileDeduction=totalMiles*rate;
   const $ =n=>n.toLocaleString('en-US',{minimumFractionDigits:2});
   // Schedule C deduction categories
@@ -2450,7 +2462,7 @@ function exportTaxPDF(){
   const seHalf=seTax/2;
   // Contractor / 1099 data
   const w9Map={};
-  [...props,'general'].forEach(p=>{allE(p).forEach(e=>{if(e.v&&e.c==='Labor / Contractor'&&parseFloat(e.a||0)>=600&&e.w9){const k=e.v.trim().toLowerCase();if(!w9Map[k])w9Map[k]={vendor:e.v.trim(),total:0};w9Map[k].total+=parseFloat(e.a)||0;}});});
+  [...props,'general'].forEach(p=>{allE(p).forEach(e=>{if(e.v&&e.c==='Labor / Contractor'&&parseFloat(e.a||0)>=600&&e.w9&&(e.dt||'').startsWith(String(taxYear))){const k=e.v.trim().toLowerCase();if(!w9Map[k])w9Map[k]={vendor:e.v.trim(),total:0};w9Map[k].total+=parseFloat(e.a)||0;}});});
   const contractors=Object.values(w9Map);
   const manualContractors=(propData._contractors||[]).filter(c=>!w9Map[c.name.toLowerCase()]);
   const allContractors=[...contractors,...manualContractors.map(c=>({vendor:c.name,total:0,ein:c.ein,manual:true}))];
@@ -2548,7 +2560,7 @@ function ohioAutocomplete(inp){
 
 function exportTaxCSV(){
   const rate=parseFloat(propData._mileageRate)||0.725;
-  const totalMiles=(window._mileage||[]).filter(t=>{const yr=String(taxYear);const d=String(t.date||t.dt||'');const de=String(t.dateEnd||'');return d.startsWith(yr)||de.startsWith(yr);}).reduce((s,t)=>s+t.miles,0);
+  const totalMiles=(window._mileage||[]).filter(t=>{const yr=String(taxYear);const d=String(t.date||t.dt||'');const de=String(t.dateEnd||'');return d.startsWith(yr)||(!d&&de.startsWith(yr));}).reduce((s,t)=>s+t.miles,0);
   const mileDeduction=totalMiles*rate;
   const props=getPropKeys();
   const revenue=props.reduce((s,p)=>s+propSold(p,taxYear),0);
@@ -2582,7 +2594,7 @@ function exportTaxCSV(){
   const w9Map={};
   [...props,'general'].forEach(p=>{
     allE(p).forEach(e=>{
-      if(e.v&&(e.c==='Labor / Contractor')&&parseFloat(e.a||0)>=600&&e.w9){
+      if(e.v&&(e.c==='Labor / Contractor')&&parseFloat(e.a||0)>=600&&e.w9&&(e.dt||'').startsWith(String(taxYear))){
         const k=e.v.trim().toLowerCase();
         if(!w9Map[k])w9Map[k]={vendor:e.v.trim(),total:0};
         w9Map[k].total+=parseFloat(e.a)||0;
@@ -2839,7 +2851,7 @@ function populateTaskPropDropdown(selId, currentVal){
   if(!sel) return;
   sel.innerHTML = '<option>General</option>' + getPropKeys().map(k => {
     const p = getProp(k); const addr = p.addr || k;
-    return '<option'+(currentVal===addr?' selected':'')+'>'+addr+'</option>';
+    return '<option'+(currentVal===addr?' selected':'')+'>'+esc(addr)+'</option>';
   }).join('');
   if(currentVal) sel.value = currentVal;
 }
@@ -2953,12 +2965,9 @@ function showModal(id){
   const m=document.getElementById(id);if(!m)return;
   // Populate task property dropdown dynamically
   if(id==='m-task'||id==='m-edit-task'){
-    const sel=m.querySelector('#task-prop, #edit-task-prop');
-    if(sel){
-      const cur=sel.value;
-      sel.innerHTML='<option value="General">General</option>'+getPropKeys().map(k=>`<option value="${k}">${getProp(k).addr||k}</option>`).join('');
-      if(cur)sel.value=cur;
-    }
+    const selId=id==='m-task'?'task-prop':'edit-task-prop';
+    const sel=document.getElementById(selId);
+    if(sel){const cur=sel.value;populateTaskPropDropdown(selId,cur||undefined);}
   }
   m.classList.add("open");const sy=window.scrollY;document.body.dataset.sy=sy;document.body.style.overflow="hidden";if(_moOpen===0)document.addEventListener('touchmove',_tmHandler,{passive:false});_moOpen++;if(id==='m-exp'||id==='m-edit-exp'){hookW9Listeners();setTimeout(()=>{if(id==='m-exp')checkW9Visibility('exp');else checkW9Visibility('eeexp');},50);}if(id==='tax-contractors'||m.closest('#tax-contractors'))renderContractors();
 }
@@ -3292,7 +3301,8 @@ async function saveExp(){
   const dt=document.getElementById("exp-date").value;
   const c=getExpCat("exp-cat","exp-custom-cat");
   const v=document.getElementById("exp-vendor").value.trim();
-  if(!amount){document.getElementById("exp-scan-status").innerHTML='<div style="font-size:12px;color:var(--red)">Please enter an amount.</div>';return;}
+  if(!(amount>0)){document.getElementById("exp-scan-status").innerHTML='<div style="font-size:12px;color:var(--red)">Please enter an amount greater than $0.</div>';return;}
+  if(!dt){document.getElementById("exp-scan-status").innerHTML='<div style="font-size:12px;color:var(--red)">Please choose a date.</div>';return;}
   if(_receiptUploadFailed){document.getElementById("exp-scan-status").innerHTML='<div style="font-size:13px;color:var(--red);font-weight:600;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.3);border-radius:8px;padding:8px 12px">⚠ Receipt upload failed. Remove the photo and re-attach on a better connection, or remove it to save without a receipt.</div>';return;}
   const isRecurring=document.getElementById("exp-recurring")?.checked;
   const recurFreq=document.getElementById("exp-recur-freq")?.value||"monthly";
@@ -3307,8 +3317,9 @@ async function saveExp(){
     if(!dates.length){document.getElementById("exp-scan-status").innerHTML='<div style="font-size:12px;color:var(--red)">Start date must be today or earlier.</div>';return;}
     if(dates.length===500){document.getElementById("exp-scan-status").innerHTML='<div style="font-size:12px;color:var(--red)">⚠ Recurring cap hit (500 entries). Choose a more recent start date.</div>';return;}
     if(!await appConfirm(`This will add ${dates.length} ${recurFreq} expense${dates.length>1?'s':''} (${dates[0]} → ${dates[dates.length-1]}). Continue?`,'Add'))return;
+    const recurId='r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
     dates.forEach(date=>{
-      const expObj={a:amount,d,c,v,dt:date,receipt,recur:recurFreq};
+      const expObj={a:amount,d,c,v,dt:date,receipt,recur:recurFreq,recurId};
       if(w9)expObj.w9=true;if(warranty)expObj.warranty=true;
       extra[p].unshift(expObj);
     });
@@ -3356,10 +3367,13 @@ async function importExpCSV(event,pid){
     dataLines.forEach(line=>{
       if(!line.trim())return;
       const cols=parseCSVLine(line);
-      const rawAmt=(cols[colAmt]||'').replace(/[$,\s]/g,'');
-      const amount=parseFloat(rawAmt);
-      if(!amount||isNaN(amount)){skipped++;return;}
-      const dt=(cols[colDate]||'').trim();
+      const rawAmt=(cols[colAmt]||'').replace(/[$,\s()]/g,'');
+      const amount=Math.abs(parseFloat(rawAmt)); // bank exports show debits as negative
+      if(!(amount>0)){skipped++;return;}
+      let dt=(cols[colDate]||'').trim();
+      const mdy=dt.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2}|\d{4})$/);
+      if(mdy){const y=mdy[3].length===2?'20'+mdy[3]:mdy[3];dt=`${y}-${mdy[1].padStart(2,'0')}-${mdy[2].padStart(2,'0')}`;}
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(dt)){skipped++;return;}
       const d=(cols[colDesc]||'Imported Expense').trim();
       const rawCat=(cols[colCat]||'').trim();
       const c=validCats.find(vc=>vc.toLowerCase()===rawCat.toLowerCase())||rawCat||'Miscellaneous';
@@ -3370,7 +3384,7 @@ async function importExpCSV(event,pid){
       pending.push({a:amount,d,c,v,dt});
     });
     if(!pending.length){
-      alert('Nothing to import — '+(skipped?skipped+' rows skipped (no valid amount or duplicates).':'file had no valid rows.'));
+      alert('Nothing to import — '+(skipped?skipped+' rows skipped (no valid amount, unreadable date, or duplicates).':'file had no valid rows.'));
       return;
     }
     const total=pending.reduce((s,r)=>s+r.a,0);
@@ -3485,6 +3499,8 @@ function saveEditExp(){
   const _ew9=document.getElementById('eeexp-w9')?.checked;
   const _ewarranty=document.getElementById('eeexp-warranty')?.checked||false;
   const _eamt=parseFloat(document.getElementById('eeexp-amt').value);
+  if(!(_eamt>0)){alert('Please enter an amount greater than $0.');return;}
+  if(!document.getElementById('eeexp-date').value){alert('Please choose a date.');return;}
   const _ecat=getExpCat('eeexp-cat','eeexp-custom-cat');
   const newData={a:_eamt,d:document.getElementById('eeexp-desc').value.trim(),dt:document.getElementById('eeexp-date').value,c:_ecat,v:_ev};
   if(_ew9&&_ecat==='Labor / Contractor'&&_eamt>=600)newData.w9=true;else newData.w9=false;
@@ -3539,7 +3555,8 @@ async function saveCr(){
   const dt=document.getElementById("cr-date").value;
   const c=getExpCat("cr-cat","cr-custom-cat");
   const v=document.getElementById("cr-vendor").value.trim();
-  if(!amount){document.getElementById("cr-scan-status").innerHTML='<div style="font-size:12px;color:var(--red)">Please enter an amount.</div>';return;}
+  if(!(amount>0)){document.getElementById("cr-scan-status").innerHTML='<div style="font-size:12px;color:var(--red)">Please enter an amount greater than $0.</div>';return;}
+  if(!dt){document.getElementById("cr-scan-status").innerHTML='<div style="font-size:12px;color:var(--red)">Please choose a date.</div>';return;}
   const crDup=allE(p).find(x=>x.credit&&parseFloat(x.a||x.amount)===amount&&x.dt===dt);
   if(crDup&&!await appConfirm(`A credit for ${fmt(amount)} on ${dt} already exists ("${crDup.d||crDup.desc||'Credit'}"). Add again?`,'Add Again'))return;
   if(!extra[p])extra[p]=[];
@@ -3585,6 +3602,8 @@ function saveEditCr(){
   const all=allE(p);const e=all[origIdx];if(!e)return;
   const _cv=document.getElementById("eecr-vendor").value.trim();saveVendor(_cv);
   const _camt=parseFloat(document.getElementById("eecr-amt").value);
+  if(!(_camt>0)){alert('Please enter an amount greater than $0.');return;}
+  if(!document.getElementById('eecr-date').value){alert('Please choose a date.');return;}
   const _ccat=getExpCat("eecr-cat","eecr-custom-cat");
   const newData={a:_camt,d:document.getElementById("eecr-desc").value.trim(),dt:document.getElementById("eecr-date").value,c:_ccat,v:_cv,credit:true};
   if(editCrReceiptUrl==='__deleted__')newData.receipt='';
@@ -3679,7 +3698,7 @@ async function scanEstImage(b64,mime,fallbackFile){
     const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:getAuthHeaders(),body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:700,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:imgMime,data:imgB64}},{type:"text",text:"You are an expert contractor estimate reader. Extract data from this estimate document and respond ONLY with raw JSON (no markdown, no explanation).\n\nIMPORTANT for date: use ONLY a clear estimate or document date. Do NOT use copyright years or footer years. Return null if none found.\n\nRespond ONLY with this JSON:\n{\"contractor\":\"Company or person name\",\"job\":\"Brief job type e.g. Roofing, HVAC, Plumbing\",\"amount\":12345.00,\"phone\":\"phone number or null\",\"email\":\"email or null\",\"date\":\"YYYY-MM-DD or null\",\"notes\":\"Brief scope summary or null\"}"}]}]})});
     if(!resp.ok)throw new Error(await resp.text());
     const data=await resp.json();
-    const parsed=JSON.parse(data.content[0].text.replace(/```json|```/g,"").trim());
+    const _m=(data.content?.[0]?.text||"").match(/\{[\s\S]*\}/);if(!_m)throw new Error("AI did not return readable data — try a clearer image");const parsed=JSON.parse(_m[0]);
     if(parsed.contractor)document.getElementById("est-contractor").value=parsed.contractor;
     if(parsed.job)document.getElementById("est-job").value=parsed.job;
     if(parsed.amount){document.getElementById("est-amount").value=String(parsed.amount).replace(/[^0-9.\-]/g,'');}
@@ -3701,7 +3720,7 @@ async function scanCrReceipt(f,preB64=null,preMime=null){
     const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:getAuthHeaders(),body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:600,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:processed.mime,data:b64}},{type:"text",text:"You are an expert real estate expense categorizer. Extract data from this refund or credit receipt and respond ONLY with raw JSON (no markdown).\n\nCategories (pick the BEST match):\n- \"Insurance Refund\" → insurance refunds or credits\n- \"Material Return\" → returned materials or supplies\n- \"Overpayment Refund\" → overpayment credits\n- \"Labor / Contractor\" → contractor credits\n- \"Materials & Supplies\" → supply credits\n- \"Other\" → anything that does not fit above\n\nIMPORTANT: For the date, use ONLY a clear transaction date printed on the receipt. Do NOT use copyright years, website footer years, or manufacturer dates. If no clear transaction date is visible, return null for date.\n\nRespond ONLY with this JSON:\n{\"amount\":123.45,\"desc\":\"Brief 4-6 word description\",\"vendor\":\"Store or person name\",\"date\":\"YYYY-MM-DD or null\",\"cat\":\"exact category from list\"}"}]}]})});
     if(!resp.ok)throw new Error(await resp.text());
     const data=await resp.json();
-    const parsed=JSON.parse(data.content[0].text.replace(/```json|```/g,"").trim());
+    const _m=(data.content?.[0]?.text||"").match(/\{[\s\S]*\}/);if(!_m)throw new Error("AI did not return readable data — try a clearer image");const parsed=JSON.parse(_m[0]);
     if(parsed.amount){const amt=String(parsed.amount).replace(/[^0-9.\-]/g,'');document.getElementById("cr-amt").value=amt;}
     if(parsed.desc)document.getElementById("cr-desc").value=parsed.desc;
     if(parsed.vendor)document.getElementById("cr-vendor").value=parsed.vendor;
@@ -3794,21 +3813,24 @@ async function _ensurePdfJs(){
 async function pdfToImage(file){
   await _ensurePdfJs();
   const url=URL.createObjectURL(file);
-  const pdf=await pdfjsLib.getDocument(url).promise;
-  const page=await pdf.getPage(1);
-  const scale=2.0;
-  const viewport=page.getViewport({scale});
-  const canvas=document.createElement('canvas');
-  canvas.width=viewport.width; canvas.height=viewport.height;
-  await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
-  URL.revokeObjectURL(url);
-  const data=canvas.toDataURL('image/jpeg',0.88);
-  return {b64:data.split(',')[1],mime:'image/jpeg'};
+  let pdf;
+  try{
+    pdf=await pdfjsLib.getDocument(url).promise;
+    const page=await pdf.getPage(1);
+    const viewport=page.getViewport({scale:2.0});
+    const canvas=document.createElement('canvas');
+    canvas.width=viewport.width; canvas.height=viewport.height;
+    await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+    const data=canvas.toDataURL('image/jpeg',0.88);
+    return {b64:data.split(',')[1],mime:'image/jpeg'};
+  }finally{URL.revokeObjectURL(url);if(pdf)pdf.destroy();}
 }
 async function pdfToImages(file){
   await _ensurePdfJs();
   const url=URL.createObjectURL(file);
-  const pdf=await pdfjsLib.getDocument(url).promise;
+  let pdf;
+  try{
+  pdf=await pdfjsLib.getDocument(url).promise;
   const pages=[];
   for(let i=1;i<=pdf.numPages;i++){
     const page=await pdf.getPage(i);
@@ -3820,8 +3842,8 @@ async function pdfToImages(file){
     const data=canvas.toDataURL('image/jpeg',0.88);
     pages.push({b64:data.split(',')[1],mime:'image/jpeg',dataUrl:data});
   }
-  URL.revokeObjectURL(url);
   return pages;
+  }finally{URL.revokeObjectURL(url);if(pdf)pdf.destroy();}
 }
 
 async function processReceiptImage(f,crop=false){
@@ -4386,7 +4408,7 @@ function addMileage(){
   const date=document.getElementById("mi-date").value;
   const dateEnd=document.getElementById("mi-date-end").value;
   const prop=document.getElementById("mi-prop")?.value||"General Business";
-  if(!miles||!purpose)return;
+  if(!(miles>0)||!purpose||!date){alert('Enter miles greater than 0, a purpose, and a start date.');return;}
   if(window._editMileageId){
     const idx=window._mileage.findIndex(x=>String(x.id)===String(window._editMileageId));
     if(idx>-1)window._mileage[idx]={...window._mileage[idx],miles,purpose,date,dateEnd,prop};
@@ -4457,7 +4479,7 @@ function renderMileage(){
     getPropKeys().forEach(k=>{const opt=document.createElement("option");opt.value=k;opt.textContent=getProp(k).addr||k;miProp.appendChild(opt);});
   }
   if(!window._mileage.length){el.innerHTML='<div class="empty"><svg class="ico"><use href="#ico-car"/></svg>No trips logged</div>';return;}
-  const yearMileage=window._mileage.filter(t=>{const yr=String(taxYear);const d=String(t.date||t.dt||'');const de=String(t.dateEnd||'');return d.startsWith(yr)||de.startsWith(yr);});
+  const yearMileage=window._mileage.filter(t=>{const yr=String(taxYear);const d=String(t.date||t.dt||'');const de=String(t.dateEnd||'');return d.startsWith(yr)||(!d&&de.startsWith(yr));});
   const total=yearMileage.reduce((s,t)=>s+t.miles,0);
   if(!yearMileage.length){el.innerHTML=`<div class="empty"><svg class="ico"><use href="#ico-car"/></svg>No trips logged for ${taxYear}</div>`;setEl("mi-total-miles","0.0 mi");setEl("mi-total-deduction",fmt(0));setEl("mi-stat-miles","0.0");setEl("mi-stat-deduction",fmt(0));renderCr&&0;return;}
   el.innerHTML=yearMileage.map(t=>{const dateStr=t.dateEnd&&t.dateEnd!==t.date?fmtD(t.date)+' → '+fmtD(t.dateEnd):(t.date?fmtD(t.date):'');return`<div class="exp-item"><div class="exp-left"><div><div class="exp-desc">${t.purpose}</div><div class="exp-meta">${t.prop||""}${dateStr?" · "+dateStr:""}</div></div></div><div class="exp-right"><div><div class="exp-amt">${t.miles.toFixed(1)} mi</div><div style="font-size:11px;color:var(--text3)">${fmt(t.miles*rate)}</div></div><button class="btn btn-danger btn-sm btn-icon" onclick="deleteMileage('${t.id}')"><svg class="ico" style="width:12px;height:12px"><use href="#ico-trash"/></svg></button><button class="btn btn-sm btn-icon" style="margin-left:3px;border-color:var(--border2);color:var(--text1)" onclick="openEditMileage('${t.id}')"><svg class="ico" style="width:12px;height:12px"><use href="#ico-edit"/></svg></button></div></div>`}).join("")+`<div class="exp-item" style="background:var(--bg3);font-weight:700"><div class="exp-left"><div class="exp-desc">Total Deduction</div></div><div class="exp-right"><div class="exp-amt">${fmt(total*rate)}</div></div></div>`;
@@ -4480,7 +4502,7 @@ function updateBalanceSheet(){
   const activeAllin=activeProps.reduce((s,p)=>s+propAllin(p),0);
   // Populate each active property row in balance sheet
   const bsRows=document.getElementById('bs-prop-rows');
-  if(bsRows)bsRows.innerHTML=activeProps.map(p=>`<div class="pl-row"><span>${getProp(p).addr||p} (${propStatus(p)} — at cost)</span><span id="bs-prop-val-${p}">${fmt(propAllin(p))}</span></div>`).join('');
+  if(bsRows)bsRows.innerHTML=activeProps.map(p=>`<div class="pl-row"><span>${esc(getProp(p).addr||p)} (${propStatus(p)} — at cost)</span><span id="bs-prop-val-${p}">${fmt(propAllin(p))}</span></div>`).join('');
   const cash=parseFloat(document.getElementById('bs-cash-inp')?.value)||0;
   const manualLoans=parseFloat(document.getElementById('bs-loans-inp')?.value)||0;
   const payable=parseFloat(document.getElementById('bs-payable-inp')?.value)||0;
@@ -4575,7 +4597,7 @@ function updateAuthStatus(){
   }
 }
 
-function initPin(){console.log("Apex Homes v2026-11-26-A loaded");
+function initPin(){console.log("Apex Homes v2026-11-27-A loaded");
   initAuth();
   const s=document.getElementById('pin-screen');if(!s)return;
   if(sessionStorage.getItem('apex_unlocked')==='1'){s.style.display='none';return;}
@@ -4598,7 +4620,7 @@ function checkPin(){
       const d=document.getElementById('pin-dots');
       if(d){d.style.animation='shake .35s ease';setTimeout(()=>{if(d)d.style.animation='';},400);}
     }
-  }catch(err){const s=document.getElementById('pin-screen');if(s)s.style.display='none';}
+  }catch(err){console.error('checkPin failed',err);const pe=document.getElementById('pin-error');if(pe)pe.textContent='PIN check failed — reload and try again';}
 }
 function changePin(){
   const curr=document.getElementById('pin-current')?.value;
@@ -4830,15 +4852,17 @@ function refreshSite(scope){
   const totalExp=[...props,"general"].reduce((s,p)=>s+eTotal(p,taxYear),0);
   const acquisitions=props.filter(p=>propSold(p,taxYear)>0).reduce((s,p)=>s+propPurchase(p,taxYear),0);
   const soldProps2=props.filter(p=>propSold(p,taxYear)>0);
-  const soldPropExp=soldProps2.reduce((s,p)=>s+eTotal(p,taxYear),0);
+  // A sold flip's realized profit includes everything spent on it, even in earlier years
+  const soldPropExp=soldProps2.reduce((s,p)=>s+eTotal(p),0);
   const generalExp=eTotal('general',taxYear);
   const mealsAll=[...props,"general"].flatMap(p=>allE(p)).filter(e=>(e.dt||e.date||'').startsWith(String(taxYear))&&(e.c||e.cat||'')==='Meals (50% deductible)'&&!e.credit).reduce((s,e)=>s+(parseFloat(e.a||e.amount)||0),0);
-  const soldMeals=[...soldProps2,"general"].flatMap(p=>allE(p)).filter(e=>(e.dt||e.date||'').startsWith(String(taxYear))&&(e.c||e.cat||'')==='Meals (50% deductible)'&&!e.credit).reduce((s,e)=>s+(parseFloat(e.a||e.amount)||0),0);
+  const _isMeal=e=>(e.c||e.cat||'')==='Meals (50% deductible)'&&!e.credit;
+  const soldMeals=soldProps2.flatMap(p=>allE(p)).filter(_isMeal).reduce((s,e)=>s+(parseFloat(e.a||e.amount)||0),0)+allE("general").filter(e=>(e.dt||e.date||'').startsWith(String(taxYear))&&_isMeal(e)).reduce((s,e)=>s+(parseFloat(e.a||e.amount)||0),0);
   const activeAllin=props.filter(p=>{const st=propStatus(p);return st!=='Sold'&&st!=='Inactive'&&st!=='Closed';}).reduce((s,p)=>s+propAllin(p),0);
   const activeCount=props.filter(p=>{const st=propStatus(p);return st!=='Sold'&&st!=='Inactive'&&st!=='Closed';}).length;
   const otherInc=incomeTotal(taxYear);
   const _mileRate=parseFloat(propData._mileageRate)||0.725;
-  const _totalMiles=(window._mileage||[]).filter(t=>{const yr=String(taxYear);const d=String(t.date||t.dt||'');const de=String(t.dateEnd||'');return d.startsWith(yr)||de.startsWith(yr);}).reduce((s,t)=>s+t.miles,0);
+  const _totalMiles=(window._mileage||[]).filter(t=>{const yr=String(taxYear);const d=String(t.date||t.dt||'');const de=String(t.dateEnd||'');return d.startsWith(yr)||(!d&&de.startsWith(yr));}).reduce((s,t)=>s+t.miles,0);
   const mileDeduction=_totalMiles*_mileRate;
   const assetDed=totalAssetDeductions(taxYear);
   const assetInt=totalAssetInterest(taxYear);
@@ -4868,7 +4892,7 @@ function refreshSite(scope){
   const plRevEl=document.getElementById('pl-total-rev');
   if(plRevEl){
     const plBody=document.getElementById('pl-rev-rows');
-    if(plBody){plBody.innerHTML=soldProps.map(p=>`<div class="pl-row"><span>${getProp(p).addr||p} (sold)</span><span style="color:var(--green)">${fmt(propSold(p,taxYear))}</span></div>`).join('');}
+    if(plBody){plBody.innerHTML=soldProps.map(p=>`<div class="pl-row"><span>${esc(getProp(p).addr||p)} (sold)</span><span style="color:var(--green)">${fmt(propSold(p,taxYear))}</span></div>`).join('');}
     const plExpEl=document.getElementById('pl-exp-rows');
     if(plExpEl){
       const allExp=[...props,'general'].flatMap(p=>allE(p)).filter(e=>(e.dt||e.date||'').startsWith(String(taxYear)));
@@ -4881,10 +4905,10 @@ function refreshSite(scope){
   setEl("pl-total-rev",fmt(totalRevIncome));
   setEl("pl-total-exp-row",fmt(totalExp));
   const plAcqEl=document.getElementById('pl-acq-rows');
-  if(plAcqEl){plAcqEl.innerHTML=soldProps.map(p=>`<div class="pl-row"><span>${getProp(p).addr||p}</span><span id="pl-${p}-acq">${fmt(propPurchase(p,taxYear))}</span></div>`).join('');}
+  if(plAcqEl){plAcqEl.innerHTML=soldProps.map(p=>`<div class="pl-row"><span>${esc(getProp(p).addr||p)}</span><span id="pl-${p}-acq">${fmt(propPurchase(p,taxYear))}</span></div>`).join('');}
   setEl("pl-total-acq",fmt(acquisitions));
-  setEl("pl-mile-deduction",mealsAll||mileDeduction?'('+fmt(mileDeduction)+')':'—');
-  setEl("pl-meals-addback",mealsAll?'('+fmt(mealsAll*0.5)+')':'—');
+  setEl("pl-mile-deduction",mileDeduction?'('+fmt(mileDeduction)+')':'—');
+  setEl("pl-meals-addback",mealsAll?'+'+fmt(mealsAll*0.5):'—');
   setEl("pl-asset-deduction",assetDed||assetInt?'('+fmt(assetDed+assetInt)+')':'—');
   const plAssetRow=document.getElementById('pl-asset-row');if(plAssetRow)plAssetRow.style.display=(assetDed||assetInt)?'flex':'none';
   const plNet=netProfitFull-mileDeduction-assetDed-assetInt+mealsAll*0.5;
@@ -5174,7 +5198,7 @@ async function handleClosingFile(file, key){
     if(status) status.innerHTML = '';
   }catch(e){
     console.error('Closing scan error:', e);
-    if(status) status.innerHTML = '<span style="color:var(--red)">✗ '+( e.message||'Unknown error')+' — check browser console for details</span>';
+    if(status) status.innerHTML = '<span style="color:var(--red)">✗ '+esc(e.message||'Unknown error')+' — check browser console for details</span>';
   }
 }
 
@@ -5256,7 +5280,7 @@ function renderClosingPreview(key, data){
     <div style="font-size:14px;font-weight:700;margin-bottom:.75rem;color:var(--gold2)">Closing Statement ${typeTag}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem .75rem;margin-bottom:1rem;font-size:13px">
       <div><span style="color:var(--text2)">Address:</span> <strong>${esc(data.address||'—')}, ${esc(data.city||'')} ${esc(data.state||'')} ${esc(data.zip||'')}</strong></div>
-      <div><span style="color:var(--text2)">Settlement Date:</span> <strong>${data.settlementDate||'—'}</strong></div>
+      <div><span style="color:var(--text2)">Settlement Date:</span> <strong>${esc(data.settlementDate||'—')}</strong></div>
       <div><span style="color:var(--text2)">${priceLabel}:</span> <strong style="color:var(--gold2)">${fmt(data.transactionPrice)}</strong></div>
       <div><span style="color:var(--text2)">${isSeller?'Buyer':'Seller'}:</span> <strong>${esc(data.otherParty||'—')}</strong></div>
     </div>`;
@@ -5323,11 +5347,13 @@ async function importClosingStatement(key){
   if(!extra[key]) extra[key] = [];
   const dt = data.settlementDate || new Date().toLocaleDateString('en-CA');
   (data.debits||[]).forEach(d=>{
+    if(!(parseFloat(d.amount)>0))return;
     extra[key].unshift({a:parseFloat(d.amount).toFixed(2),d:d.description,c:d.category||'Closing Costs',v:d.vendor||'',dt,credit:false});
   });
   const txPrice = parseFloat(data.transactionPrice||0);
   (data.credits||[]).forEach(c=>{
     // Never import the sale/purchase price itself as a credit — it's already set on the property
+    if(!(parseFloat(c.amount)>0))return;
     if(txPrice && Math.abs(parseFloat(c.amount) - txPrice) < 1) return;
     extra[key].unshift({a:parseFloat(c.amount).toFixed(2),d:c.description,c:c.category||'Closing Costs',v:'',dt,credit:true});
   });
@@ -5521,9 +5547,11 @@ function extendRecurringExpenses(){
     if(!exps.length)return;
     const groups={};
     exps.forEach(e=>{
-      const key=`${e.a}|${e.d}|${e.c}|${e.v}|${e.recur}`;
+      // Series identity: recurId, or description+category for series created before recurId existed,
+      // so editing one entry's amount/vendor doesn't split it into a second, duplicating series
+      const key=e.recurId||`${e.d}|${e.c}|${e.recur}`;
       if(!groups[key])groups[key]={freq:e.recur,tmpl:e,dates:[]};
-      if(e.dt)groups[key].dates.push(e.dt);
+      if(e.dt){groups[key].dates.push(e.dt);if(e.dt>=(groups[key].tmpl.dt||''))groups[key].tmpl=e;}
     });
     Object.values(groups).forEach(g=>{
       const maxDate=g.dates.sort().pop();
@@ -5547,6 +5575,7 @@ function extendRecurringExpenses(){
       const t=g.tmpl;
       newDates.forEach(date=>{
         const obj={a:t.a,d:t.d,c:t.c,v:t.v,dt:date,recur:freq};
+        if(t.recurId)obj.recurId=t.recurId;
         if(t.w9)obj.w9=true;if(t.warranty)obj.warranty=true;
         extra[p].push(obj);
       });
@@ -5724,7 +5753,7 @@ loadData().then(()=>{
     renderTasks();renderPropTasks();renderCal();
     getPropKeys().forEach(renderDocs);
     // Hydrate mileage from cloud (the parse-time init ran before loadData resolved)
-    if(propData._mileage&&propData._mileage.length&&!(window._mileage&&window._mileage.length)){
+    if(propData._mileage&&propData._mileage.length){
       window._mileage=propData._mileage;
       localStorage.setItem('apex_mileage',JSON.stringify(window._mileage));
     }
@@ -5780,6 +5809,7 @@ async function autoSyncPull(){
     const rows=await r.json();
     if(!rows||!rows[0]||!rows[0].data)return;
     const d=rows[0].data;
+    if(_pushPending)return; // user saved while the fetch was in flight
     const hash=JSON.stringify({i:d.propImgs,e:d.extra,t:d.tasks,p:d.propData});
     if(hash===_lastSyncHash)return; // nothing changed
     _lastSyncHash=hash;
@@ -5819,9 +5849,14 @@ async function autoSyncPull(){
       extra=_mergeReceipts(incomingExtra)||extra;
       if(incoming._logo&&incoming._logo!==propData._logo){applyCustomLogo(incoming._logo,true);}
       propData=incoming;changed=true;
+      if(Array.isArray(propData._mileage)){
+        window._mileage=propData._mileage;
+        localStorage.setItem('apex_mileage',JSON.stringify(window._mileage));
+        renderMileage();
+      }
     }
     if(changed){
-      localStorage.setItem('apex_v8',JSON.stringify({extra,tasks,propImgs,propData}));
+      try{localStorage.setItem('apex_v8',JSON.stringify({extra:_stripB64Receipts(extra),tasks,propImgs,propData}));}catch(e){console.warn('localStorage full',e);}
       Object.keys(propImgs).forEach(applyPropImg);
       [...getPropKeys(),'general'].forEach(renderE);
       getPropKeys().forEach(renderDocs);
